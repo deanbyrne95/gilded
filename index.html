@@ -190,10 +190,47 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 @keyframes conffall{ to{ transform:translateY(105vh) rotate(var(--spin)); opacity:.15 } }
 .token .gem{ transition:transform .18s ease, filter .18s ease }
 .token .gem:not(.disabled):hover{ transform:translateY(-3px); filter:brightness(1.12) }
+/* ---------- responsive / fluid sizing ---------- */
+html,body{overflow-x:hidden}
+.wrap{padding:clamp(12px,3vw,18px) clamp(10px,3vw,16px) 60px}
+.brand h1{font-size:clamp(26px,6vw,34px)}
+.brand .sub{font-size:clamp(10px,2.4vw,12.5px)}
+.noble{width:clamp(76px,20vw,96px); height:clamp(76px,20vw,96px)}
+.deck{width:clamp(56px,15vw,70px); height:clamp(80px,21vw,98px)}
+.card{width:clamp(96px,24vw,112px); height:auto; aspect-ratio:112/150; flex:none}
+.token{width:clamp(54px,14vw,66px)}
+.token .gem{width:clamp(42px,11vw,52px); height:clamp(42px,11vw,52px)}
+.modal{padding:clamp(18px,5vw,28px)}
+.modal h2{font-size:clamp(24px,6vw,30px)}
+
+/* tablets and down: single column already collapses at 960 (rule above) */
+@media (min-width:961px){
+  .layout{grid-template-columns:minmax(0,1fr) clamp(280px,26vw,340px)}
+}
+
+/* phones: each tier becomes a swipeable strip so cards never get crushed */
+@media (max-width:640px){
+  .topbar{gap:10px; padding-bottom:10px}
+  .layout{gap:14px}
+  .nobles{gap:8px}
+  .tier-row{overflow-x:auto; -webkit-overflow-scrolling:touch;
+    padding:8px 0 8px; scroll-snap-type:x proximity;
+    scrollbar-width:thin; scrollbar-color:var(--line) transparent}
+  .tier-row::-webkit-scrollbar{height:5px}
+  .tier-row::-webkit-scrollbar-thumb{background:var(--line); border-radius:99px}
+  .tier-row .cards{flex-wrap:nowrap; width:max-content}
+  .tier-row .deck,.tier-row .card{scroll-snap-align:start}
+  .tier-row .card:hover{transform:none}
+  .bank{gap:10px}
+  .take-tray{padding:10px 12px}
+  .status .who{font-size:20px}
+}
+
 @media (prefers-reduced-motion: reduce){
   .card-enter{animation:none}
   .pl.active{animation:none}
   .fly-gem,.float-txt,.fx-ring{transition:none}
+  .token .gem{transition:none}
 }
 </style>
 </head>
