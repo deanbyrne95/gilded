@@ -61,38 +61,38 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 
 /* Bottom player HUD (action bar) */
 .hud{position:fixed; left:0; right:0; bottom:0; z-index:44;
-  display:flex; flex-direction:column; gap:10px; padding:10px clamp(10px,3vw,18px) 12px;
+  display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; padding:8px clamp(10px,3vw,18px);
   background:linear-gradient(0deg, rgba(15,11,20,.98), rgba(23,17,30,.92));
-  border-top:1px solid var(--gilt); backdrop-filter:blur(6px); max-height:64vh; overflow-y:auto}
-.hud-bank{display:flex; flex-direction:column; gap:8px;
-  border-bottom:1px solid var(--line); padding-bottom:10px}
+  border-top:1px solid var(--gilt); backdrop-filter:blur(6px); max-height:50vh; overflow-y:auto}
+.hud-bank{flex:1 1 300px; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px}
 .hud-bank.hidden{display:none}
-.hud-bank-label{font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--ink-dim)}
-.hud-players{display:flex; gap:10px; overflow-x:auto; padding-bottom:2px;
+.hud-players{flex:1 1 240px; display:flex; gap:8px; overflow-x:auto; padding-bottom:2px;
   scrollbar-width:thin; scrollbar-color:var(--line) transparent}
 .hud-players::-webkit-scrollbar{height:5px}
 .hud-players::-webkit-scrollbar-thumb{background:var(--line); border-radius:99px}
-.pchip{flex:0 0 auto; min-width:150px; border-radius:12px; padding:8px 11px;
+.pchip{flex:0 0 auto; min-width:130px; border-radius:11px; padding:6px 10px;
   background:var(--felt-2); border:1px solid var(--line)}
 .pchip.active{border-color:var(--gilt); animation:breathe 2.6s ease-in-out infinite}
 .pchip .pc-top{display:flex; align-items:baseline; justify-content:space-between; gap:8px}
-.pchip .pc-name{font-family:"Cormorant Garamond",serif; font-size:18px}
-.pchip .pc-vp{font-family:"Cormorant Garamond",serif; font-size:20px; color:var(--gilt-soft)}
+.pchip .pc-name{font-family:"Cormorant Garamond",serif; font-size:16px}
+.pchip .pc-vp{font-family:"Cormorant Garamond",serif; font-size:18px; color:var(--gilt-soft)}
 .pchip .pc-vp small{font-family:"Jost"; font-size:9px; letter-spacing:1px; color:var(--ink-dim)}
-.pchip .pc-row{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px}
-.pchip .pc-sub{display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; font-size:11px; color:var(--ink-dim)}
-.pchip .stack{display:flex; align-items:center; gap:3px; font-size:12px}
-.pchip .stack .gem{width:15px; height:15px}
-.pchip .stack .bon{width:15px; height:15px; border-radius:4px; border:1px solid rgba(0,0,0,.4)}
-/* bank inside the HUD sits on one line with the controls */
-.hud-bank .bank{margin:0; gap:clamp(8px,2.2vw,14px)}
-.hud-bank .take-tray{margin:0; padding:8px 12px}
-.hud-bank .token{width:auto; gap:3px}
-.hud-bank .token .gem{width:clamp(28px,7vw,38px); height:clamp(28px,7vw,38px)}
-.hud-bank .token .cnt{font-size:11px}
-.hud-bank .token .lbl{font-size:8.5px; letter-spacing:1px}
-.hud-bank .take-chips .gem{width:22px; height:22px}
-.hud-bank-label{margin-bottom:-2px}
+.pchip .pc-row{display:flex; flex-wrap:wrap; gap:5px; margin-top:4px}
+.pchip .pc-sub{display:flex; flex-wrap:wrap; gap:7px; margin-top:4px; font-size:10.5px; color:var(--ink-dim)}
+.pchip .stack{display:flex; align-items:center; gap:3px; font-size:11px}
+.pchip .stack .gem{width:14px; height:14px}
+.pchip .stack .bon{width:14px; height:14px; border-radius:4px; border:1px solid rgba(0,0,0,.4)}
+/* compact bank inside the HUD */
+.hud-bank .bank{margin:0; gap:clamp(6px,2vw,12px); flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px}
+.hud-bank .token{width:auto; gap:1px}
+.hud-bank .token .gem{width:clamp(26px,6.4vw,34px); height:clamp(26px,6.4vw,34px)}
+.hud-bank .token .cnt{font-size:10.5px}
+.hud-bank .token .lbl{display:none}
+.hud-bank .take-tray{margin:0; padding:0; border:none; background:none;
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.hud-bank .take-tray:empty{display:none}
+.hud-bank .take-chips .gem{width:20px; height:20px}
+.hud-bank .gbtn{padding:6px 12px; font-size:13px}
 
 .section-label{font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--ink-dim); margin:2px 0 10px}
 
@@ -405,7 +405,6 @@ body.light .ledger-tab{color:#e6cd86}
 <!-- Floating player HUD -->
 <div class="hud" id="hud">
   <div class="hud-bank" id="hudBank">
-    <div class="hud-bank-label">The bank</div>
     <div class="bank" id="bank"></div>
     <div class="take-tray" id="takeTray"></div>
   </div>
@@ -853,10 +852,7 @@ function renderTakeTray(){
     return;
   }
   const colors=Object.keys(UI.sel).filter(k=>UI.sel[k]>0);
-  if(!humanControls() || colors.length===0){
-    el.innerHTML=`<span class="take-empty">Tap gems to take 3 different, or 2 of one kind. Tap a chosen gem to remove it.</span>`;
-    return;
-  }
+  if(!humanControls() || colors.length===0){ el.innerHTML=""; return; }
   const chips=colors.map(k=>Array(UI.sel[k]).fill(`<div class="gem g-${k}" data-action="deselect" data-color="${k}" title="remove"></div>`).join("")).join("");
   el.innerHTML=`<div class="take-chips">${chips}</div>
     <button class="gbtn" data-action="confirm-take">Take gems</button>
