@@ -46,25 +46,29 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 /* Layout */
 .layout{display:grid; gap:clamp(10px,2vw,18px); align-items:start;
   grid-template-columns:minmax(0,1fr) clamp(132px,24vw,320px);
-  grid-template-areas:"board status" "board score" "board log" "board .";
-  grid-template-rows:auto auto auto 1fr}
+  grid-template-areas:"board status" "board score" "board .";
+  grid-template-rows:auto auto 1fr}
 .blk-status{grid-area:status} .blk-score{grid-area:score}
-.blk-board{grid-area:board} .blk-log{grid-area:log}
+.blk-board{grid-area:board}
 
 .section-label{font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--ink-dim); margin:2px 0 10px}
 
 /* Nobles */
-.nobles{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px}
-.noble{width:96px; height:96px; border-radius:12px; position:relative;
+.nobles{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px}
+.noble{width:clamp(86px,21vw,110px); min-height:clamp(70px,17vw,92px);
+  border-radius:12px; position:relative;
   background:linear-gradient(160deg,#40354f,#2a2135); border:1px solid var(--gilt);
-  box-shadow:var(--shadow); padding:9px; display:flex; flex-direction:column; justify-content:space-between}
-.noble .np{position:absolute; top:6px; right:8px; font-family:"Cormorant Garamond",serif;
-  font-size:22px; color:var(--gilt-soft)}
-.noble .seal{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#e6cd86,#a9822f);
-  border:1px solid #7a5e21; margin-bottom:2px}
-.noble .req{display:flex; gap:4px; flex-wrap:wrap}
-.reqchip{display:flex; align-items:center; gap:3px; font-size:12px; color:var(--ink)}
-.dot{width:13px;height:13px;border-radius:3px; display:inline-block; border:1px solid rgba(0,0,0,.35)}
+  box-shadow:var(--shadow); padding:9px 10px; display:flex; flex-direction:column;
+  justify-content:space-between; gap:8px}
+.noble .np{font-family:"Cormorant Garamond",serif; font-size:clamp(20px,5vw,24px);
+  line-height:1; color:var(--gilt-soft)}
+.noble .np small{font-family:"Jost"; font-size:9px; letter-spacing:1.5px;
+  text-transform:uppercase; color:var(--ink-dim); margin-left:4px}
+.noble .req{display:flex; gap:6px; flex-wrap:wrap; align-items:center}
+.reqchip{display:flex; align-items:center; gap:4px; font-size:clamp(12px,3.2vw,14px);
+  color:var(--ink); font-weight:500}
+.dot{width:clamp(13px,3.4vw,16px); height:clamp(13px,3.4vw,16px); border-radius:4px;
+  display:inline-block; border:1px solid rgba(0,0,0,.35)}
 
 /* Tiers + cards */
 .tier-row{display:flex; align-items:center; gap:12px; margin-bottom:14px}
@@ -199,7 +203,6 @@ html,body{overflow-x:hidden}
 .wrap{padding:clamp(12px,3vw,18px) clamp(10px,3vw,16px) 60px}
 .brand h1{font-size:clamp(26px,6vw,34px)}
 .brand .sub{font-size:clamp(10px,2.4vw,12.5px)}
-.noble{width:clamp(56px,14vw,96px); height:clamp(56px,14vw,96px)}
 .token{width:clamp(46px,12vw,66px)}
 .token .gem{width:clamp(36px,9.5vw,52px); height:clamp(36px,9.5vw,52px)}
 .tier-row{gap:6px}
@@ -239,6 +242,36 @@ html,body{overflow-x:hidden}
   .fly-gem,.float-txt,.fx-ring{transition:none}
   .token .gem{transition:none}
 }
+/* footer */
+.footer{display:flex; justify-content:center; gap:12px; margin-top:26px; padding-top:18px; border-top:1px solid var(--line)}
+
+/* ledger slide-in drawer */
+.ledger-tab{position:fixed; right:0; top:50%; transform:translateY(-50%);
+  writing-mode:vertical-rl; text-orientation:mixed;
+  background:linear-gradient(180deg,#332942,#271f33); color:var(--gilt-soft);
+  border:1px solid var(--gilt); border-right:none; border-radius:10px 0 0 10px;
+  padding:16px 8px; font-size:13px; letter-spacing:2px; text-transform:uppercase;
+  cursor:pointer; z-index:45; box-shadow:var(--shadow)}
+.ledger-tab:hover{color:#fff; border-color:var(--gilt-soft)}
+.ledger-scrim{position:fixed; inset:0; background:rgba(8,5,12,.5); backdrop-filter:blur(2px);
+  opacity:0; pointer-events:none; transition:opacity .3s; z-index:46}
+.ledger-scrim.show{opacity:1; pointer-events:auto}
+.ledger-drawer{position:fixed; top:0; right:0; height:100%; width:min(340px,86vw);
+  background:linear-gradient(180deg,#2b2338,#1e1728); border-left:1px solid var(--gilt);
+  box-shadow:-12px 0 40px rgba(0,0,0,.5); z-index:47; padding:18px 18px 24px;
+  transform:translateX(100%); transition:transform .32s cubic-bezier(.4,.1,.2,1);
+  display:flex; flex-direction:column}
+.ledger-drawer.open{transform:translateX(0)}
+.ledger-head{display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:12px; border-bottom:1px solid var(--line); padding-bottom:10px}
+.ledger-head h3{font-size:24px; color:var(--gilt-soft)}
+.ledger-close{background:none; border:none; color:var(--ink-dim); font-size:30px;
+  line-height:1; cursor:pointer; padding:0 4px}
+.ledger-close:hover{color:var(--ink)}
+.ledger-drawer .log{max-height:none; flex:1; overflow:auto}
+@media (prefers-reduced-motion: reduce){
+  .ledger-drawer{transition:none} .ledger-scrim{transition:none}
+}
 </style>
 </head>
 <body>
@@ -250,7 +283,6 @@ html,body{overflow-x:hidden}
     </div>
     <div class="spacer"></div>
     <span class="pill">First to <b>15</b> prestige</span>
-    <button class="gbtn ghost" data-action="open-tutorial">How to play</button>
     <button class="gbtn" data-action="open-newgame">New game</button>
   </div>
 
@@ -278,13 +310,23 @@ html,body{overflow-x:hidden}
         <div class="cards" id="myReserve"></div>
       </div>
     </div>
+  </div>
 
-    <div class="panel blk-log">
-      <div class="section-label" style="margin-top:0">Ledger</div>
-      <div class="log" id="log"></div>
-    </div>
+  <div class="footer">
+    <button class="gbtn ghost" data-action="open-tutorial">How to play</button>
   </div>
 </div>
+
+<!-- Ledger slide-in drawer -->
+<button class="ledger-tab" data-action="toggle-ledger" aria-label="Open ledger">Ledger</button>
+<div class="ledger-scrim" id="ledgerScrim" data-action="close-ledger"></div>
+<aside class="ledger-drawer" id="ledgerDrawer" aria-hidden="true">
+  <div class="ledger-head">
+    <h3>Ledger</h3>
+    <button class="ledger-close" data-action="close-ledger" aria-label="Close ledger">&times;</button>
+  </div>
+  <div class="log" id="log"></div>
+</aside>
 
 <div id="fxLayer"></div>
 
@@ -652,7 +694,7 @@ function renderNobles(){
   const el=document.getElementById("nobles");
   el.innerHTML=G.nobles.map(n=>{
     const chips=Object.entries(n.req).map(([ci,req])=>`<span class="reqchip">${dot(KEYS[ci])}${req}</span>`).join("");
-    return `<div class="noble"><div class="np">3</div><div class="seal"></div><div class="req">${chips}</div></div>`;
+    return `<div class="noble"><div class="np">3<small>prestige</small></div><div class="req">${chips}</div></div>`;
   }).join("");
 }
 function renderTiers(){
@@ -913,13 +955,30 @@ document.addEventListener("click",(e)=>{
     case "reserve-deck": onDeckReserve(+t.dataset.tier); break;
     case "discard": onDiscard(t.dataset.color); break;
     case "pick-noble": { const n=UI._nobleList[+t.dataset.i]; closeModal(); UI._nobleCb(n); break; }
+    case "toggle-ledger": toggleLedger(); break;
+    case "close-ledger": closeLedger(); break;
   }
 });
 scrim.addEventListener("click",(e)=>{ if(e.target===scrim && scrim.dataset.dismiss==="1") closeModal(); });
 
+/* ---------- ledger drawer ---------- */
+function toggleLedger(){
+  const d=document.getElementById('ledgerDrawer'), s=document.getElementById('ledgerScrim');
+  const open=d.classList.toggle('open'); s.classList.toggle('show',open);
+  d.setAttribute('aria-hidden', open?'false':'true');
+}
+function closeLedger(){
+  const d=document.getElementById('ledgerDrawer'), s=document.getElementById('ledgerScrim');
+  d.classList.remove('open'); s.classList.remove('show'); d.setAttribute('aria-hidden','true');
+}
+
 /* ---------- boot ---------- */
+// remember, per device, that the how-to has been shown (survives refresh; degrades safely if storage is blocked)
+function seenTutorial(){ try{ return localStorage.getItem('gilded_tutorial_seen')==='1'; }catch(e){ return false; } }
+function markTutorialSeen(){ try{ localStorage.setItem('gilded_tutorial_seen','1'); }catch(e){} }
+
 startGame(1);
-openTutorial();
+if(!seenTutorial()){ openTutorial(); markTutorialSeen(); }
 </script>
 </body>
 </html>
