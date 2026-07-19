@@ -43,13 +43,46 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 .gbtn:hover{border-color:var(--gilt-soft); color:#fff}
 .gbtn.ghost{border-color:var(--line)}
 
-/* Layout */
-.layout{display:grid; gap:clamp(10px,2vw,18px); align-items:start;
-  grid-template-columns:minmax(0,1fr) clamp(116px,22vw,300px);
-  grid-template-areas:"board status" "board score" "board .";
-  grid-template-rows:auto auto 1fr}
-.blk-status{grid-area:status} .blk-score{grid-area:score}
-.blk-board{grid-area:board}
+/* Layout: full-width board, floating HUD at the bottom */
+.wrap{padding-bottom:clamp(104px,20vh,150px)}
+.board{min-width:0}
+
+/* Goal banner */
+.goal-banner{display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px;
+  background:linear-gradient(160deg,var(--panel-2),var(--panel));
+  border:1px solid var(--gilt); border-radius:12px; padding:11px 16px; margin-bottom:18px;
+  box-shadow:var(--shadow)}
+.goal-banner .gb-main{font-family:"Cormorant Garamond",serif; font-size:clamp(17px,4vw,21px);
+  color:var(--gilt-soft); line-height:1}
+.goal-banner .gb-sep{flex:1}
+.goal-banner .gb-tag{font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--ink-dim)}
+.goal-banner .gb-tag b{color:var(--ink)}
+.goal-banner .gb-final{color:#e8b04a; font-weight:600; letter-spacing:1px}
+
+/* Bottom player HUD */
+.hud{position:fixed; left:0; right:0; bottom:0; z-index:44;
+  display:flex; align-items:stretch; gap:12px; padding:10px clamp(10px,3vw,18px);
+  background:linear-gradient(0deg, rgba(15,11,20,.98), rgba(23,17,30,.9));
+  border-top:1px solid var(--gilt); backdrop-filter:blur(6px); max-height:42vh}
+.hud-prompt{flex:0 0 auto; align-self:center; max-width:38%;
+  font-size:clamp(12px,3vw,14px); color:var(--ink-dim); line-height:1.3}
+.hud-prompt b{color:var(--gilt-soft)}
+.hud-players{flex:1 1 auto; display:flex; gap:10px; overflow-x:auto; padding-bottom:2px;
+  scrollbar-width:thin; scrollbar-color:var(--line) transparent}
+.hud-players::-webkit-scrollbar{height:5px}
+.hud-players::-webkit-scrollbar-thumb{background:var(--line); border-radius:99px}
+.pchip{flex:0 0 auto; min-width:150px; border-radius:12px; padding:8px 11px;
+  background:var(--felt-2); border:1px solid var(--line)}
+.pchip.active{border-color:var(--gilt); animation:breathe 2.6s ease-in-out infinite}
+.pchip .pc-top{display:flex; align-items:baseline; justify-content:space-between; gap:8px}
+.pchip .pc-name{font-family:"Cormorant Garamond",serif; font-size:18px}
+.pchip .pc-vp{font-family:"Cormorant Garamond",serif; font-size:20px; color:var(--gilt-soft)}
+.pchip .pc-vp small{font-family:"Jost"; font-size:9px; letter-spacing:1px; color:var(--ink-dim)}
+.pchip .pc-row{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px}
+.pchip .pc-sub{display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; font-size:11px; color:var(--ink-dim)}
+.pchip .stack{display:flex; align-items:center; gap:3px; font-size:12px}
+.pchip .stack .gem{width:15px; height:15px}
+.pchip .stack .bon{width:15px; height:15px; border-radius:4px; border:1px solid rgba(0,0,0,.4)}
 
 .section-label{font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--ink-dim); margin:2px 0 10px}
 
@@ -93,8 +126,8 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 .card:hover{transform:translateY(-3px); border-color:var(--gilt)}
 .card.sel{border-color:var(--gilt-soft); box-shadow:0 0 0 2px var(--gilt-soft), var(--shadow)}
 .card.afford{border-color:#6fae7e}
-.card-band{flex:0 0 38%; position:relative; display:flex; justify-content:flex-end;
-  align-items:flex-start; padding:7px 8px; border-radius:11px 11px 0 0;
+.card-band{flex:0 0 38%; position:relative; display:flex; justify-content:center;
+  align-items:center; padding:7px 8px; border-radius:11px 11px 0 0;
   box-shadow:inset 0 -10px 14px rgba(0,0,0,.16)}
 .card-pts{font-family:"Cormorant Garamond",serif; font-weight:700; line-height:1;
   font-size:clamp(15px,26cqi,26px); color:var(--gilt-soft);
@@ -282,6 +315,42 @@ html,body{overflow-x:hidden}
 @media (prefers-reduced-motion: reduce){
   .ledger-drawer{transition:none} .ledger-scrim{transition:none}
 }
+/* menu + settings */
+.menu-list{display:flex; flex-direction:column; gap:8px; margin:16px 0 4px}
+.menu-item{text-align:left; background:var(--felt-2); border:1px solid var(--line);
+  color:var(--ink); border-radius:10px; padding:13px 15px; font-size:15px; font-family:"Jost"; cursor:pointer}
+.menu-item:hover:not(:disabled){border-color:var(--gilt)}
+.menu-item:disabled{opacity:.5; cursor:not-allowed}
+.set-row{display:flex; align-items:center; justify-content:space-between; gap:14px;
+  padding:13px 0; border-bottom:1px solid var(--line)}
+.set-label{font-size:15px; color:var(--ink); display:flex; flex-direction:column}
+.set-hint{font-size:11px; color:var(--ink-dim); margin-top:2px}
+.seg-group{display:flex; gap:6px; flex:0 0 auto}
+.seg{background:var(--felt-2); border:1px solid var(--line); color:var(--ink-dim);
+  border-radius:8px; padding:8px 13px; font-size:14px; cursor:pointer; font-family:"Jost"}
+.seg.on{border-color:var(--gilt); color:var(--gilt-soft); background:var(--panel-2)}
+.set-note{font-size:12px; color:var(--ink-dim); margin-top:16px}
+
+/* colour-blind aid: letters on cost/patron dots */
+.dot{position:relative}
+body.cb .dot::after{content:attr(data-g); position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:9px; font-weight:700; color:#fff; text-shadow:0 0 2px #000,0 0 2px #000; font-family:"Jost"}
+
+/* light theme */
+body.light{
+  --felt:#ece3d1; --felt-2:#f6efe0; --panel:#fbf6ea; --panel-2:#f0e8d6;
+  --gilt:#a9812f; --gilt-soft:#8a6626; --ink:#2c2430; --ink-dim:#6a5e50; --line:#dccfb5;
+  --shadow:0 8px 24px rgba(90,66,20,.16);
+  background:radial-gradient(1200px 700px at 50% -10%, #fffdf6 0%, var(--felt) 55%), var(--felt);
+}
+body.light .gbtn{color:#f4ecdd}
+body.light .card{background:linear-gradient(165deg,#fbf6ea,#efe5d2)}
+body.light .noble{background:linear-gradient(160deg,#f4ecdd,#e8dec8)}
+body.light .hud{background:linear-gradient(0deg,#f1e9d7,#f8f2e5)}
+body.light .modal{background:linear-gradient(170deg,#fbf6ea,#f1e9d7)}
+body.light .ledger-drawer{background:linear-gradient(180deg,#fbf6ea,#eee5d3)}
+body.light .ledger-tab{color:#e6cd86}
 </style>
 </head>
 <body>
@@ -292,38 +361,26 @@ html,body{overflow-x:hidden}
       <span class="sub">A Gem Merchant's Game</span>
     </div>
     <div class="spacer"></div>
-    <span class="pill">First to <b>15</b> prestige</span>
-    <button class="gbtn" data-action="open-newgame">New game</button>
+    <button class="gbtn" data-action="open-menu">&#9776; Menu</button>
   </div>
 
-  <div class="layout">
-    <div class="status blk-status" id="status"></div>
+  <div class="goal-banner" id="goalBanner"></div>
 
-    <div class="panel blk-score">
-      <div class="section-label" style="margin-top:0">Merchants</div>
-      <div id="players"></div>
+  <div class="board">
+    <div class="section-label">Patrons</div>
+    <div class="nobles" id="nobles"></div>
+
+    <div class="section-label">Development cards</div>
+    <div id="tiers"></div>
+
+    <div class="section-label" style="margin-top:6px">The bank</div>
+    <div class="bank" id="bank"></div>
+    <div class="take-tray" id="takeTray"></div>
+
+    <div id="reserveWrap" class="hidden">
+      <div class="section-label" style="margin-top:16px">Your reserve</div>
+      <div class="cards" id="myReserve"></div>
     </div>
-
-    <div class="board blk-board">
-      <div class="section-label">Patrons</div>
-      <div class="nobles" id="nobles"></div>
-
-      <div class="section-label">Development cards</div>
-      <div id="tiers"></div>
-
-      <div class="section-label" style="margin-top:6px">The bank</div>
-      <div class="bank" id="bank"></div>
-      <div class="take-tray" id="takeTray"></div>
-
-      <div id="reserveWrap" class="hidden">
-        <div class="section-label" style="margin-top:16px">Your reserve</div>
-        <div class="cards" id="myReserve"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="footer">
-    <button class="gbtn ghost" data-action="open-tutorial">How to play</button>
   </div>
 </div>
 
@@ -337,6 +394,12 @@ html,body{overflow-x:hidden}
   </div>
   <div class="log" id="log"></div>
 </aside>
+
+<!-- Floating player HUD -->
+<div class="hud" id="hud">
+  <div class="hud-prompt" id="hudPrompt"></div>
+  <div class="hud-players" id="players"></div>
+</div>
 
 <div id="fxLayer"></div>
 
@@ -352,7 +415,8 @@ html,body{overflow-x:hidden}
 const KEYS = ["white","blue","green","red","black"];       // gem colours (indexes 0..4)
 const ALL  = ["white","blue","green","red","black","gold"];
 const NAME = {white:"Diamond",blue:"Sapphire",green:"Emerald",red:"Ruby",black:"Onyx",gold:"Gold"};
-const WIN = 15;
+let WIN = 15;
+const GLET = {white:"D",blue:"S",green:"E",red:"R",black:"O",gold:"G"};
 
 // cost patterns. index 0 of `c` is the card's OWN colour; the rest rotate through the others.
 const PAT = {
@@ -691,14 +755,14 @@ function aiDiscardIfNeeded(p){
 function render(){
   if(!G) return;
   renderNobles(); renderTiers(); renderBank(); renderTakeTray(); renderReserve();
-  renderStatus(); renderPlayers(); renderLog();
+  renderBanner(); renderHudPrompt(); renderPlayers(); renderLog();
   const ids=new Set();
   [1,2,3].forEach(t=>G.board[t].forEach(c=>ids.add(c.id)));
   G.players[0].reserved.forEach(c=>ids.add(c.id));
   PREV_CARD_IDS=ids;
 }
 function gem(cls,extra=""){ return `<div class="gem g-${cls}" ${extra}></div>`; }
-function dot(color){ return `<span class="dot" style="background:var(--${color})"></span>`; }
+function dot(color){ return `<span class="dot" data-g="${GLET[color]}" style="background:var(--${color})"></span>`; }
 
 function renderNobles(){
   const el=document.getElementById("nobles");
@@ -776,27 +840,40 @@ function renderTakeTray(){
     <button class="gbtn" data-action="confirm-take">Take gems</button>
     <button class="gbtn ghost" data-action="clear-take">Clear</button>`;
 }
-function renderStatus(){
-  const el=document.getElementById("status");
-  if(G.over){ el.innerHTML=`<div class="who">Game over</div><div class="msg">See the result.</div>`; return; }
+function renderBanner(){
+  const el=document.getElementById("goalBanner"); if(!el) return;
+  const leader=G.players.reduce((a,b)=> b.points>a.points?b:a, G.players[0]);
+  const you=G.players[0];
+  let tag;
+  if(G.over){ tag=`<span class="gb-tag">The books are closed</span>`; }
+  else if(G.finalRound){ tag=`<span class="gb-final">&#9670; Final round — last turns!</span>`; }
+  else {
+    const lead = leader.points>0 ? `<span class="gb-tag">Leader <b>${leader.name}</b> · ${leader.points}</span>`
+                                 : `<span class="gb-tag">No prestige yet</span>`;
+    tag = `${lead}<span class="gb-tag">You <b>${you.points}</b></span>`;
+  }
+  el.innerHTML=`<div class="gb-main">First to ${WIN} prestige</div><div class="gb-sep"></div>${tag}`;
+}
+function renderHudPrompt(){
+  const el=document.getElementById("hudPrompt"); if(!el) return;
+  if(G.over){ el.innerHTML=`<b>Game over.</b> Open the menu for a new game.`; return; }
   const p=me();
   let msg;
-  if(p.isAI) msg="Thinking…";
+  if(p.isAI) msg=`<b>${p.name}</b> is thinking…`;
   else if(UI.phase==="discard") msg="Return down to 10 tokens.";
-  else if(UI.selectedCard) msg="Buy it, hold it, or pick another.";
-  else msg="Take gems, or click a card to buy or hold.";
-  el.innerHTML=`<div class="who">${p.isAI?p.name+"'s turn":"Your turn"}</div><div class="msg">${msg}</div>`;
+  else if(UI.selectedCard) msg="Buy it, hold it, or tap another card.";
+  else msg="<b>Your turn</b> — take gems, or tap a card.";
+  el.innerHTML=msg;
 }
 function renderPlayers(){
-  const el=document.getElementById("players");
+  const el=document.getElementById("players"); if(!el) return;
   el.innerHTML=G.players.map((p,i)=>{
     const bonus=KEYS.map(k=>`<span class="stack"><span class="bon g-${k}"></span>${p.bonus[k]}</span>`).join("");
-    const toks=ALL.filter(k=>p.tokens[k]).map(k=>`<span class="stack"><span class="gem g-${k}"></span>${p.tokens[k]}</span>`).join("") || `<span class="stack" style="color:var(--ink-dim)">no tokens</span>`;
-    return `<div class="pl ${i===G.current&&!G.over?"active":""}" data-pi="${i}">
-      <div class="row1"><div class="nm">${p.name}</div><div class="vp">${p.points}<small> VP</small></div></div>
-      <div class="mini">${bonus}</div>
-      <div class="mini">${toks}</div>
-      <div class="resv">Cards ${p.cards.length} · Reserved ${p.reserved.length} · Patrons ${p.nobles.length}</div>
+    const toks=ALL.filter(k=>p.tokens[k]).map(k=>`<span class="stack"><span class="gem g-${k}"></span>${p.tokens[k]}</span>`).join("");
+    return `<div class="pchip ${i===G.current&&!G.over?"active":""}" data-pi="${i}">
+      <div class="pc-top"><span class="pc-name">${p.name}</span><span class="pc-vp">${p.points}<small> VP</small></span></div>
+      <div class="pc-row">${bonus}</div>
+      <div class="pc-sub">${toks||"<span>no gems</span>"}<span>${p.cards.length} cards</span><span>${p.nobles.length} patrons</span></div>
     </div>`;
   }).join("");
 }
@@ -808,10 +885,9 @@ function log(s){ (G.logs=G.logs||[]).push(s); if(document.getElementById("log"))
 
 let flashT=null;
 function flash(msg){
-  const el=document.getElementById("status"); if(!el) return;
-  const m=el.querySelector(".msg"); if(!m) return;
-  m.textContent=msg; m.style.color="var(--gilt-soft)";
-  clearTimeout(flashT); flashT=setTimeout(()=>{ renderStatus(); },1800);
+  const el=document.getElementById("hudPrompt"); if(!el) return;
+  el.innerHTML=`<b>${msg}</b>`;
+  clearTimeout(flashT); flashT=setTimeout(()=>{ renderHudPrompt(); },1800);
 }
 
 /* ---------- modals ---------- */
@@ -860,6 +936,59 @@ function newGameHTML(){
 }
 function openNewGame(){ openModal(newGameHTML(), !!G); }
 
+/* ---------- menu / settings / save-load ---------- */
+const SETTINGS = (function(){ try{ return JSON.parse(localStorage.getItem('gilded_settings'))||{}; }catch(e){ return {}; } })();
+function saveSettings(){ try{ localStorage.setItem('gilded_settings', JSON.stringify(SETTINGS)); }catch(e){} }
+function applySettings(){
+  document.body.classList.toggle('light', SETTINGS.theme==='light');
+  document.body.classList.toggle('cb', !!SETTINGS.cb);
+  WIN = SETTINGS.maxVP || 15;
+}
+function hasSave(){ try{ return !!localStorage.getItem('gilded_save'); }catch(e){ return false; } }
+function saveGame(){
+  try{ localStorage.setItem('gilded_save', JSON.stringify({G:G, WIN:WIN})); openMenu("Game saved on this device."); }
+  catch(e){ openMenu("Couldn't save (storage unavailable here)."); }
+}
+function loadGame(){
+  try{
+    const s=JSON.parse(localStorage.getItem('gilded_save')); if(!s||!s.G) return;
+    G=s.G; if(s.WIN) WIN=s.WIN;
+    UI={sel:{}, selectedCard:null, phase:"play", discardResolve:null};
+    closeModal(); render();
+    if(!G.over && me().isAI) setTimeout(aiTurn, 600);
+  }catch(e){}
+}
+function menuHTML(note){
+  return `<div class="eyebrow">Menu</div><h2>Gilded</h2>
+  ${note?`<p style="color:var(--gilt-soft)">${note}</p>`:""}
+  <div class="menu-list">
+    <button class="menu-item" data-action="open-newgame">New game</button>
+    <button class="menu-item" data-action="save-game">Save game</button>
+    <button class="menu-item" data-action="load-game" ${hasSave()?"":"disabled"}>Load game${hasSave()?"":" — none saved"}</button>
+    <button class="menu-item" data-action="open-settings">Settings</button>
+    <button class="menu-item" data-action="open-tutorial">How to play</button>
+  </div>
+  <div class="foot"><button class="gbtn ghost" data-action="close-modal">Close</button></div>`;
+}
+function openMenu(note){ openModal(menuHTML(note), true); }
+function settingsHTML(){
+  const theme=SETTINGS.theme||'dark', maxVP=SETTINGS.maxVP||15, cb=SETTINGS.cb?'1':'0';
+  const seg=(name,val,cur,label)=>`<button class="seg ${String(val)===String(cur)?'on':''}" data-action="set-${name}" data-v="${val}">${label}</button>`;
+  return `<div class="eyebrow">Settings</div><h2>Settings</h2>
+  <div class="set-row"><div class="set-label">Theme</div><div class="seg-group">
+    ${seg('theme','dark',theme,'Dark')}${seg('theme','light',theme,'Light')}</div></div>
+  <div class="set-row"><div class="set-label">Prestige to win</div><div class="seg-group">
+    ${seg('max','10',maxVP,'10')}${seg('max','15',maxVP,'15')}${seg('max','20',maxVP,'20')}</div></div>
+  <div class="set-row"><div class="set-label">Colour-blind aid<span class="set-hint">letters on gem costs</span></div><div class="seg-group">
+    ${seg('cb','0',cb,'Off')}${seg('cb','1',cb,'On')}</div></div>
+  <p class="set-note">Prestige-to-win applies now and to new games. Settings are saved on this device.</p>
+  <div class="foot"><button class="gbtn ghost" data-action="open-menu">Back</button><button class="gbtn" data-action="close-modal">Done</button></div>`;
+}
+function openSettings(){ openModal(settingsHTML(), true); }
+function setTheme(v){ SETTINGS.theme=v; saveSettings(); applySettings(); openSettings(); }
+function setMax(v){ SETTINGS.maxVP=+v; saveSettings(); applySettings(); if(G) renderBanner(); openSettings(); }
+function setCB(v){ SETTINGS.cb=(v==='1'); saveSettings(); applySettings(); openSettings(); }
+
 function chooseNoble(list,cb){
   UI._nobleCb=cb;
   const opts=list.map((n,i)=>{
@@ -885,7 +1014,7 @@ let PREV_CARD_IDS = new Set();
 function fxLayer(){ return document.getElementById('fxLayer'); }
 function centerOf(el){ const r=el.getBoundingClientRect(); return {x:r.left+r.width/2, y:r.top+r.height/2}; }
 function elBank(color){ return document.querySelector(`#bank [data-color="${color}"]`); }
-function elPlayer(i){ return document.querySelector(`#players .pl[data-pi="${i}"]`); }
+function elPlayer(i){ return document.querySelector(`#players .pchip[data-pi="${i}"]`); }
 function elCardById(id){ return document.querySelector(`.card[data-cid="${id}"]`); }
 function flyGem(color, from, to, delay=0){
   if(REDUCE||!from||!to) return; const L=fxLayer(); if(!L) return;
@@ -967,6 +1096,13 @@ document.addEventListener("click",(e)=>{
     case "pick-noble": { const n=UI._nobleList[+t.dataset.i]; closeModal(); UI._nobleCb(n); break; }
     case "toggle-ledger": toggleLedger(); break;
     case "close-ledger": closeLedger(); break;
+    case "open-menu": openMenu(); break;
+    case "open-settings": openSettings(); break;
+    case "save-game": saveGame(); break;
+    case "load-game": loadGame(); break;
+    case "set-theme": setTheme(t.dataset.v); break;
+    case "set-max": setMax(t.dataset.v); break;
+    case "set-cb": setCB(t.dataset.v); break;
   }
 });
 scrim.addEventListener("click",(e)=>{ if(e.target===scrim && scrim.dataset.dismiss==="1") closeModal(); });
@@ -987,6 +1123,7 @@ function closeLedger(){
 function seenTutorial(){ try{ return localStorage.getItem('gilded_tutorial_seen')==='1'; }catch(e){ return false; } }
 function markTutorialSeen(){ try{ localStorage.setItem('gilded_tutorial_seen','1'); }catch(e){} }
 
+applySettings();
 startGame(1);
 if(!seenTutorial()){ openTutorial(); markTutorialSeen(); }
 </script>
