@@ -166,6 +166,35 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 .choice .c{font-size:12px; letter-spacing:1px; color:var(--ink-dim)}
 .win-name{font-family:"Cormorant Garamond",serif; font-size:38px; color:var(--gilt-soft); text-align:center; margin:6px 0}
 .hidden{display:none !important}
+
+/* ---------- animations ---------- */
+#fxLayer{position:fixed; inset:0; pointer-events:none; z-index:60; overflow:hidden}
+.fly-gem{position:fixed; width:26px; height:26px; border-radius:50%;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.18), 0 4px 12px rgba(0,0,0,.5);
+  border:1px solid rgba(0,0,0,.4);
+  transition:transform .6s cubic-bezier(.35,.05,.2,1), opacity .6s ease;
+  will-change:transform,opacity}
+.float-txt{position:fixed; font-family:"Cormorant Garamond",serif; font-weight:700;
+  font-size:26px; color:var(--gilt-soft); text-shadow:0 2px 10px rgba(0,0,0,.65);
+  transition:transform 1s cubic-bezier(.2,.6,.2,1), opacity 1s ease;
+  will-change:transform,opacity; white-space:nowrap}
+.fx-ring{position:fixed; width:40px; height:40px; border-radius:50%;
+  border:2px solid var(--gilt-soft);
+  transition:transform .7s ease-out, opacity .7s ease-out; will-change:transform,opacity}
+.confetti{position:fixed; top:-24px; width:12px; height:12px; border-radius:3px; border:1px solid rgba(0,0,0,.35)}
+@keyframes dealIn{ from{opacity:0; transform:translateY(-10px) scale(.96)} to{opacity:1; transform:none} }
+.card-enter{ animation:dealIn .42s cubic-bezier(.3,.7,.2,1) both }
+@keyframes breathe{ 0%,100%{box-shadow:0 0 0 1px var(--gilt) inset}
+  50%{box-shadow:0 0 0 1px var(--gilt) inset, 0 0 16px rgba(199,162,76,.5)} }
+.pl.active{ animation:breathe 2.6s ease-in-out infinite }
+@keyframes conffall{ to{ transform:translateY(105vh) rotate(var(--spin)); opacity:.15 } }
+.token .gem{ transition:transform .18s ease, filter .18s ease }
+.token .gem:not(.disabled):hover{ transform:translateY(-3px); filter:brightness(1.12) }
+@media (prefers-reduced-motion: reduce){
+  .card-enter{animation:none}
+  .pl.active{animation:none}
+  .fly-gem,.float-txt,.fx-ring{transition:none}
+}
 </style>
 </head>
 <body>
@@ -212,6 +241,8 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
     </div>
   </div>
 </div>
+
+<div id="fxLayer"></div>
 
 <!-- Tutorial / dialogs -->
 <div class="scrim" id="scrim">
@@ -344,9 +375,9 @@ function finishTurn(p, actionText){
     advance();
   };
   if(q.length===0){ proceed(); return; }
-  if(q.length===1 || p.isAI){ const n=p.isAI?q[0]:q[0]; awardNoble(p,q[0]); log(`<b>${p.name}</b> is visited by a patron. <b>+3</b> prestige.`); proceed(); return; }
+  if(q.length===1 || p.isAI){ awardNoble(p,q[0]); patronFlourish(G.players.indexOf(p)); log(`<b>${p.name}</b> is visited by a patron. <b>+3</b> prestige.`); proceed(); return; }
   // human, multiple nobles -> choose
-  chooseNoble(q,(n)=>{ awardNoble(p,n); log(`<b>You</b> welcome a patron. <b>+3</b> prestige.`); proceed(); });
+  chooseNoble(q,(n)=>{ awardNoble(p,n); patronFlourish(G.players.indexOf(p)); log(`<b>You</b> welcome a patron. <b>+3</b> prestige.`); proceed(); });
 }
 function advance(){
   UI.selectedCard=null; UI.sel={};
@@ -394,6 +425,7 @@ function confirmTake(){
   const two=colors.find(k=>UI.sel[k]===2);
   if(two && colors.length>1) return flash("Two-of-a-kind must be a single colour.");
   const p=me(); const plan={}; colors.forEach(k=>plan[k]=UI.sel[k]);
+  animateTake(plan,0);
   takeGems(p,plan);
   const desc=colors.map(k=>`${UI.sel[k]}× ${NAME[k]}`).join(", ");
   UI.sel={};
@@ -412,7 +444,9 @@ function doBuy(){
   const card = loc.reserved!=null ? p.reserved[loc.reserved] : G.board[loc.tier][loc.idx];
   if(!card) return;
   if(!affordPlan(p,card).ok) return flash("You can't afford that yet.");
+  const cardEl=elCardById(card.id);
   buyCard(p,card,loc.reserved!=null?{reserved:loc.reserved}:{tier:card.tier});
+  if(card.points) floatText('+'+card.points+' prestige', cardEl);
   UI.selectedCard=null;
   postAction(p, `<b>You</b> buy a ${card.color} card${card.points?` (<b>+${card.points}</b>)`:""}.`);
 }
@@ -466,7 +500,9 @@ function aiTurn(){
     buyables.sort((a,b)=> aiCardValue(p,b.c)-aiCardValue(p,a.c));
     const best=buyables[0];
     if(best.c.points>0 || aiWants0pt(p,best.c)){
+      const bEl=elCardById(best.c.id);
       buyCard(p,best.c,best.from);
+      if(best.c.points) floatText('+'+best.c.points+' prestige', bEl);
       finishTurn(p,`<b>${p.name}</b> buys a ${best.c.color} card${best.c.points?` (+${best.c.points})`:""}.`);
       return;
     }
@@ -494,6 +530,7 @@ function aiTurn(){
   // 3) take gems toward the target
   const plan=aiPickGems(p,target);
   if(Object.keys(plan).length){
+    animateTake(plan, G.current);
     takeGems(p,plan);
     aiDiscardIfNeeded(p,target);
     const desc=Object.keys(plan).map(k=>`${plan[k]}× ${NAME[k]}`).join(", ");
@@ -559,6 +596,10 @@ function render(){
   if(!G) return;
   renderNobles(); renderTiers(); renderBank(); renderTakeTray(); renderReserve();
   renderStatus(); renderPlayers(); renderLog();
+  const ids=new Set();
+  [1,2,3].forEach(t=>G.board[t].forEach(c=>ids.add(c.id)));
+  G.players[0].reserved.forEach(c=>ids.add(c.id));
+  PREV_CARD_IDS=ids;
 }
 function gem(cls,extra=""){ return `<div class="gem g-${cls}" ${extra}></div>`; }
 function dot(color){ return `<span class="dot" style="background:var(--${color})"></span>`; }
@@ -593,7 +634,8 @@ function cardHTML(c,loc){
     </div>`;
   }
   const dataloc = loc.reserved!=null?`data-reserved="${loc.reserved}"`:`data-tier="${loc.tier}" data-idx="${loc.idx}"`;
-  return `<div class="card ${sel?"sel":""} ${afford?"afford":""}" data-action="card" ${dataloc}>
+  const isNew = !PREV_CARD_IDS.has(c.id);
+  return `<div class="card ${sel?"sel":""} ${afford?"afford":""} ${isNew?"card-enter":""}" data-action="card" data-cid="${c.id}" ${dataloc}>
     <div class="top"><div class="pts">${c.points||""}</div><div class="gem-badge g-${c.color}"></div></div>
     <div class="cost">${cost}</div>${menu}
   </div>`;
@@ -654,7 +696,7 @@ function renderPlayers(){
   el.innerHTML=G.players.map((p,i)=>{
     const bonus=KEYS.map(k=>`<span class="stack"><span class="bon g-${k}"></span>${p.bonus[k]}</span>`).join("");
     const toks=ALL.filter(k=>p.tokens[k]).map(k=>`<span class="stack"><span class="gem g-${k}"></span>${p.tokens[k]}</span>`).join("") || `<span class="stack" style="color:var(--ink-dim)">no tokens</span>`;
-    return `<div class="pl ${i===G.current&&!G.over?"active":""}">
+    return `<div class="pl ${i===G.current&&!G.over?"active":""}" data-pi="${i}">
       <div class="row1"><div class="nm">${p.name}</div><div class="vp">${p.points}<small> VP</small></div></div>
       <div class="mini">${bonus}</div>
       <div class="mini">${toks}</div>
@@ -738,6 +780,71 @@ function showWinner(p){
     <div class="win-name">${p.name==="You"?"You win!":p.name+" wins"}</div>
     ${board}
     <div class="foot"><button class="gbtn" data-action="open-newgame">Play again</button></div>`,false);
+  if(p.name==="You") celebrate();
+}
+
+/* ---------- fx / animations ---------- */
+const REDUCE = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let PREV_CARD_IDS = new Set();
+function fxLayer(){ return document.getElementById('fxLayer'); }
+function centerOf(el){ const r=el.getBoundingClientRect(); return {x:r.left+r.width/2, y:r.top+r.height/2}; }
+function elBank(color){ return document.querySelector(`#bank [data-color="${color}"]`); }
+function elPlayer(i){ return document.querySelector(`#players .pl[data-pi="${i}"]`); }
+function elCardById(id){ return document.querySelector(`.card[data-cid="${id}"]`); }
+function flyGem(color, from, to, delay=0){
+  if(REDUCE||!from||!to) return; const L=fxLayer(); if(!L) return;
+  const a=centerOf(from), b=centerOf(to);
+  const g=document.createElement('div');
+  g.className='fly-gem g-'+color;
+  g.style.left=(a.x-13)+'px'; g.style.top=(a.y-13)+'px'; g.style.transitionDelay=delay+'ms';
+  L.appendChild(g);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    g.style.transform=`translate(${b.x-a.x}px, ${b.y-a.y}px) scale(.45)`; g.style.opacity='0.15';
+  }));
+  setTimeout(()=>g.remove(), 750+delay);
+}
+function floatText(text, atEl, delay=0){
+  if(REDUCE||!atEl) return; const L=fxLayer(); if(!L) return;
+  const c=centerOf(atEl);
+  const t=document.createElement('div');
+  t.className='float-txt'; t.textContent=text;
+  t.style.left=c.x+'px'; t.style.top=c.y+'px'; t.style.transform='translate(-50%,-50%)'; t.style.transitionDelay=delay+'ms';
+  L.appendChild(t);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ t.style.transform='translate(-50%,-165%)'; t.style.opacity='0'; }));
+  setTimeout(()=>t.remove(), 1150+delay);
+}
+function ringPop(atEl){
+  if(REDUCE||!atEl) return; const L=fxLayer(); if(!L) return;
+  const c=centerOf(atEl);
+  const r=document.createElement('div');
+  r.className='fx-ring';
+  r.style.left=(c.x-20)+'px'; r.style.top=(c.y-20)+'px'; r.style.opacity='0.9';
+  L.appendChild(r);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ r.style.transform='scale(2.6)'; r.style.opacity='0'; }));
+  setTimeout(()=>r.remove(), 760);
+}
+function animateTake(plan, playerIndex){
+  if(REDUCE) return; const to=elPlayer(playerIndex); if(!to) return;
+  let d=0;
+  Object.keys(plan).forEach(k=>{
+    const from=elBank(k); if(!from) return;
+    for(let n=0;n<plan[k];n++){ flyGem(k, from, to, d); d+=90; }
+  });
+}
+function patronFlourish(playerIndex){ const el=elPlayer(playerIndex); ringPop(el); floatText('Patron +3', el); }
+function celebrate(){
+  if(REDUCE) return; const L=fxLayer(); if(!L) return;
+  const cols=['white','blue','green','red','black','gold'];
+  for(let i=0;i<40;i++){
+    const c=document.createElement('div');
+    c.className='confetti g-'+cols[i%cols.length];
+    c.style.left=Math.random()*100+'vw';
+    c.style.setProperty('--spin',(Math.random()*720-360)+'deg');
+    const dur=2.2+Math.random()*1.8;
+    c.style.animation=`conffall ${dur}s ${Math.random()*0.6}s ease-in forwards`;
+    L.appendChild(c);
+    setTimeout(()=>c.remove(), (dur+1)*1000);
+  }
 }
 
 /* ---------- event delegation ---------- */
