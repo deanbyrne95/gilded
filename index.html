@@ -72,12 +72,15 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 
 /* Tiers + cards */
 .tier-row{display:flex; align-items:center; gap:12px; margin-bottom:14px}
-.deck{width:70px; height:98px; border-radius:10px; flex:none;
-  display:flex; align-items:center; justify-content:center; color:var(--gilt-soft);
-  font-family:"Cormorant Garamond",serif; font-size:26px; position:relative;
-  border:1px solid var(--gilt); box-shadow:var(--shadow); cursor:pointer}
-.deck small{position:absolute; bottom:6px; left:0; right:0; text-align:center;
-  font-family:"Jost"; font-size:10px; letter-spacing:2px; color:rgba(255,255,255,.55)}
+.deck{width:70px; height:98px; border-radius:10px; flex:none; container-type:inline-size;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:clamp(1px,3cqi,4px);
+  color:var(--gilt-soft); position:relative;
+  border:1px solid var(--gilt); box-shadow:var(--shadow); cursor:pointer; padding:6px 2px}
+.deck .dnum{font-family:"Cormorant Garamond",serif; line-height:1; font-size:clamp(15px,42cqi,28px)}
+.deck .dlabel{font-family:"Jost"; font-size:clamp(6px,11cqi,9px); letter-spacing:1px;
+  text-transform:uppercase; color:rgba(255,255,255,.5); line-height:1}
+.deck .dleft{font-family:"Jost"; font-size:clamp(7px,13cqi,10px); letter-spacing:.5px;
+  color:rgba(255,255,255,.62); line-height:1}
 .deck.t1{background:linear-gradient(160deg,#20402f,#16281f)}
 .deck.t2{background:linear-gradient(160deg,#3a2f16,#241c0f)}
 .deck.t3{background:linear-gradient(160deg,#3a1622,#241017)}
@@ -707,7 +710,7 @@ function renderNobles(){
 function renderTiers(){
   const el=document.getElementById("tiers");
   el.innerHTML=[3,2,1].map(t=>{
-    const deck=`<div class="deck t${t}" data-action="reserve-deck" data-tier="${t}">${t}<small>${G.decks[t].length} left</small></div>`;
+    const deck=`<div class="deck t${t}" data-action="reserve-deck" data-tier="${t}"><div class="dlabel">Tier</div><div class="dnum">${t}</div><div class="dleft">${G.decks[t].length} left</div></div>`;
     const cards=G.board[t].map((c,idx)=>cardHTML(c,{tier:t,idx})).join("");
     return `<div class="tier-row">${deck}<div class="cards">${cards}</div></div>`;
   }).join("");
