@@ -88,11 +88,16 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 .hud-bank .token .gem{width:clamp(26px,6.4vw,34px); height:clamp(26px,6.4vw,34px)}
 .hud-bank .token .cnt{font-size:10.5px}
 .hud-bank .token .lbl{display:none}
-.hud-bank .take-tray{margin:0; padding:0; border:none; background:none;
-  display:flex; align-items:center; gap:8px; flex-wrap:wrap}
-.hud-bank .take-tray:empty{display:none}
-.hud-bank .take-chips .gem{width:20px; height:20px}
-.hud-bank .gbtn{padding:6px 12px; font-size:13px}
+/* controls: permanent slot between gems and players — never displaces */
+.hud-controls{flex:0 0 auto; display:flex; align-items:center}
+.hud-controls.hidden{display:none}
+.hud-controls .take-tray{margin:0; padding:0; border:none; background:none;
+  display:flex; align-items:center; gap:8px}
+.hud-controls .take-chips{display:flex; gap:5px; min-width:78px; justify-content:flex-start}
+.hud-controls .take-chips .gem{width:20px; height:20px}
+.hud-controls .take-note{font-size:11px; color:var(--gilt-soft)}
+.hud-controls .gbtn{padding:6px 12px; font-size:13px}
+.gbtn:disabled{opacity:.4; cursor:not-allowed}
 
 .section-label{font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--ink-dim); margin:2px 0 10px}
 
@@ -406,6 +411,8 @@ body.light .ledger-tab{color:#e6cd86}
 <div class="hud" id="hud">
   <div class="hud-bank" id="hudBank">
     <div class="bank" id="bank"></div>
+  </div>
+  <div class="hud-controls" id="hudControls">
     <div class="take-tray" id="takeTray"></div>
   </div>
   <div class="hud-players" id="players"></div>
@@ -774,8 +781,10 @@ function render(){
   if(!G) return;
   renderNobles(); renderTiers(); renderBank(); renderTakeTray(); renderReserve();
   renderBanner(); renderPlayers(); renderLog();
-  const hb=document.getElementById("hudBank");
-  if(hb) hb.classList.toggle("hidden", !(G.current===0 && !G.over));
+  const hb=document.getElementById("hudBank"), hc=document.getElementById("hudControls");
+  const yourTurn = G.current===0 && !G.over;
+  if(hb) hb.classList.toggle("hidden", !yourTurn);
+  if(hc) hc.classList.toggle("hidden", !yourTurn);
   syncHudSpace();
   const ids=new Set();
   [1,2,3].forEach(t=>G.board[t].forEach(c=>ids.add(c.id)));
@@ -844,19 +853,20 @@ function renderBank(){
   }).join("");
 }
 function renderTakeTray(){
-  const el=document.getElementById("takeTray");
+  const el=document.getElementById("takeTray"); if(!el) return;
   if(G.current===0 && UI.phase==="discard"){
     const p=me();
     const chips=ALL.filter(k=>p.tokens[k]).map(k=>`<div class="gem g-${k}" data-action="discard" data-color="${k}" title="discard"></div>`).join("");
-    el.innerHTML=`<span class="take-empty">Over the limit — tap a token to return it (${totalTokens(p)}/10):</span><div class="take-chips">${chips}</div>`;
+    el.innerHTML=`<span class="take-note">Return to 10 (${totalTokens(p)}/10)</span><div class="take-chips">${chips}</div>`;
     return;
   }
+  if(!humanControls()){ el.innerHTML=""; return; }
   const colors=Object.keys(UI.sel).filter(k=>UI.sel[k]>0);
-  if(!humanControls() || colors.length===0){ el.innerHTML=""; return; }
+  const has=colors.length>0;
   const chips=colors.map(k=>Array(UI.sel[k]).fill(`<div class="gem g-${k}" data-action="deselect" data-color="${k}" title="remove"></div>`).join("")).join("");
   el.innerHTML=`<div class="take-chips">${chips}</div>
-    <button class="gbtn" data-action="confirm-take">Take gems</button>
-    <button class="gbtn ghost" data-action="clear-take">Clear</button>`;
+    <button class="gbtn" data-action="confirm-take" ${has?"":"disabled"}>Take</button>
+    <button class="gbtn ghost" data-action="clear-take" ${has?"":"disabled"}>Clear</button>`;
 }
 function renderBanner(){
   const el=document.getElementById("goalBanner"); if(!el) return;
