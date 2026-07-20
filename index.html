@@ -110,6 +110,15 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
 .pchip.active{border-color:var(--gilt); animation:breathe 2.6s ease-in-out infinite}
 .pchip .pc-top{display:flex; align-items:baseline; gap:8px}
 .pchip .pc-name{font-family:"Cormorant Garamond",serif; font-size:16px}
+.pchip .pc-think{display:inline-flex; align-items:center; gap:3px; align-self:center}
+.pchip .pc-first{align-self:center; font-family:"Jost"; font-size:9px; font-weight:600; letter-spacing:.5px;
+  text-transform:uppercase; color:var(--gilt-soft); border:1px solid var(--gilt); border-radius:6px;
+  padding:1px 5px; line-height:1.4}
+.pchip .pc-think i{width:4px; height:4px; border-radius:50%; background:var(--gilt-soft);
+  opacity:.35; animation:thinkPulse 1.1s ease-in-out infinite}
+.pchip .pc-think i:nth-child(2){animation-delay:.18s}
+.pchip .pc-think i:nth-child(3){animation-delay:.36s}
+@keyframes thinkPulse{0%,80%,100%{opacity:.28; transform:translateY(0)} 40%{opacity:1; transform:translateY(-2px)}}
 .pchip .pc-vp{margin-left:auto; font-family:"Cormorant Garamond",serif; font-size:18px; color:var(--gilt-soft)}
 .pchip .pc-vp small{font-family:"Jost"; font-size:9px; letter-spacing:1px; color:var(--ink-dim)}
 .pchip .pc-pat{font-family:"Jost"; font-weight:500; font-size:12px; color:var(--ink-dim); margin-right:9px}
@@ -322,6 +331,15 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
 .choice.sel{border-color:var(--gilt); box-shadow:0 0 0 1px var(--gilt) inset}
 .choice .n{font-family:"Cormorant Garamond",serif; font-size:34px; color:var(--gilt-soft)}
 .choice .c{font-size:12px; letter-spacing:1px; color:var(--ink-dim)}
+.mode-cards{display:flex; gap:12px; margin:18px 0 8px; flex-wrap:wrap}
+.mode-card{flex:1 1 0; min-width:148px; text-align:left; background:var(--felt-2);
+  border:1px solid var(--line); border-radius:12px; padding:13px 15px; cursor:pointer;
+  display:flex; flex-direction:column; gap:3px; font-family:"Jost"}
+.mode-card:hover:not(.disabled){border-color:var(--gilt)}
+.mode-card.sel{border-color:var(--gilt); box-shadow:0 0 0 1px var(--gilt) inset}
+.mode-card .mc-t{font-family:"Cormorant Garamond",serif; font-size:21px; color:var(--gilt-soft)}
+.mode-card .mc-s{font-size:12px; letter-spacing:.3px; color:var(--ink-dim)}
+.mode-card.disabled{opacity:.45; cursor:not-allowed}
 .win-name{font-family:"Cormorant Garamond",serif; font-size:38px; color:var(--gilt-soft); text-align:center; margin:6px 0}
 .hidden{display:none !important}
 
@@ -399,6 +417,8 @@ html,body{overflow-x:hidden}
   .fly-gem,.float-txt,.fx-ring,.fly-card{transition:none}
   .gem-hud{transition:opacity .01s}
   .gem-tab .chev,.ledger-tab .chev{transition:none}
+  .pchip.active{animation:none}
+  .pc-think i{animation:none; opacity:.7}
   .token .gem{transition:none}
 }
 /* footer */
@@ -608,27 +628,48 @@ function newPlayer(name,isAI){
     bonus:{white:0,blue:0,green:0,red:0,black:0} };
 }
 
-function startGame(opponents){
-  SETTINGS.opponents=opponents; saveSettings();
-  const total = opponents+1;
+const AI_NAMES=["Aldo","Bianca","Cosimo"];
+const LEVEL_LABEL={easy:"Easy",normal:"Normal",hard:"Hard"};
+function startGame(opts, silent){
+  if(typeof opts==="number") opts={mode:"ai", opponents:opts};
+  opts = opts||{};
+  const mode = opts.mode || SETTINGS.mode || "ai";
+  let players=[], level=null;
+  if(mode==="hotseat"){
+    const humans = Math.min(4, Math.max(2, opts.humans || SETTINGS.humans || 2));
+    for(let i=0;i<humans;i++) players.push(newPlayer(`Player ${i+1}`, false));
+    SETTINGS.humans=humans;
+  } else {
+    const opponents = Math.min(3, Math.max(1, opts.opponents || SETTINGS.opponents || 1));
+    level = opts.level || SETTINGS.aiLevel || "normal";
+    players.push(newPlayer("You", false));
+    for(let i=0;i<opponents;i++){ const ai=newPlayer(AI_NAMES[i], true); ai.level=level; players.push(ai); }
+    SETTINGS.opponents=opponents; SETTINGS.aiLevel=level;
+  }
+  SETTINGS.mode=mode; saveSettings();
+  const total = players.length;
   const bankPer = total<=2?4 : total===3?5 : 7;
   const bank={white:bankPer,blue:bankPer,green:bankPer,red:bankPer,black:bankPer,gold:5};
   const decks={1:buildDeck(1),2:buildDeck(2),3:buildDeck(3)};
   const board={1:[],2:[],3:[]};
   for(let t=1;t<=3;t++) for(let i=0;i<4;i++) board[t].push(decks[t].pop());
-  const players=[newPlayer("You",false)];
-  const aiNames=["Aldo","Bianca","Cosimo"];
-  for(let i=0;i<opponents;i++) players.push(newPlayer(aiNames[i],true));
-  G = { players, current:0, bank, decks, board, nobles:buildNobles(total+1),
+  const starter = Math.floor(Math.random()*total);
+  G = { players, current:starter, starter, mode, level, bank, decks, board, nobles:buildNobles(total+1),
         finalRound:false, over:false, turn:0 };
-  UI = { sel:{}, selectedCard:null, phase:"play", discardResolve:null, oppView:0 };
-  log(`<b>A new game begins.</b> ${players.length} merchants at the table.`);
+  UI = { sel:{}, selectedCard:null, phase:"play", discardResolve:null, oppView:starter };
+  if(!silent){
+    if(mode==="hotseat") log(`<b>A new game begins.</b> ${total} players, pass-and-play.`);
+    else log(`<b>A new game begins.</b> ${total} merchants · ${LEVEL_LABEL[level]} rivals.`);
+    log(`<b>${players[starter].name}</b> ${players[starter].name==="You"?"go":"goes"} first.`);
+  }
   render();
+  if(!silent && !G.over && me().isAI) scheduleAI();
 }
 
 /* ---------- helpers ---------- */
 const me = ()=>G.players[G.current];
-const isMyTurn = ()=> !G.over && G.current===0 && UI.phase!=="discard-wait" ? true : (G.current===0 && UI.phase==="discard");
+const localSeat = ()=> (G && G.players[G.current] && !G.players[G.current].isAI) ? G.current : 0;
+const isMyTurn = ()=> !G.over && !me().isAI && (UI.phase==="play" || UI.phase==="discard");
 function totalTokens(p){ return ALL.reduce((s,k)=>s+p.tokens[k],0); }
 function selCount(){ return Object.values(UI.sel).reduce((a,b)=>a+b,0); }
 
@@ -691,13 +732,13 @@ function finishTurn(p, actionText){
 }
 function advance(){
   UI.selectedCard=null; UI.sel={};
-  const wasLast = G.current===G.players.length-1;
+  const starter = G.starter||0;
   G.current=(G.current+1)%G.players.length;
-  if(wasLast) G.turn++;
-  // end game check: game ends when the round in which someone hit 15 completes (back to player 0)
-  if(G.finalRound && G.current===0){ endGame(); return; }
+  if(G.current===starter) G.turn++;
+  // end game check: game ends when the round in which someone hit 15 completes (back to the starter)
+  if(G.finalRound && G.current===starter){ endGame(); return; }
   render();
-  if(!G.over && me().isAI){ setTimeout(aiTurn, 750); }
+  if(!G.over && me().isAI){ scheduleAI(); }
 }
 function endGame(){
   G.over=true;
@@ -816,21 +857,27 @@ function onDiscard(color){
   if(totalTokens(p)<=10){ UI.phase="play"; const t=UI.pendingText; UI.pendingText=null; finishTurn(p,t); }
   else render();
 }
-function humanControls(){ return !G.over && G.current===0 && UI.phase==="play"; }
+function humanControls(){ return !G.over && !me().isAI && UI.phase==="play"; }
 function sameLoc(a,b){ if(!a||!b)return false; return a.tier===b.tier&&a.idx===b.idx&&a.reserved===b.reserved&&a.deck===b.deck; }
 
 /* ---------- AI ---------- */
+// AI pacing: a randomized pause so rivals feel like they're deliberating, not snapping.
+function aiThinkTime(){ return 1200 + Math.random()*900; } // ~1.2–2.1s
+function scheduleAI(){ if(G.over) return; setTimeout(aiTurn, aiThinkTime()); }
 function aiTurn(){
   const p=me(); if(!p||!p.isAI||G.over) return;
+  const lvl = p.level||"normal";
 
   // 1) buy the best affordable card (prefer points; take a useful 0-pt bonus sometimes)
   const buyables=[];
   G.board[1].concat(G.board[2],G.board[3]).forEach(c=>{ if(c && affordPlan(p,c).ok) buyables.push({c,from:{tier:c.tier}}); });
   p.reserved.forEach((c,i)=>{ if(affordPlan(p,c).ok) buyables.push({c,from:{reserved:i}}); });
   if(buyables.length){
-    buyables.sort((a,b)=> aiCardValue(p,b.c)-aiCardValue(p,a.c));
+    if(lvl==="easy"){ shuffle(buyables); buyables.sort((a,b)=> (b.c.points>0?1:0)-(a.c.points>0?1:0)); }
+    else { buyables.sort((a,b)=> aiCardValue(p,b.c)-aiCardValue(p,a.c)); }
     const best=buyables[0];
-    if(best.c.points>0 || aiWants0pt(p,best.c)){
+    const wantBuy = lvl==="easy" ? best.c.points>0 : (best.c.points>0 || aiWants0pt(p,best.c));
+    if(wantBuy){
       const bEl=elCardById(best.c.id);
       const plan=affordPlan(p,best.c);
       buyCard(p,best.c,best.from);
@@ -845,14 +892,17 @@ function aiTurn(){
   // pick a target to work toward: reachable card with best value
   const targets=G.board[1].concat(G.board[2],G.board[3]).concat(p.reserved).filter(Boolean)
     .map(c=>({c,d:cardDeficit(p,c),v:aiCardValue(p,c)}))
-    .filter(t=>t.d>0)
-    .sort((a,b)=> (a.d-b.d) || (b.v-a.v));
+    .filter(t=>t.d>0);
+  if(lvl==="hard") targets.sort((a,b)=> ((b.v/(b.d+1)) - (a.v/(a.d+1))) || (a.d-b.d));
+  else targets.sort((a,b)=> (a.d-b.d) || (b.v-a.v));
   const target = targets[0] ? targets[0].c : null;
 
-  // 2) reserve a strong card occasionally (for the gold + to hold it)
-  if(p.reserved.length<3 && p.tokens.gold===0){
-    const strong=G.board[3].concat(G.board[2]).find(c=>c && c.points>=4 && cardDeficit(p,c)>=3 && cardDeficit(p,c)<=6);
-    if(strong && G.bank.gold>0 && Math.random()<0.5){
+  // 2) reserve a strong card (aggressiveness scales with difficulty)
+  const resP = lvl==="hard"?0.85 : lvl==="easy"?0 : 0.5;
+  if(resP>0 && p.reserved.length<3 && p.tokens.gold===0){
+    const minPts = lvl==="hard"?3:4, maxDef = lvl==="hard"?8:6;
+    const strong=G.board[3].concat(G.board[2]).find(c=>c && c.points>=minPts && cardDeficit(p,c)>=3 && cardDeficit(p,c)<=maxDef);
+    if(strong && G.bank.gold>0 && Math.random()<resP){
       reserveCard(p,strong,{tier:strong.tier});
       // may exceed 10 -> AI discards
       aiDiscardIfNeeded(p,target);
@@ -861,8 +911,8 @@ function aiTurn(){
     }
   }
 
-  // 3) take gems toward the target
-  const plan=aiPickGems(p,target);
+  // 3) take gems toward the target (easy rivals grab gems less purposefully)
+  const plan = (lvl==="easy" && Math.random()<0.6) ? aiRandomGems(p) : aiPickGems(p,target);
   if(Object.keys(plan).length){
     animateTake(plan, G.current);
     takeGems(p,plan);
@@ -893,6 +943,11 @@ function aiWants0pt(p,c){
   // helpful if it advances a noble we're chasing, or we already have few cards
   const noble = G.nobles.some(n=>n.req[KEYS.indexOf(c.color)]);
   return noble || p.cards.length<3 || cardDeficit(p,c)===0 && p.cards.length<6;
+}
+function aiRandomGems(p){
+  const plan={}; let taken=0;
+  for(const k of shuffle(KEYS.filter(k=>G.bank[k]>0))){ if(taken>=3) break; plan[k]=1; taken++; }
+  return plan;
 }
 function aiPickGems(p,target){
   const plan={}; let taken=0;
@@ -931,7 +986,7 @@ function render(){
   renderNobles(); renderTiers(); renderBank(); renderTakeTray();
   renderBanner(); renderPlayers(); renderLog();
   const gh=document.getElementById("gemHud"), hc=document.getElementById("hudControls");
-  const yourTurn = G.current===0 && !G.over;
+  const yourTurn = !me().isAI && !G.over;
   if(UI._lastCurrent !== G.current){ UI._lastCurrent = G.current; if(yourTurn) document.body.classList.remove("gems-hidden"); }
   if(gh) gh.classList.toggle("show", yourTurn);
   if(hc) hc.classList.toggle("hidden", !yourTurn);
@@ -988,7 +1043,7 @@ function cardHTML(c,loc){
 }
 function renderBank(){
   const el=document.getElementById("bank");
-  const inDiscard = G.current===0 && UI.phase==="discard";
+  const inDiscard = !me().isAI && UI.phase==="discard";
   el.innerHTML=ALL.map(k=>{
     const n=G.bank[k];
     const selN=UI.sel[k]||0;
@@ -1002,7 +1057,7 @@ function renderBank(){
 }
 function renderTakeTray(){
   const el=document.getElementById("takeTray"); if(!el) return;
-  if(G.current===0 && UI.phase==="discard"){
+  if(!me().isAI && UI.phase==="discard"){
     const p=me();
     const chips=ALL.filter(k=>p.tokens[k]).map(k=>`<div class="gem g-${k}" data-action="discard" data-color="${k}" title="discard"></div>`).join("");
     el.innerHTML=`<span class="take-note">Return to 10 (${totalTokens(p)}/10)</span><div class="take-chips">${chips}</div>`;
@@ -1050,18 +1105,19 @@ function syncHudSpace(){
 function renderPlayers(){
   const el=document.getElementById("players"); if(!el) return;
   hideRtip();
+  const seat = localSeat();
   const chips=G.players.map((p,i)=>{
     const hold=KEYS.map(k=>{
       const b=p.bonus[k], t=p.tokens[k];
-      const sel=(i===0 && humanControls() && UI.sel[k]) ? UI.sel[k] : 0;
+      const sel=(i===seat && humanControls() && UI.sel[k]) ? UI.sel[k] : 0;
       const cls = sel ? "tk tk-add" : (t?"tk":"tk tk0");
       return `<span class="cg"><span class="bon g-${k}">${b?`<b>${b}</b>`:""}</span><span class="${cls}">${t+sel}</span></span>`;
     }).join("");
     const gg=p.tokens.gold;
     const gold=`<span class="cg"><span class="gem g-gold"></span><span class="tk${gg?"":" tk0"}">${gg}</span></span>`;
     const patronIco=`<svg class="pc-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 7.5l4.2 3.4L12 4l4.8 6.9L21 7.5 19.3 19H4.7L3 7.5z"/></svg>`;
-    const role = i===0 ? "you" : "opp";
-    const mine = i===0;
+    const mine = i===seat;
+    const role = mine ? "you" : "opp";
     let resStrip="";
     if(p.reserved.length){
       const selIdx = mine && UI.selectedCard && UI.selectedCard.reserved!=null ? UI.selectedCard.reserved : -1;
@@ -1077,13 +1133,13 @@ function renderPlayers(){
       resStrip = `<div class="pc-res${mine?" mine":""}" title="Reserved cards">${items}</div>`;
     }
     return `<div class="pchip ${role} ${i===G.current&&!G.over?"active":""}" data-pi="${i}">
-      <div class="pc-top"><span class="pc-name">${p.name}</span><span class="pc-vp"><span class="pc-pat" title="Patrons">${patronIco}${p.nobles.length}</span>${p.points}<small> VP</small></span></div>
+      <div class="pc-top"><span class="pc-name">${p.name}</span>${(i===G.starter&&G.turn===0&&!G.over)?`<span class="pc-first" title="Starts the game">1st</span>`:""}${(i===G.current&&!G.over&&p.isAI)?`<span class="pc-think" aria-label="thinking"><i></i><i></i><i></i></span>`:""}<span class="pc-vp"><span class="pc-pat" title="Patrons">${patronIco}${p.nobles.length}</span>${p.points}<small> VP</small></span></div>
       <div class="pc-hold">${hold}${gold}</div>${resStrip}
     </div>`;
   }).join("");
   const nav=`<button class="pchip-nav" data-action="cycle-opp" hidden aria-label="Show next player"><span class="nav-chev" aria-hidden="true">&rsaquo;</span><span class="nav-count"></span></button>`;
   el.innerHTML=chips+nav;
-  if(!G.over && G.current!==0) UI.oppView=G.current;      // focus the active player's chip on its turn
+  if(!G.over) UI.oppView=G.current;      // keep the active player's chip in view
   layoutPlayers();
 }
 // Pin "You"; when the players don't fit, show one rival at a time behind a cycle button.
@@ -1156,17 +1212,42 @@ function tutorialHTML(){
 }
 function openTutorial(){ openModal(tutorialHTML(),true); }
 
-function newGameHTML(){
-  const cur=SETTINGS.opponents||1;
-  const opt=(n,label)=>`<div class="choice${cur===n?' sel':''}" data-action="start" data-opp="${n}"><div class="n">${n}</div><div class="c">${label}</div></div>`;
-  return `<div class="eyebrow">New game</div><h2>How many opponents?</h2>
-  <p>You'll play against clever computer merchants.</p>
-  <div class="choices">
-    ${opt(1,'1 rival')}${opt(2,'2 rivals')}${opt(3,'3 rivals')}
+let ngForce=false, pendingStartMenu=false;
+function newGameHTML(force){
+  const mode = SETTINGS.mode || "ai";
+  const opp = SETTINGS.opponents || 1;
+  const lvl = SETTINGS.aiLevel || "normal";
+  const humans = SETTINGS.humans || 2;
+  const modeBtn=(m,label,sub,dis)=>`<button class="mode-card${mode===m&&!dis?' sel':''}${dis?' disabled':''}" ${dis?'disabled aria-disabled="true"':`data-action="ng-mode" data-mode="${m}"`}><span class="mc-t">${label}</span><span class="mc-s">${sub}</span></button>`;
+  const seg=(act,val,cur,label)=>`<button class="seg ${String(val)===String(cur)?'on':''}" data-action="${act}" data-v="${val}">${label}</button>`;
+  let sub;
+  if(mode==="hotseat"){
+    sub=`<div class="set-row"><div class="set-label">Players<span class="set-hint">pass the device between turns</span></div><div class="seg-group">
+        ${seg('ng-players',2,humans,'2')}${seg('ng-players',3,humans,'3')}${seg('ng-players',4,humans,'4')}</div></div>`;
+  } else {
+    sub=`<div class="set-row"><div class="set-label">Rivals</div><div class="seg-group">
+        ${seg('ng-ai-count',1,opp,'1')}${seg('ng-ai-count',2,opp,'2')}${seg('ng-ai-count',3,opp,'3')}</div></div>
+      <div class="set-row"><div class="set-label">Difficulty<span class="set-hint">how sharply rivals play</span></div><div class="seg-group">
+        ${seg('ng-ai-level','easy',lvl,'Easy')}${seg('ng-ai-level','normal',lvl,'Normal')}${seg('ng-ai-level','hard',lvl,'Hard')}</div></div>`;
+  }
+  const cancel = force ? '' : `<button class="gbtn ghost" data-action="close-modal">Cancel</button>`;
+  return `<div class="eyebrow">New game</div><h2>Choose your game</h2>
+  <div class="mode-cards">
+    ${modeBtn('ai','Vs AI','Play computer merchants')}
+    ${modeBtn('hotseat','Vs Player','Local pass-and-play')}
+    ${modeBtn('online','Online','Coming soon',true)}
   </div>
-  <div class="foot"><button class="gbtn ghost" data-action="close-modal">Cancel</button></div>`;
+  ${sub}
+  <div class="foot">${cancel}<button class="gbtn" data-action="start-game">Start game</button></div>`;
 }
-function openNewGame(){ openModal(newGameHTML(), !!G); }
+function openNewGame(force){ ngForce=!!force; openModal(newGameHTML(!!force), force?false:!!G); }
+function ngRerender(){ openModal(newGameHTML(ngForce), ngForce?false:!!G); }
+function startFromMenu(){
+  const mode=SETTINGS.mode||"ai";
+  ngForce=false; closeModal();
+  if(mode==="hotseat") startGame({mode:"hotseat", humans:SETTINGS.humans||2});
+  else startGame({mode:"ai", opponents:SETTINGS.opponents||1, level:SETTINGS.aiLevel||"normal"});
+}
 
 /* ---------- menu / settings / save-load ---------- */
 const SETTINGS = (function(){ try{ return JSON.parse(localStorage.getItem('gilded_settings'))||{}; }catch(e){ return {}; } })();
@@ -1195,7 +1276,7 @@ function loadGame(){
     G=s.G; if(s.WIN) WIN=s.WIN;
     UI={sel:{}, selectedCard:null, phase:"play", discardResolve:null, oppView:0};
     closeModal(); render();
-    if(!G.over && me().isAI) setTimeout(aiTurn, 600);
+    if(!G.over && me().isAI) scheduleAI();
   }catch(e){}
 }
 function menuHTML(note){
@@ -1384,8 +1465,12 @@ document.addEventListener("click",(e)=>{
   switch(a){
     case "open-tutorial": openTutorial(); break;
     case "open-newgame": openNewGame(); break;
-    case "close-modal": closeModal(); break;
-    case "start": closeModal(); startGame(+t.dataset.opp); break;
+    case "close-modal": closeModal(); if(pendingStartMenu){ pendingStartMenu=false; openNewGame(true); } break;
+    case "ng-mode": SETTINGS.mode=t.dataset.mode; saveSettings(); ngRerender(); break;
+    case "ng-ai-count": SETTINGS.opponents=+t.dataset.v; saveSettings(); ngRerender(); break;
+    case "ng-ai-level": SETTINGS.aiLevel=t.dataset.v; saveSettings(); ngRerender(); break;
+    case "ng-players": SETTINGS.humans=+t.dataset.v; saveSettings(); ngRerender(); break;
+    case "start-game": startFromMenu(); break;
     case "bank": onTakeGem(t.dataset.color); break;
     case "deselect": onDeselect(t.dataset.color); break;
     case "confirm-take": confirmTake(); break;
@@ -1438,9 +1523,12 @@ function seenTutorial(){ try{ return localStorage.getItem('gilded_tutorial_seen'
 function markTutorialSeen(){ try{ localStorage.setItem('gilded_tutorial_seen','1'); }catch(e){} }
 
 applySettings();
-startGame(SETTINGS.opponents||1);
+startGame(SETTINGS.mode==="hotseat"
+  ? {mode:"hotseat", humans:SETTINGS.humans||2}
+  : {mode:"ai", opponents:SETTINGS.opponents||1, level:SETTINGS.aiLevel||"normal"}, true);
 syncHeaderActions();
-if(!seenTutorial()){ openTutorial(); markTutorialSeen(); }
+if(!seenTutorial()){ markTutorialSeen(); pendingStartMenu=true; openTutorial(); }
+else openNewGame(true);
 </script>
 </body>
 </html>
