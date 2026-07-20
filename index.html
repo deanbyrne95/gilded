@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Gilded — a gem merchant game</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,6 +22,7 @@ body{
     radial-gradient(1200px 700px at 50% -10%, #2a2033 0%, var(--felt) 55%),
     var(--felt);
   color:var(--ink); font-family:"Jost",system-ui,sans-serif;
+  font-variant-numeric:lining-nums; font-feature-settings:"lnum" 1;
   min-height:100vh; -webkit-font-smoothing:antialiased;
 }
 h1,h2,h3{font-family:"Cormorant Garamond",serif; font-weight:600; margin:0}
@@ -61,43 +62,114 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 
 /* Bottom player HUD (action bar) */
 .hud{position:fixed; left:0; right:0; bottom:0; z-index:44;
-  display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; padding:6px clamp(8px,2.5vw,16px);
+  display:flex; flex-wrap:nowrap; align-items:center; gap:8px 16px;
+  padding:8px clamp(10px,3vw,18px) calc(8px + env(safe-area-inset-bottom, 0px));
   background:linear-gradient(0deg, rgba(15,11,20,.98), rgba(23,17,30,.92));
-  border-top:1px solid var(--gilt); backdrop-filter:blur(6px); max-height:44vh; overflow-y:auto}
-.hud-bank{flex:1 1 260px; display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px}
-.hud-bank.hidden{display:none}
-.hud-players{flex:1 1 220px; display:flex; gap:6px; overflow-x:auto; padding-bottom:2px;
+  border-top:1px solid var(--gilt); backdrop-filter:blur(6px); max-height:50vh; overflow-y:auto}
+.gem-hud{position:fixed; left:50%; bottom:var(--hud-h,58px); z-index:43;
+  transform:translate(-50%, calc(100% + 16px)); opacity:0; pointer-events:none;
+  max-width:min(96vw,540px);
+  display:flex; flex-direction:column; gap:9px;
+  padding:9px clamp(12px,3vw,20px) 20px;
+  border-radius:16px 16px 0 0; border:1px solid var(--gilt); border-bottom:none;
+  background:linear-gradient(0deg, rgba(17,12,22,.985), rgba(30,22,38,.95));
+  backdrop-filter:blur(6px); box-shadow:0 -10px 26px rgba(0,0,0,.45);
+  transition:transform .42s cubic-bezier(.2,.8,.2,1), opacity .34s ease}
+.gem-hud.show{transform:translate(-50%, 12px); opacity:1; pointer-events:auto}
+/* collapsed: slide the panel down so only its ledger-style tab shows */
+body.gems-hidden .gem-hud.show{transform:translate(-50%, 100%)}
+.gem-tab{position:absolute; top:0; left:50%; transform:translate(-50%,-100%);
+  display:flex; align-items:center; gap:7px; padding:5px 16px;
+  background:linear-gradient(180deg,#332942,#271f33); color:var(--gilt-soft);
+  border:1px solid var(--gilt); border-bottom:none; border-radius:10px 10px 0 0;
+  font-family:"Jost"; font-size:11px; letter-spacing:2px; text-transform:uppercase;
+  cursor:pointer; box-shadow:var(--shadow); white-space:nowrap}
+.gem-tab:hover{color:#fff; border-color:var(--gilt-soft)}
+.gem-tab .chev{font-size:10px; line-height:1; transition:transform .28s ease}
+body.gems-hidden .gem-tab .chev{transform:rotate(180deg)}
+body.light .gem-tab{color:#e6cd86}
+.hud-players{flex:1 1 240px; display:flex; align-items:stretch; gap:8px; overflow-x:auto; padding-bottom:2px;
   scrollbar-width:thin; scrollbar-color:var(--line) transparent}
 .hud-players::-webkit-scrollbar{height:5px}
 .hud-players::-webkit-scrollbar-thumb{background:var(--line); border-radius:99px}
-.pchip{flex:0 0 auto; min-width:118px; border-radius:10px; padding:5px 9px;
+.hud-players.paged{overflow-x:hidden}
+.hud-players.single .pchip{flex:1 1 auto; min-width:0}
+.pchip-nav{flex:0 0 auto; align-self:stretch; min-width:38px; border-radius:11px; cursor:pointer;
+  background:var(--felt-2); border:1px solid var(--line); color:var(--gilt-soft);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:2px 6px}
+.pchip-nav:hover{border-color:var(--gilt)}
+.pchip-nav .nav-chev{font-size:20px; line-height:1}
+.pchip-nav .nav-count{font-family:"Jost"; font-size:10px; letter-spacing:.5px; color:var(--ink-dim); font-variant-numeric:tabular-nums}
+.hud-players [hidden]{display:none}
+.pchip{flex:0 0 auto; min-width:130px; border-radius:11px; padding:6px 10px;
   background:var(--felt-2); border:1px solid var(--line)}
 .pchip.active{border-color:var(--gilt); animation:breathe 2.6s ease-in-out infinite}
-.pchip .pc-top{display:flex; align-items:baseline; gap:6px}
-.pchip .pc-name{font-family:"Cormorant Garamond",serif; font-size:15px; line-height:1.1}
-.pchip .pc-meta{font-size:9px; color:var(--ink-dim); letter-spacing:.3px}
-.pchip .pc-vp{margin-left:auto; font-family:"Cormorant Garamond",serif; font-size:16px; color:var(--gilt-soft); line-height:1.1}
-.pchip .pc-vp small{font-family:"Jost"; font-size:8px; letter-spacing:1px; color:var(--ink-dim)}
-.pchip .pc-row{display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin-top:3px}
-.pchip .pc-div{width:1px; height:13px; background:var(--line); margin:0 2px}
-.pchip .stack{display:flex; align-items:center; gap:2px; font-size:10px}
-.pchip .stack .gem{width:12px; height:12px}
-.pchip .stack .bon{width:12px; height:12px; border-radius:3px; border:1px solid rgba(0,0,0,.4)}
-/* compact bank inside the HUD */
-.hud-bank .bank{margin:0; gap:clamp(5px,1.6vw,10px); flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px}
-.hud-bank .token{width:auto; gap:0}
-.hud-bank .token .gem{width:clamp(24px,5.6vw,30px); height:clamp(24px,5.6vw,30px)}
-.hud-bank .token .cnt{font-size:10px}
-.hud-bank .token .lbl{display:none}
-/* controls: permanent slot between gems and players — never displaces */
-.hud-controls{flex:0 0 auto; display:flex; align-items:center}
-.hud-controls.hidden{display:none}
-.hud-controls .take-tray{margin:0; padding:0; border:none; background:none;
-  display:flex; align-items:center; gap:6px}
-.hud-controls .take-chips{display:flex; gap:4px; min-width:64px; justify-content:flex-start}
-.hud-controls .take-chips .gem{width:18px; height:18px}
-.hud-controls .take-note{font-size:10.5px; color:var(--gilt-soft)}
-.hud-controls .gbtn{padding:5px 10px; font-size:12.5px}
+.pchip .pc-top{display:flex; align-items:baseline; gap:8px}
+.pchip .pc-name{font-family:"Cormorant Garamond",serif; font-size:16px}
+.pchip .pc-vp{margin-left:auto; font-family:"Cormorant Garamond",serif; font-size:18px; color:var(--gilt-soft)}
+.pchip .pc-vp small{font-family:"Jost"; font-size:9px; letter-spacing:1px; color:var(--ink-dim)}
+.pchip .pc-pat{font-family:"Jost"; font-weight:500; font-size:12px; color:var(--ink-dim); margin-right:9px}
+.pchip .pc-pat .pc-ico{vertical-align:-0.14em; margin-right:2px}
+/* combined holdings: card count sits inside the colour, gem count beside it */
+.pchip .pc-hold{display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; margin-top:5px; font-size:11px; color:var(--ink-dim)}
+.pchip .cg{display:inline-flex; align-items:center; gap:3px}
+.pchip .cg .bon{width:17px; height:17px; border-radius:5px; border:1px solid rgba(0,0,0,.4);
+  display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;
+  line-height:1; color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.55)}
+.pchip .cg .bon.g-white, .pchip .cg .bon.g-gold{color:#241d2b; text-shadow:0 1px 0 rgba(255,255,255,.4)}
+.pchip .cg .gem{width:15px; height:15px}
+.pchip .cg .tk{color:var(--ink); font-variant-numeric:tabular-nums}
+.pchip .cg .tk.tk0{color:var(--ink-dim); opacity:.45}
+.pchip .cg .tk-add{color:#7fd39a; font-weight:700}
+.pchip .pc-ico{width:13px; height:13px; opacity:.9}
+/* opponents' reserved cards: face-up ones are public, deck-holds show as a back */
+.pchip .pc-res{display:flex; gap:4px; margin-top:6px}
+.pchip .rcard{width:15px; height:21px; border-radius:3px; border:1px solid rgba(0,0,0,.45);
+  display:inline-flex; align-items:flex-start; justify-content:flex-start; padding:1px 0 0 2px;
+  font-size:9px; font-weight:700; line-height:1; color:#fff;
+  text-shadow:0 1px 1px rgba(0,0,0,.6); box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.pchip .rcard.g-white{color:#241d2b; text-shadow:0 1px 0 rgba(255,255,255,.4)}
+.pchip .rcard.back{align-items:center; justify-content:center; padding:0;
+  background:repeating-linear-gradient(45deg,#2c2338,#2c2338 3px,#221b2e 3px,#221b2e 6px); border-color:var(--line)}
+.pchip .rcard.back::after{content:"\2666"; color:var(--gilt-soft); font-size:9px}
+.pchip.you .pc-res .rcard{cursor:pointer; width:18px; height:25px; font-size:10px; transition:transform .12s ease, box-shadow .12s ease}
+.pchip.you .pc-res .rcard:hover{transform:translateY(-2px); box-shadow:0 3px 8px rgba(0,0,0,.45)}
+.pchip .rcard.sel{outline:2px solid var(--gilt-soft); outline-offset:1px}
+.pchip.you .pc-res .rcard.buyable{border-color:#6fae7e}
+/* rich hover tooltip for reserved cards */
+.rtip{position:fixed; z-index:80; pointer-events:none; min-width:118px; max-width:180px;
+  background:linear-gradient(180deg,#241d2b,#1a1422); border:1px solid var(--gilt);
+  border-radius:10px; padding:8px 10px; box-shadow:0 10px 26px rgba(0,0,0,.55);
+  color:var(--ink); font-size:12px; line-height:1.3}
+.rtip[hidden]{display:none}
+.rtip-head{display:flex; align-items:center; gap:6px; margin-bottom:4px}
+.rtip-swatch{width:14px; height:19px; border-radius:3px; border:1px solid rgba(0,0,0,.5); flex:none}
+.rtip-name{font-weight:700}
+.rtip-pts{margin-left:auto; color:var(--gilt-soft); font-weight:700; white-space:nowrap}
+.rtip-pts small{font-weight:400; color:var(--ink-dim)}
+.rtip-tier{color:var(--ink-dim); font-size:11px; margin-bottom:6px}
+.rtip-cost-lbl{font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim); margin-bottom:3px}
+.rtip-cost{display:flex; gap:4px; flex-wrap:wrap}
+.rtip-cost .dot{width:18px; height:18px}
+.rtip-free{color:var(--ink-dim); font-style:italic}
+.rtip-ready{margin-top:6px; color:#6fae7e; font-weight:700; font-size:11px}
+.gem-hud .res-cost{display:inline-flex; align-items:center; gap:4px}
+.gem-hud .res-cost .dot{width:19px; height:19px}
+/* gems live in their own centered floating panel behind the bar */
+.gem-hud .bank{margin:0; gap:clamp(8px,2vw,14px); flex-wrap:nowrap; justify-content:center; overflow:visible; padding:4px 2px 2px}
+.gem-hud .token{width:auto; gap:1px}
+.gem-hud .token .gem{width:clamp(26px,6.4vw,34px); height:clamp(26px,6.4vw,34px)}
+.gem-hud .token .cnt{font-size:10.5px}
+.gem-hud .token .lbl{display:none}
+/* take controls sit atop the gem panel, spanning its full width */
+.gem-hud .hud-controls{width:100%; display:flex}
+.gem-hud .hud-controls.hidden{display:none}
+.gem-hud .take-tray{margin:0; padding:0; border:none; background:none;
+  display:flex; align-items:center; gap:8px; width:100%; flex-wrap:wrap}
+.gem-hud .take-tray .gbtn{flex:1 1 0; min-width:78px; padding:8px 12px; font-size:13px}
+.gem-hud .take-tray .take-note{flex:1 1 auto; font-size:11.5px; color:var(--gilt-soft)}
+.gem-hud .take-tray .take-chips{display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-start}
+.gem-hud .take-tray .take-chips .gem{width:20px; height:20px}
 .gbtn:disabled{opacity:.4; cursor:not-allowed}
 
 .section-label{font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--ink-dim); margin:2px 0 10px}
@@ -116,12 +188,12 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 .noble .req{display:flex; gap:6px; flex-wrap:wrap; align-items:center}
 .reqchip{display:flex; align-items:center; gap:4px; font-size:clamp(12px,3.2vw,14px);
   color:var(--ink); font-weight:500}
-.dot{width:clamp(13px,3.4vw,16px); height:clamp(13px,3.4vw,16px); border-radius:4px;
-  display:inline-block; border:1px solid rgba(0,0,0,.35)}
+.dot{width:clamp(16px,4.4vw,20px); height:clamp(16px,4.4vw,20px); border-radius:5px;
+  display:inline-flex; align-items:center; justify-content:center; border:1px solid rgba(0,0,0,.35)}
 
 /* Tiers + cards */
-.tier-row{display:flex; align-items:center; gap:12px; margin-bottom:14px}
-.deck{width:70px; height:98px; border-radius:10px; flex:none; container-type:inline-size;
+.tier-row{display:flex; align-items:center; gap:12px; margin-bottom:14px; container-type:inline-size}
+.deck{width:112px; height:150px; border-radius:12px; flex:none; container-type:inline-size;
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:clamp(1px,3cqi,4px);
   color:var(--gilt-soft); position:relative;
   border:1px solid var(--gilt); box-shadow:var(--shadow); cursor:pointer; padding:6px 2px}
@@ -134,12 +206,18 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 .deck.t2{background:linear-gradient(160deg,#3a2f16,#241c0f)}
 .deck.t3{background:linear-gradient(160deg,#3a1622,#241017)}
 .deck:hover{border-color:var(--gilt-soft)}
+.deck.sel{border-color:var(--gilt-soft); box-shadow:0 0 0 2px var(--gilt-soft), var(--shadow)}
+.deck.sel .dleft{visibility:hidden}
+.deck-menu{position:absolute; inset:auto 4px 4px 4px; display:flex}
+.deck-menu .mbtn{flex:1; font-size:clamp(8px,22cqi,12px); padding:clamp(3px,6cqi,6px) 0}
 .cards{display:flex; gap:12px; flex-wrap:wrap}
 .card{width:112px; height:150px; border-radius:12px; position:relative;
   background:linear-gradient(165deg,#2c2438,#211a2b); border:1px solid var(--line);
   box-shadow:var(--shadow); transition:transform .12s, border-color .12s; cursor:pointer;
   display:flex; flex-direction:column}
 .card:hover{transform:translateY(-3px); border-color:var(--gilt)}
+.card.empty{background:rgba(255,255,255,.02); border:1px dashed var(--line); box-shadow:none; cursor:default}
+.card.empty:hover{transform:none; border-color:var(--line)}
 .card.sel{border-color:var(--gilt-soft); box-shadow:0 0 0 2px var(--gilt-soft), var(--shadow)}
 .card.afford{border-color:#6fae7e}
 .card-band{flex:0 0 38%; position:relative; display:flex; justify-content:flex-end;
@@ -147,11 +225,12 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
   box-shadow:inset 0 -10px 14px rgba(0,0,0,.16)}
 .card-pts{font-family:"Cormorant Garamond",serif; font-weight:700; line-height:1;
   font-size:clamp(15px,26cqi,26px); color:var(--gilt-soft);
+  font-variant-numeric:lining-nums tabular-nums; font-feature-settings:"lnum" 1,"tnum" 1;
   background:rgba(20,15,26,.82); border-radius:8px; padding:2px 6px;
   min-width:1.5em; display:inline-flex; align-items:center; justify-content:center; text-align:center}
 .card-body{flex:1 1 auto; display:flex; flex-direction:column; justify-content:center;
   gap:clamp(3px,4cqi,6px); padding:clamp(6px,7cqi,10px)}
-.card .cost{display:flex; flex-direction:column; gap:clamp(3px,4cqi,6px); align-items:flex-start}
+.card .cost{display:grid; grid-template-columns:repeat(2,max-content); gap:clamp(3px,4cqi,6px); align-content:flex-start; justify-content:flex-start}
 .card .menu{position:absolute; inset:auto 6px 6px 6px; display:flex; gap:6px}
 .mbtn{flex:1; border:none; border-radius:7px; padding:6px 0; font-size:12px; letter-spacing:.5px; color:#1a1420}
 .mbtn.buy{background:linear-gradient(180deg,#7fd39a,#4fae72)}
@@ -214,6 +293,8 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 .log{max-height:190px; overflow:auto; font-size:12.5px; line-height:1.5; color:var(--ink-dim)}
 .log div{padding:2px 0; border-bottom:1px dashed rgba(255,255,255,.05)}
 .log b{color:var(--ink)}
+.log .fin{color:#e8b04a; font-weight:600; letter-spacing:.3px}
+.log .fin b{color:#ffdf8e}
 
 /* Modal */
 .scrim{position:fixed; inset:0; background:rgba(8,5,12,.72); backdrop-filter:blur(3px);
@@ -234,6 +315,7 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 .choice{border:1px solid var(--line); background:var(--felt-2); border-radius:12px;
   padding:16px 20px; text-align:center; cursor:pointer; min-width:88px}
 .choice:hover{border-color:var(--gilt)}
+.choice.sel{border-color:var(--gilt); box-shadow:0 0 0 1px var(--gilt) inset}
 .choice .n{font-family:"Cormorant Garamond",serif; font-size:34px; color:var(--gilt-soft)}
 .choice .c{font-size:12px; letter-spacing:1px; color:var(--ink-dim)}
 .win-name{font-family:"Cormorant Garamond",serif; font-size:38px; color:var(--gilt-soft); text-align:center; margin:6px 0}
@@ -253,6 +335,9 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 .fx-ring{position:fixed; width:40px; height:40px; border-radius:50%;
   border:2px solid var(--gilt-soft);
   transition:transform .7s ease-out, opacity .7s ease-out; will-change:transform,opacity}
+.fly-card{position:fixed; z-index:61; margin:0; pointer-events:none; border-radius:12px;
+  transition:transform .58s cubic-bezier(.4,.05,.2,1), opacity .58s ease;
+  transform-origin:center; will-change:transform,opacity; box-shadow:0 16px 34px rgba(0,0,0,.55)}
 .confetti{position:fixed; top:-24px; width:12px; height:12px; border-radius:3px; border:1px solid rgba(0,0,0,.35)}
 @keyframes dealIn{ from{opacity:0; transform:translateY(-10px) scale(.96)} to{opacity:1; transform:none} }
 .card-enter{ animation:dealIn .42s cubic-bezier(.3,.7,.2,1) both }
@@ -270,15 +355,15 @@ html,body{overflow-x:hidden}
 .token{width:clamp(46px,12vw,66px)}
 .token .gem{width:clamp(36px,9.5vw,52px); height:clamp(36px,9.5vw,52px)}
 .tier-row{gap:6px}
-.deck{flex:0 0 auto; width:clamp(40px,9%,70px); height:auto; aspect-ratio:70/98}
+.deck{flex:0 0 auto; width:clamp(92px,46cqi,112px); height:auto; aspect-ratio:112/150}
 .cards{flex:1 1 auto; flex-wrap:wrap; min-width:0; gap:8px; align-content:flex-start; container-type:inline-size}
 .card{flex:0 0 auto; width:clamp(92px,46cqi,112px); height:auto; aspect-ratio:112/150; container-type:inline-size}
 .modal{padding:clamp(18px,5vw,28px)}
 .modal h2{font-size:clamp(24px,6vw,30px)}
 
-/* card internals scale with the card; cost chips match the nobles' styling */
-.card .reqchip{font-size:clamp(11px,15cqi,14px); font-weight:500; color:var(--ink)}
-.card .cost .dot{width:clamp(11px,15cqi,16px); height:clamp(11px,15cqi,16px)}
+/* card internals scale with the card; cost blocks carry the count inside */
+.card .cost .dot{width:clamp(17px,24cqi,22px); height:clamp(17px,24cqi,22px)}
+.card .cost .dv{font-size:clamp(9px,15cqi,13px)}
 
 /* small screens: same layout, just tighter spacing and type */
 @media (max-width:640px){
@@ -294,32 +379,45 @@ html,body{overflow-x:hidden}
   .pl .mini{gap:5px; margin-top:6px}
   .pl .resv{margin-top:6px; font-size:11px}
   .section-label{letter-spacing:2px}
+  /* HUD on phones: gems + buttons stay inline on one row, players scroll on their own row below */
+  .hud{gap:6px 10px; padding:6px 10px calc(6px + env(safe-area-inset-bottom, 0px)); flex-wrap:wrap; max-height:48vh}
+  .hud-players{flex:1 1 100%; margin-top:2px}
+  .gem-hud .token .gem{width:clamp(22px,6.6vw,30px); height:clamp(22px,6.6vw,30px)}
+  .pchip{min-width:116px; padding:5px 9px}
+  .pchip .pc-name{font-size:15px}
+  .pchip .pc-vp{font-size:16px}
 }
 
 @media (prefers-reduced-motion: reduce){
   .card-enter{animation:none}
   .pl.active{animation:none}
-  .fly-gem,.float-txt,.fx-ring{transition:none}
+  .fly-gem,.float-txt,.fx-ring,.fly-card{transition:none}
+  .gem-hud{transition:opacity .01s}
+  .gem-tab .chev,.ledger-tab .chev{transition:none}
   .token .gem{transition:none}
 }
 /* footer */
 .footer{display:flex; justify-content:center; gap:12px; margin-top:26px; padding-top:18px; border-top:1px solid var(--line)}
 
 /* ledger slide-in drawer */
-.ledger-tab{position:fixed; right:0; top:50%; transform:translateY(-50%);
-  writing-mode:vertical-rl; text-orientation:mixed;
+.ledger-tab{position:absolute; left:0; top:50%; transform:translate(-100%,-50%);
+  display:flex; flex-direction:column; align-items:center; gap:7px;
   background:linear-gradient(180deg,#332942,#271f33); color:var(--gilt-soft);
   border:1px solid var(--gilt); border-right:none; border-radius:10px 0 0 10px;
-  padding:16px 8px; font-size:13px; letter-spacing:2px; text-transform:uppercase;
-  cursor:pointer; z-index:45; box-shadow:var(--shadow)}
+  padding:14px 7px; font-size:11px; letter-spacing:2px; text-transform:uppercase;
+  cursor:pointer; box-shadow:var(--shadow)}
+.ledger-tab .lbl{writing-mode:vertical-rl; text-orientation:mixed; transform:rotate(180deg)}
+.ledger-tab .chev{font-size:10px; line-height:1; transition:transform .28s ease}
+body.ledger-open .ledger-tab .chev{transform:rotate(180deg)}
 .ledger-tab:hover{color:#fff; border-color:var(--gilt-soft)}
-.ledger-scrim{position:fixed; inset:0; background:rgba(8,5,12,.5); backdrop-filter:blur(2px);
-  opacity:0; pointer-events:none; transition:opacity .3s; z-index:46}
-.ledger-scrim.show{opacity:1; pointer-events:auto}
-.ledger-drawer{position:fixed; top:0; right:0; height:100%; width:min(340px,86vw);
-  background:linear-gradient(180deg,#2b2338,#1e1728); border-left:1px solid var(--gilt);
-  box-shadow:-12px 0 40px rgba(0,0,0,.5); z-index:47; padding:18px 18px 24px;
-  transform:translateX(100%); transition:transform .32s cubic-bezier(.4,.1,.2,1);
+.ledger-drawer{position:fixed; right:0; top:0; bottom:0; z-index:47;
+  width:min(340px,86vw);
+  transform:translateX(100%);
+  background:linear-gradient(180deg, rgba(30,23,40,.985), rgba(23,17,30,.95));
+  backdrop-filter:blur(6px);
+  border:1px solid var(--gilt); border-right:none; border-radius:16px 0 0 16px;
+  box-shadow:-12px 0 40px rgba(0,0,0,.5); padding:16px 18px 18px;
+  transition:transform .42s cubic-bezier(.2,.8,.2,1);
   display:flex; flex-direction:column}
 .ledger-drawer.open{transform:translateX(0)}
 .ledger-head{display:flex; align-items:center; justify-content:space-between;
@@ -330,7 +428,7 @@ html,body{overflow-x:hidden}
 .ledger-close:hover{color:var(--ink)}
 .ledger-drawer .log{max-height:none; flex:1; overflow:auto}
 @media (prefers-reduced-motion: reduce){
-  .ledger-drawer{transition:none} .ledger-scrim{transition:none}
+  .ledger-drawer{transition:none}
 }
 /* menu + settings */
 .menu-list{display:flex; flex-direction:column; gap:8px; margin:16px 0 4px}
@@ -342,17 +440,25 @@ html,body{overflow-x:hidden}
   padding:13px 0; border-bottom:1px solid var(--line)}
 .set-label{font-size:15px; color:var(--ink); display:flex; flex-direction:column}
 .set-hint{font-size:11px; color:var(--ink-dim); margin-top:2px}
-.seg-group{display:flex; gap:6px; flex:0 0 auto}
+.seg-group{display:flex; gap:6px; flex:0 1 auto; flex-wrap:wrap; justify-content:flex-end}
 .seg{background:var(--felt-2); border:1px solid var(--line); color:var(--ink-dim);
   border-radius:8px; padding:8px 13px; font-size:14px; cursor:pointer; font-family:"Jost"}
 .seg.on{border-color:var(--gilt); color:var(--gilt-soft); background:var(--panel-2)}
 .set-note{font-size:12px; color:var(--ink-dim); margin-top:16px}
 
-/* colour-blind aid: letters on cost/patron dots */
-.dot{position:relative}
-body.cb .dot::after{content:attr(data-g); position:absolute; inset:0;
-  display:flex; align-items:center; justify-content:center;
-  font-size:9px; font-weight:700; color:#fff; text-shadow:0 0 2px #000,0 0 2px #000; font-family:"Jost"}
+/* colour-vision modes: remap gem hues so blue / green / red stay distinguishable
+   (white stays light, black stays dark, so they separate by luminance).
+   Palettes verified with a Machado-2009 CVD simulation + CIEDE2000: every token
+   pair stays >=21 ΔE for protan/deutan and >=20 ΔE for tritan.
+   Protan/deutan share Paul Tol's "vibrant" red-green-safe set; tritan is tuned
+   separately for the blue-yellow axis. Applies over both dark and light themes. */
+body.cvd-prot{ --blue:#0077BB; --green:#009988; --red:#CC3311; --gold:#F0E442; }
+body.cvd-deut{ --blue:#0077BB; --green:#009988; --red:#CC3311; --gold:#F0E442; }
+body.cvd-trit{ --blue:#3b3bdb; --green:#2a9d3a; --red:#d6334c; --gold:#cfae2b; }
+
+/* cost / patron requirement blocks: the count sits inside the colour square */
+.dot .dv{font-family:"Jost"; font-weight:700; line-height:1; color:#fff;
+  text-shadow:0 0 2px #000,0 0 2px #000; font-size:clamp(9px,2.6vw,12px)}
 
 /* light theme */
 body.light{
@@ -389,18 +495,12 @@ body.light .ledger-tab{color:#e6cd86}
 
     <div class="section-label">Development cards</div>
     <div id="tiers"></div>
-
-    <div id="reserveWrap" class="hidden">
-      <div class="section-label" style="margin-top:16px">Your reserve</div>
-      <div class="cards" id="myReserve"></div>
-    </div>
   </div>
 </div>
 
-<!-- Ledger slide-in drawer -->
-<button class="ledger-tab" data-action="toggle-ledger" aria-label="Open ledger">Ledger</button>
-<div class="ledger-scrim" id="ledgerScrim" data-action="close-ledger"></div>
-<aside class="ledger-drawer" id="ledgerDrawer" aria-hidden="true">
+<!-- Ledger: floating HUD panel, slides in from the right (no overlay) -->
+<aside class="ledger-drawer" id="ledgerDrawer">
+  <button class="ledger-tab" data-action="toggle-ledger" aria-expanded="false" aria-label="Open or close ledger"><span class="lbl">Ledger</span><span class="chev" aria-hidden="true">&#9662;</span></button>
   <div class="ledger-head">
     <h3>Ledger</h3>
     <button class="ledger-close" data-action="close-ledger" aria-label="Close ledger">&times;</button>
@@ -410,16 +510,18 @@ body.light .ledger-tab{color:#e6cd86}
 
 <!-- Floating player HUD -->
 <div class="hud" id="hud">
-  <div class="hud-bank" id="hudBank">
-    <div class="bank" id="bank"></div>
-  </div>
-  <div class="hud-controls" id="hudControls">
-    <div class="take-tray" id="takeTray"></div>
-  </div>
   <div class="hud-players" id="players"></div>
 </div>
 
+<!-- Gem bank + take controls: own centered panel, tucked behind the HUD, shown on your turn -->
+<div class="gem-hud" id="gemHud">
+  <button class="gem-tab" data-action="toggle-hud" aria-label="Hide or show the bank" title="Hide / show the bank"><span class="lbl">The Bank</span><span class="chev" aria-hidden="true">&#9662;</span></button>
+  <div class="hud-controls" id="hudControls"><div class="take-tray" id="takeTray"></div></div>
+  <div class="bank" id="bank"></div>
+</div>
+
 <div id="fxLayer"></div>
+<div id="rtip" class="rtip" hidden></div>
 
 <!-- Tutorial / dialogs -->
 <div class="scrim" id="scrim">
@@ -435,6 +537,8 @@ const ALL  = ["white","blue","green","red","black","gold"];
 const NAME = {white:"Diamond",blue:"Sapphire",green:"Emerald",red:"Ruby",black:"Onyx",gold:"Gold"};
 let WIN = 15;
 const GLET = {white:"D",blue:"S",green:"E",red:"R",black:"O",gold:"G"};
+const ROMAN = {1:"I",2:"II",3:"III"};
+function costText(pay){ return ALL.filter(k=>pay[k]).map(k=>`<b>${pay[k]}</b> ${NAME[k]}`).join(", "); }
 
 // cost patterns. index 0 of `c` is the card's OWN colour; the rest rotate through the others.
 const PAT = {
@@ -469,7 +573,7 @@ function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.flo
 
 /* ---------- game state ---------- */
 let G = null;
-let UI = { sel:{}, selectedCard:null, phase:"play", discardResolve:null };
+let UI = { sel:{}, selectedCard:null, phase:"play", discardResolve:null, oppView:0 };
 
 function newPlayer(name,isAI){
   return { name, isAI, points:0, cards:[], reserved:[], nobles:[],
@@ -478,6 +582,7 @@ function newPlayer(name,isAI){
 }
 
 function startGame(opponents){
+  SETTINGS.opponents=opponents; saveSettings();
   const total = opponents+1;
   const bankPer = total<=2?4 : total===3?5 : 7;
   const bank={white:bankPer,blue:bankPer,green:bankPer,red:bankPer,black:bankPer,gold:5};
@@ -489,7 +594,7 @@ function startGame(opponents){
   for(let i=0;i<opponents;i++) players.push(newPlayer(aiNames[i],true));
   G = { players, current:0, bank, decks, board, nobles:buildNobles(total+1),
         finalRound:false, over:false, turn:0 };
-  UI = { sel:{}, selectedCard:null, phase:"play", discardResolve:null };
+  UI = { sel:{}, selectedCard:null, phase:"play", discardResolve:null, oppView:0 };
   log(`<b>A new game begins.</b> ${players.length} merchants at the table.`);
   render();
 }
@@ -528,13 +633,13 @@ function buyCard(p,card,from){ // from: {tier} board, or {reserved:idx}
   for(const k of ALL){ if(plan.pay[k]){ p.tokens[k]-=plan.pay[k]; G.bank[k]+=plan.pay[k]; } }
   p.bonus[card.color]++; p.points+=card.points; p.cards.push(card);
   if(from.reserved!=null){ p.reserved.splice(from.reserved,1); }
-  else { const arr=G.board[card.tier]; const i=arr.indexOf(card); arr.splice(i,1); const nx=G.decks[card.tier].pop(); if(nx) arr.push(nx); }
+  else { const arr=G.board[card.tier]; const i=arr.indexOf(card); arr[i]=G.decks[card.tier].pop()||null; }
   return true;
 }
 function reserveCard(p,card,from){
   if(p.reserved.length>=3) return false;
-  if(from.deck){ const c=G.decks[from.deck].pop(); if(!c) return false; p.reserved.push(c); card=c; }
-  else { const arr=G.board[card.tier]; const i=arr.indexOf(card); arr.splice(i,1); p.reserved.push(card); const nx=G.decks[card.tier].pop(); if(nx) arr.push(nx); }
+  if(from.deck){ const c=G.decks[from.deck].pop(); if(!c) return false; c.blind=true; p.reserved.push(c); card=c; }
+  else { const arr=G.board[card.tier]; const i=arr.indexOf(card); card.blind=false; p.reserved.push(card); arr[i]=G.decks[card.tier].pop()||null; }
   if(G.bank.gold>0){ G.bank.gold--; p.tokens.gold++; }
   return true;
 }
@@ -575,6 +680,10 @@ function endGame(){
     else if(p.points>best.points) best=p;
     else if(p.points===best.points && p.cards.length<best.cards.length) best=p;
   });
+  const rounds=G.turn||1;
+  const verdict = best.name==="You" ? `<b>You win</b>` : `<b>${best.name}</b> wins`;
+  log(`<span class="fin">&#9670; The books are closed after ${rounds} round${rounds===1?"":"s"}.</span>`);
+  log(`<span class="fin">${verdict} with <b>${best.points}</b> prestige across <b>${best.cards.length}</b> card${best.cards.length===1?"":"s"}.</span>`);
   render();
   showWinner(best);
 }
@@ -582,6 +691,7 @@ function endGame(){
 /* ---------- human interactions ---------- */
 function onTakeGem(color){
   if(!humanControls()||color==="gold") return;
+  const hadCard = UI.selectedCard!=null; UI.selectedCard=null;
   const cur=UI.sel[color]||0;
   const distinct=Object.keys(UI.sel).filter(k=>UI.sel[k]>0);
   const onlyThis = distinct.length===0 || (distinct.length===1 && distinct[0]===color);
@@ -597,12 +707,13 @@ function onTakeGem(color){
   } else {
     delete UI.sel[color];               // tap a doubled gem to clear it
   }
-  renderBank(); renderTakeTray();
+  if(hadCard){ render(); return; }
+  renderBank(); renderTakeTray(); renderPlayers();
 }
 function onDeselect(color){
   if(!UI.sel[color]) return;
   UI.sel[color]--; if(UI.sel[color]<=0) delete UI.sel[color];
-  renderBank(); renderTakeTray();
+  renderBank(); renderTakeTray(); renderPlayers();
 }
 function confirmTake(){
   if(!humanControls()) return;
@@ -617,40 +728,47 @@ function confirmTake(){
   UI.sel={};
   postAction(p, `<b>You</b> take ${desc}.`);
 }
-function clearTake(){ UI.sel={}; renderBank(); renderTakeTray(); }
+function clearTake(){ UI.sel={}; renderBank(); renderTakeTray(); renderPlayers(); }
 
 function onCardClick(loc){
   if(!humanControls()) return;
   UI.selectedCard = sameLoc(UI.selectedCard,loc)?null:loc;
   UI.sel={};
+  if(UI.selectedCard && UI.selectedCard.reserved!=null) document.body.classList.remove("gems-hidden");
   render();
 }
 function doBuy(){
   const loc=UI.selectedCard; if(!loc) return; const p=me();
   const card = loc.reserved!=null ? p.reserved[loc.reserved] : G.board[loc.tier][loc.idx];
   if(!card) return;
-  if(!affordPlan(p,card).ok) return flash("You can't afford that yet.");
+  const plan=affordPlan(p,card);
+  if(!plan.ok) return flash("You can't afford that yet.");
   const cardEl=elCardById(card.id);
   buyCard(p,card,loc.reserved!=null?{reserved:loc.reserved}:{tier:card.tier});
+  flyCard(cardEl, 0);
   if(card.points) floatText('+'+card.points+' prestige', cardEl);
   UI.selectedCard=null;
-  postAction(p, `<b>You</b> buy a ${card.color} card${card.points?` (<b>+${card.points}</b>)`:""}.`);
+  const paid=costText(plan.pay);
+  postAction(p, `<b>You</b> buy a ${NAME[card.color]} card${card.points?` (<b>+${card.points}</b>)`:""} for ${paid||"free"}.`);
 }
 function doReserve(){
   const loc=UI.selectedCard; if(!loc||loc.reserved!=null) return; const p=me();
   if(p.reserved.length>=3) return flash("You can hold at most 3 reserved cards.");
   const card=G.board[loc.tier][loc.idx];
+  const gotGold=G.bank.gold>0;
   reserveCard(p,card,{tier:card.tier});
   UI.selectedCard=null;
-  postAction(p, `<b>You</b> reserve a card${G.bank.gold>=0?" and take a gold":""}.`);
+  postAction(p, `<b>You</b> reserve a ${NAME[card.color]} card (tier ${ROMAN[card.tier]})${gotGold?" and take a <b>Gold</b>":""}.`);
 }
 function onDeckReserve(tier){
   if(!humanControls()) return; const p=me();
   if(p.reserved.length>=3) return flash("You can hold at most 3 reserved cards.");
   if(!G.decks[tier].length) return flash("That deck is empty.");
+  const gotGold=G.bank.gold>0;
   reserveCard(p,null,{deck:tier});
+  const card=p.reserved[p.reserved.length-1];
   UI.selectedCard=null;
-  postAction(p, `<b>You</b> reserve the top card of tier ${tier}.`);
+  postAction(p, `<b>You</b> reserve the top card of tier ${ROMAN[tier]} (a ${NAME[card.color]} card)${gotGold?" and take a <b>Gold</b>":""}.`);
 }
 
 // after a human action: check discard, then finish turn
@@ -672,7 +790,7 @@ function onDiscard(color){
   else render();
 }
 function humanControls(){ return !G.over && G.current===0 && UI.phase==="play"; }
-function sameLoc(a,b){ if(!a||!b)return false; return a.tier===b.tier&&a.idx===b.idx&&a.reserved===b.reserved; }
+function sameLoc(a,b){ if(!a||!b)return false; return a.tier===b.tier&&a.idx===b.idx&&a.reserved===b.reserved&&a.deck===b.deck; }
 
 /* ---------- AI ---------- */
 function aiTurn(){
@@ -680,22 +798,25 @@ function aiTurn(){
 
   // 1) buy the best affordable card (prefer points; take a useful 0-pt bonus sometimes)
   const buyables=[];
-  G.board[1].concat(G.board[2],G.board[3]).forEach(c=>{ if(affordPlan(p,c).ok) buyables.push({c,from:{tier:c.tier}}); });
+  G.board[1].concat(G.board[2],G.board[3]).forEach(c=>{ if(c && affordPlan(p,c).ok) buyables.push({c,from:{tier:c.tier}}); });
   p.reserved.forEach((c,i)=>{ if(affordPlan(p,c).ok) buyables.push({c,from:{reserved:i}}); });
   if(buyables.length){
     buyables.sort((a,b)=> aiCardValue(p,b.c)-aiCardValue(p,a.c));
     const best=buyables[0];
     if(best.c.points>0 || aiWants0pt(p,best.c)){
       const bEl=elCardById(best.c.id);
+      const plan=affordPlan(p,best.c);
       buyCard(p,best.c,best.from);
+      flyCard(bEl, G.current);
       if(best.c.points) floatText('+'+best.c.points+' prestige', bEl);
-      finishTurn(p,`<b>${p.name}</b> buys a ${best.c.color} card${best.c.points?` (+${best.c.points})`:""}.`);
+      const paid=costText(plan.pay);
+      finishTurn(p,`<b>${p.name}</b> buys a ${NAME[best.c.color]} card${best.c.points?` (<b>+${best.c.points}</b>)`:""} for ${paid||"free"}.`);
       return;
     }
   }
 
   // pick a target to work toward: reachable card with best value
-  const targets=G.board[1].concat(G.board[2],G.board[3]).concat(p.reserved)
+  const targets=G.board[1].concat(G.board[2],G.board[3]).concat(p.reserved).filter(Boolean)
     .map(c=>({c,d:cardDeficit(p,c),v:aiCardValue(p,c)}))
     .filter(t=>t.d>0)
     .sort((a,b)=> (a.d-b.d) || (b.v-a.v));
@@ -703,12 +824,12 @@ function aiTurn(){
 
   // 2) reserve a strong card occasionally (for the gold + to hold it)
   if(p.reserved.length<3 && p.tokens.gold===0){
-    const strong=G.board[3].concat(G.board[2]).find(c=>c.points>=4 && cardDeficit(p,c)>=3 && cardDeficit(p,c)<=6);
+    const strong=G.board[3].concat(G.board[2]).find(c=>c && c.points>=4 && cardDeficit(p,c)>=3 && cardDeficit(p,c)<=6);
     if(strong && G.bank.gold>0 && Math.random()<0.5){
       reserveCard(p,strong,{tier:strong.tier});
       // may exceed 10 -> AI discards
       aiDiscardIfNeeded(p,target);
-      finishTurn(p,`<b>${p.name}</b> reserves a card and takes gold.`);
+      finishTurn(p,`<b>${p.name}</b> reserves a ${NAME[strong.color]} card (tier ${ROMAN[strong.tier]}) and takes a <b>Gold</b>.`);
       return;
     }
   }
@@ -726,9 +847,9 @@ function aiTurn(){
 
   // 4) fallback: reserve any board card for a gold, else pass
   if(p.reserved.length<3){
-    const any=G.board[1].concat(G.board[2],G.board[3])[0];
-    if(any){ reserveCard(p,any,{tier:any.tier}); aiDiscardIfNeeded(p,target);
-      finishTurn(p,`<b>${p.name}</b> reserves a card.`); return; }
+    const any=G.board[1].concat(G.board[2],G.board[3]).filter(Boolean)[0];
+    if(any){ const gotGold=G.bank.gold>0; reserveCard(p,any,{tier:any.tier}); aiDiscardIfNeeded(p,target);
+      finishTurn(p,`<b>${p.name}</b> reserves a ${NAME[any.color]} card (tier ${ROMAN[any.tier]})${gotGold?" and takes a <b>Gold</b>":""}.`); return; }
   }
   finishTurn(p,`<b>${p.name}</b> passes.`);
 }
@@ -780,33 +901,40 @@ function aiDiscardIfNeeded(p){
 /* ---------- rendering ---------- */
 function render(){
   if(!G) return;
-  renderNobles(); renderTiers(); renderBank(); renderTakeTray(); renderReserve();
+  renderNobles(); renderTiers(); renderBank(); renderTakeTray();
   renderBanner(); renderPlayers(); renderLog();
-  const hb=document.getElementById("hudBank"), hc=document.getElementById("hudControls");
+  const gh=document.getElementById("gemHud"), hc=document.getElementById("hudControls");
   const yourTurn = G.current===0 && !G.over;
-  if(hb) hb.classList.toggle("hidden", !yourTurn);
+  if(UI._lastCurrent !== G.current){ UI._lastCurrent = G.current; if(yourTurn) document.body.classList.remove("gems-hidden"); }
+  if(gh) gh.classList.toggle("show", yourTurn);
   if(hc) hc.classList.toggle("hidden", !yourTurn);
+  layoutPlayers();
   syncHudSpace();
   const ids=new Set();
-  [1,2,3].forEach(t=>G.board[t].forEach(c=>ids.add(c.id)));
+  [1,2,3].forEach(t=>G.board[t].forEach(c=>{ if(c) ids.add(c.id); }));
   G.players[0].reserved.forEach(c=>ids.add(c.id));
   PREV_CARD_IDS=ids;
 }
 function gem(cls,extra=""){ return `<div class="gem g-${cls}" ${extra}></div>`; }
-function dot(color){ return `<span class="dot" data-g="${GLET[color]}" style="background:var(--${color})"></span>`; }
+function dot(color,n){ return `<span class="dot" style="background:var(--${color})">${n!=null?`<span class="dv">${n}</span>`:""}</span>`; }
 
 function renderNobles(){
   const el=document.getElementById("nobles");
   el.innerHTML=G.nobles.map(n=>{
-    const chips=Object.entries(n.req).map(([ci,req])=>`<span class="reqchip">${dot(KEYS[ci])}${req}</span>`).join("");
+    const chips=Object.entries(n.req).map(([ci,req])=>dot(KEYS[ci],req)).join("");
     return `<div class="noble"><div class="np">3<small>prestige</small></div><div class="req">${chips}</div></div>`;
   }).join("");
 }
 function renderTiers(){
   const el=document.getElementById("tiers");
+  const p=G.players[0];
   el.innerHTML=[3,2,1].map(t=>{
-    const deck=`<div class="deck t${t}" data-action="reserve-deck" data-tier="${t}"><div class="dlabel">Tier</div><div class="dnum">${t}</div><div class="dleft">${G.decks[t].length} left</div></div>`;
-    const cards=G.board[t].map((c,idx)=>cardHTML(c,{tier:t,idx})).join("");
+    const dsel = sameLoc(UI.selectedCard,{deck:t});
+    const canRes = humanControls() && p.reserved.length<3 && G.decks[t].length>0;
+    const dmenu = (dsel && humanControls())
+      ? `<div class="deck-menu"><button class="mbtn res" data-action="hold-deck" data-tier="${t}" ${canRes?"":"disabled"}>Hold</button></div>` : "";
+    const deck=`<div class="deck t${t} ${dsel?"sel":""}" data-action="deck" data-tier="${t}"><div class="dlabel">Tier</div><div class="dnum">${t}</div><div class="dleft">${G.decks[t].length} left</div>${dmenu}</div>`;
+    const cards=G.board[t].map((c,idx)=> c?cardHTML(c,{tier:t,idx}):`<div class="card empty" aria-hidden="true"></div>`).join("");
     return `<div class="tier-row">${deck}<div class="cards">${cards}</div></div>`;
   }).join("");
 }
@@ -814,7 +942,7 @@ function cardHTML(c,loc){
   const p=G.players[0];
   const afford = humanControls() && affordPlan(p,c).ok;
   const sel = sameLoc(UI.selectedCard,loc);
-  const cost=KEYS.filter(k=>c.cost[k]).map(k=>`<span class="reqchip">${dot(k)}${c.cost[k]}</span>`).join("");
+  const cost=KEYS.filter(k=>c.cost[k]).map(k=>dot(k,c.cost[k])).join("");
   let menu="";
   if(sel && humanControls()){
     const canBuy=affordPlan(p,c).ok;
@@ -830,14 +958,6 @@ function cardHTML(c,loc){
     <div class="card-band g-${c.color}">${c.points?`<span class="card-pts">${c.points}</span>`:""}</div>
     <div class="card-body"><div class="cost">${cost}</div></div>${menu}
   </div>`;
-}
-function renderReserve(){
-  const wrap=document.getElementById("reserveWrap");
-  const el=document.getElementById("myReserve");
-  const p=G.players[0];
-  if(!p.reserved.length){ wrap.classList.add("hidden"); el.innerHTML=""; return; }
-  wrap.classList.remove("hidden");
-  el.innerHTML=p.reserved.map((c,idx)=>cardHTML(c,{reserved:idx})).join("");
 }
 function renderBank(){
   const el=document.getElementById("bank");
@@ -862,44 +982,105 @@ function renderTakeTray(){
     return;
   }
   if(!humanControls()){ el.innerHTML=""; return; }
-  const colors=Object.keys(UI.sel).filter(k=>UI.sel[k]>0);
-  const has=colors.length>0;
-  const chips=colors.map(k=>Array(UI.sel[k]).fill(`<div class="gem g-${k}" data-action="deselect" data-color="${k}" title="remove"></div>`).join("")).join("");
-  el.innerHTML=`<div class="take-chips">${chips}</div>
-    <button class="gbtn" data-action="confirm-take" ${has?"":"disabled"}>Take</button>
+  const loc=UI.selectedCard;
+  if(loc && loc.reserved!=null){
+    const p=me(), card=p.reserved[loc.reserved];
+    if(card){
+      const cost=KEYS.filter(k=>card.cost[k]).map(k=>dot(k,card.cost[k])).join("");
+      const canBuy=affordPlan(p,card).ok;
+      el.innerHTML=`<span class="take-note">Reserved ${NAME[card.color]}${card.points?` <b>+${card.points}</b>`:""}</span>
+        <span class="res-cost">${cost}</span>
+        <button class="gbtn" data-action="buy" ${canBuy?"":"disabled"}>Buy</button>
+        <button class="gbtn ghost" data-action="clear-sel">Cancel</button>`;
+      return;
+    }
+  }
+  const has=selCount()>0;
+  el.innerHTML=`<button class="gbtn" data-action="confirm-take" ${has?"":"disabled"}>Take</button>
     <button class="gbtn ghost" data-action="clear-take" ${has?"":"disabled"}>Clear</button>`;
 }
 function renderBanner(){
   const el=document.getElementById("goalBanner"); if(!el) return;
   const leader=G.players.reduce((a,b)=> b.points>a.points?b:a, G.players[0]);
-  const you=G.players[0];
   let tag;
   if(G.over){ tag=`<span class="gb-tag">The books are closed</span>`; }
   else if(G.finalRound){ tag=`<span class="gb-final">&#9670; Final round — last turns!</span>`; }
   else {
-    const lead = leader.points>0 ? `<span class="gb-tag">Leader <b>${leader.name}</b> · ${leader.points}</span>`
-                                 : `<span class="gb-tag">No prestige yet</span>`;
-    tag = `${lead}<span class="gb-tag">You <b>${you.points}</b></span>`;
+    tag = leader.points>0 ? `<span class="gb-tag">Leader <b>${leader.name}</b> · ${leader.points}</span>`
+                          : `<span class="gb-tag">No prestige yet</span>`;
   }
   el.innerHTML=`<div class="gb-main">First to ${WIN} prestige</div><div class="gb-sep"></div>${tag}`;
 }
 function syncHudSpace(){
   const hud=document.getElementById("hud"), wrap=document.querySelector(".wrap");
   if(!hud||!wrap) return;
-  requestAnimationFrame(()=>{ wrap.style.paddingBottom=(hud.offsetHeight+16)+"px"; });
+  requestAnimationFrame(()=>{
+    const h=hud.offsetHeight;
+    wrap.style.paddingBottom=(h+16)+"px";
+    document.documentElement.style.setProperty("--hud-h", h+"px");
+  });
 }
 function renderPlayers(){
   const el=document.getElementById("players"); if(!el) return;
-  el.innerHTML=G.players.map((p,i)=>{
-    const bonus=KEYS.map(k=>`<span class="stack"><span class="bon g-${k}"></span>${p.bonus[k]}</span>`).join("");
-    const toks=ALL.filter(k=>p.tokens[k]).map(k=>`<span class="stack"><span class="gem g-${k}"></span>${p.tokens[k]}</span>`).join("");
-    return `<div class="pchip ${i===G.current&&!G.over?"active":""}" data-pi="${i}">
-      <div class="pc-top"><span class="pc-name">${p.name}</span>
-        <span class="pc-meta">${p.cards.length}c · ${p.nobles.length}&#9733;</span>
-        <span class="pc-vp">${p.points}<small> VP</small></span></div>
-      <div class="pc-row">${bonus}${toks?`<span class="pc-div"></span>${toks}`:""}</div>
+  hideRtip();
+  const chips=G.players.map((p,i)=>{
+    const hold=KEYS.map(k=>{
+      const b=p.bonus[k], t=p.tokens[k];
+      const sel=(i===0 && humanControls() && UI.sel[k]) ? UI.sel[k] : 0;
+      const cls = sel ? "tk tk-add" : (t?"tk":"tk tk0");
+      return `<span class="cg"><span class="bon g-${k}">${b?`<b>${b}</b>`:""}</span><span class="${cls}">${t+sel}</span></span>`;
+    }).join("");
+    const gg=p.tokens.gold;
+    const gold=`<span class="cg"><span class="gem g-gold"></span><span class="tk${gg?"":" tk0"}">${gg}</span></span>`;
+    const patronIco=`<svg class="pc-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 7.5l4.2 3.4L12 4l4.8 6.9L21 7.5 19.3 19H4.7L3 7.5z"/></svg>`;
+    const role = i===0 ? "you" : "opp";
+    const mine = i===0;
+    let resStrip="";
+    if(p.reserved.length){
+      const selIdx = mine && UI.selectedCard && UI.selectedCard.reserved!=null ? UI.selectedCard.reserved : -1;
+      const items = p.reserved.map((c,idx)=>{
+        if(!mine && c.blind) return `<span class="rcard back" title="Hidden — reserved from the deck"></span>`;
+        const buyable = mine && affordPlan(p,c).ok;
+        const cls = `rcard g-${c.color}`+(idx===selIdx?" sel":"")+(buyable?" buyable":"");
+        const attr = mine ? ` data-action="card" data-reserved="${idx}"` : "";
+        const costEnc = KEYS.filter(k=>c.cost[k]).map(k=>k+":"+c.cost[k]).join(",");
+        const aria = `Reserved ${NAME[c.color]}${c.points?`, ${c.points} prestige`:""}, tier ${ROMAN[c.tier]}${buyable?", ready to buy":""}`;
+        return `<span class="${cls}"${attr} data-color="${c.color}" data-tier="${c.tier}" data-points="${c.points||0}" data-cost="${costEnc}" data-ready="${buyable?1:0}" aria-label="${aria}">${c.points||""}</span>`;
+      }).join("");
+      resStrip = `<div class="pc-res${mine?" mine":""}" title="Reserved cards">${items}</div>`;
+    }
+    return `<div class="pchip ${role} ${i===G.current&&!G.over?"active":""}" data-pi="${i}">
+      <div class="pc-top"><span class="pc-name">${p.name}</span><span class="pc-vp"><span class="pc-pat" title="Patrons">${patronIco}${p.nobles.length}</span>${p.points}<small> VP</small></span></div>
+      <div class="pc-hold">${hold}${gold}</div>${resStrip}
     </div>`;
   }).join("");
+  const nav=`<button class="pchip-nav" data-action="cycle-opp" hidden aria-label="Show next player"><span class="nav-chev" aria-hidden="true">&rsaquo;</span><span class="nav-count"></span></button>`;
+  el.innerHTML=chips+nav;
+  if(!G.over && G.current!==0) UI.oppView=G.current;      // focus the active player's chip on its turn
+  layoutPlayers();
+}
+// Pin "You"; when the players don't fit, show one rival at a time behind a cycle button.
+// Show every player when they fit; when the row is too tight, page through
+// them one full-width chip at a time (including "You") behind the cycle button.
+function layoutPlayers(){
+  const el=document.getElementById("players"); if(!el) return;
+  const nav=el.querySelector(".pchip-nav");
+  const chips=[...el.querySelectorAll(".pchip")];
+  el.classList.remove("paged","single");
+  if(nav) nav.hidden=true;
+  chips.forEach(c=>c.hidden=false);
+  if(chips.length<=1) return;
+  if(el.scrollWidth <= el.clientWidth + 1) return;       // everything fits: show all
+  const n=chips.length;
+  const view=((UI.oppView||0)%n+n)%n; UI.oppView=view;
+  el.classList.add("paged","single");
+  chips.forEach((c,idx)=>{ c.hidden = idx!==view; });
+  if(nav){ nav.hidden=false; const c=nav.querySelector(".nav-count"); if(c) c.textContent=`${view+1}/${n}`; }
+}
+function cycleOpp(){
+  const n=G.players.length; if(n<=1) return;
+  UI.oppView=(((UI.oppView||0)+1)%n+n)%n;
+  layoutPlayers();
 }
 function renderLog(){
   const el=document.getElementById("log");
@@ -949,12 +1130,12 @@ function tutorialHTML(){
 function openTutorial(){ openModal(tutorialHTML(),true); }
 
 function newGameHTML(){
+  const cur=SETTINGS.opponents||1;
+  const opt=(n,label)=>`<div class="choice${cur===n?' sel':''}" data-action="start" data-opp="${n}"><div class="n">${n}</div><div class="c">${label}</div></div>`;
   return `<div class="eyebrow">New game</div><h2>How many opponents?</h2>
   <p>You'll play against clever computer merchants.</p>
   <div class="choices">
-    <div class="choice" data-action="start" data-opp="1"><div class="n">1</div><div class="c">1 rival</div></div>
-    <div class="choice" data-action="start" data-opp="2"><div class="n">2</div><div class="c">2 rivals</div></div>
-    <div class="choice" data-action="start" data-opp="3"><div class="n">3</div><div class="c">3 rivals</div></div>
+    ${opt(1,'1 rival')}${opt(2,'2 rivals')}${opt(3,'3 rivals')}
   </div>
   <div class="foot"><button class="gbtn ghost" data-action="close-modal">Cancel</button></div>`;
 }
@@ -965,7 +1146,10 @@ const SETTINGS = (function(){ try{ return JSON.parse(localStorage.getItem('gilde
 function saveSettings(){ try{ localStorage.setItem('gilded_settings', JSON.stringify(SETTINGS)); }catch(e){} }
 function applySettings(){
   document.body.classList.toggle('light', SETTINGS.theme==='light');
-  document.body.classList.toggle('cb', !!SETTINGS.cb);
+  const cvd=SETTINGS.cvd||'off';
+  document.body.classList.toggle('cvd-prot', cvd==='prot');
+  document.body.classList.toggle('cvd-deut', cvd==='deut');
+  document.body.classList.toggle('cvd-trit', cvd==='trit');
   WIN = SETTINGS.maxVP || 15;
 }
 function hasSave(){ try{ return !!localStorage.getItem('gilded_save'); }catch(e){ return false; } }
@@ -977,7 +1161,7 @@ function loadGame(){
   try{
     const s=JSON.parse(localStorage.getItem('gilded_save')); if(!s||!s.G) return;
     G=s.G; if(s.WIN) WIN=s.WIN;
-    UI={sel:{}, selectedCard:null, phase:"play", discardResolve:null};
+    UI={sel:{}, selectedCard:null, phase:"play", discardResolve:null, oppView:0};
     closeModal(); render();
     if(!G.over && me().isAI) setTimeout(aiTurn, 600);
   }catch(e){}
@@ -996,22 +1180,22 @@ function menuHTML(note){
 }
 function openMenu(note){ openModal(menuHTML(note), true); }
 function settingsHTML(){
-  const theme=SETTINGS.theme||'dark', maxVP=SETTINGS.maxVP||15, cb=SETTINGS.cb?'1':'0';
+  const theme=SETTINGS.theme||'dark', maxVP=SETTINGS.maxVP||15, cvd=SETTINGS.cvd||'off';
   const seg=(name,val,cur,label)=>`<button class="seg ${String(val)===String(cur)?'on':''}" data-action="set-${name}" data-v="${val}">${label}</button>`;
   return `<div class="eyebrow">Settings</div><h2>Settings</h2>
   <div class="set-row"><div class="set-label">Theme</div><div class="seg-group">
     ${seg('theme','dark',theme,'Dark')}${seg('theme','light',theme,'Light')}</div></div>
   <div class="set-row"><div class="set-label">Prestige to win</div><div class="seg-group">
     ${seg('max','10',maxVP,'10')}${seg('max','15',maxVP,'15')}${seg('max','20',maxVP,'20')}</div></div>
-  <div class="set-row"><div class="set-label">Colour-blind aid<span class="set-hint">letters on gem costs</span></div><div class="seg-group">
-    ${seg('cb','0',cb,'Off')}${seg('cb','1',cb,'On')}</div></div>
+  <div class="set-row"><div class="set-label">Colour-vision mode<span class="set-hint">recolours gems for clarity</span></div><div class="seg-group">
+    ${seg('cvd','off',cvd,'Off')}${seg('cvd','prot',cvd,'Protanopia')}${seg('cvd','deut',cvd,'Deuteranopia')}${seg('cvd','trit',cvd,'Tritanopia')}</div></div>
   <p class="set-note">Prestige-to-win applies now and to new games. Settings are saved on this device.</p>
   <div class="foot"><button class="gbtn ghost" data-action="open-menu">Back</button><button class="gbtn" data-action="close-modal">Done</button></div>`;
 }
 function openSettings(){ openModal(settingsHTML(), true); }
 function setTheme(v){ SETTINGS.theme=v; saveSettings(); applySettings(); openSettings(); }
 function setMax(v){ SETTINGS.maxVP=+v; saveSettings(); applySettings(); if(G) renderBanner(); openSettings(); }
-function setCB(v){ SETTINGS.cb=(v==='1'); saveSettings(); applySettings(); openSettings(); }
+function setCVD(v){ SETTINGS.cvd=v; saveSettings(); applySettings(); openSettings(); }
 
 function chooseNoble(list,cb){
   UI._nobleCb=cb;
@@ -1040,6 +1224,33 @@ function centerOf(el){ const r=el.getBoundingClientRect(); return {x:r.left+r.wi
 function elBank(color){ return document.querySelector(`#bank [data-color="${color}"]`); }
 function elPlayer(i){ return document.querySelector(`#players .pchip[data-pi="${i}"]`); }
 function elCardById(id){ return document.querySelector(`.card[data-cid="${id}"]`); }
+/* reserved-card hover tooltip */
+function hideRtip(){ const t=document.getElementById('rtip'); if(t) t.hidden=true; }
+function showRtip(el){
+  const t=document.getElementById('rtip'); if(!t) return;
+  const color=el.dataset.color, tier=el.dataset.tier, pts=+el.dataset.points||0;
+  const cost=(el.dataset.cost||"").split(",").filter(Boolean)
+    .map(s=>{ const[k,n]=s.split(":"); return dot(k,+n); }).join("");
+  const ready = el.dataset.ready==="1";
+  t.innerHTML =
+    `<div class="rtip-head"><span class="rtip-swatch" style="background:var(--${color})"></span>`+
+    `<span class="rtip-name">${NAME[color]}</span>`+
+    (pts?`<span class="rtip-pts">${pts} <small>prestige</small></span>`:"")+`</div>`+
+    `<div class="rtip-tier">Tier ${ROMAN[tier]} development</div>`+
+    `<div class="rtip-cost-lbl">Cost</div>`+
+    `<div class="rtip-cost">${cost||'<span class="rtip-free">Free</span>'}</div>`+
+    (ready?`<div class="rtip-ready">✓ Ready to buy</div>`:"");
+  t.hidden=false;
+  const r=el.getBoundingClientRect(), tr=t.getBoundingClientRect();
+  let left=r.left+r.width/2-tr.width/2;
+  left=Math.max(6, Math.min(left, window.innerWidth-tr.width-6));
+  let top=r.top-tr.height-8;
+  if(top<6) top=r.bottom+8;
+  t.style.left=left+'px'; t.style.top=top+'px';
+}
+document.addEventListener('mouseover',e=>{ const c=e.target.closest&&e.target.closest('.rcard[data-color]'); if(c) showRtip(c); });
+document.addEventListener('mouseout',e=>{ const c=e.target.closest&&e.target.closest('.rcard[data-color]'); if(c) hideRtip(); });
+window.addEventListener('scroll', hideRtip, true);
 function flyGem(color, from, to, delay=0){
   if(REDUCE||!from||!to) return; const L=fxLayer(); if(!L) return;
   const a=centerOf(from), b=centerOf(to);
@@ -1051,6 +1262,24 @@ function flyGem(color, from, to, delay=0){
     g.style.transform=`translate(${b.x-a.x}px, ${b.y-a.y}px) scale(.45)`; g.style.opacity='0.15';
   }));
   setTimeout(()=>g.remove(), 750+delay);
+}
+function flyCard(fromEl, toIndex, delay=0){
+  if(REDUCE||!fromEl) return; const L=fxLayer(); if(!L) return;
+  const toEl=elPlayer(toIndex); if(!toEl) return;
+  const r=fromEl.getBoundingClientRect(); if(!r.width) return;
+  const b=centerOf(toEl);
+  const ghost=fromEl.cloneNode(true);
+  ghost.querySelectorAll('.menu').forEach(n=>n.remove());
+  ghost.classList.remove('sel','afford','card-enter');
+  ghost.classList.add('fly-card');
+  Object.assign(ghost.style,{left:r.left+'px', top:r.top+'px', width:r.width+'px', height:r.height+'px', transitionDelay:delay+'ms'});
+  L.appendChild(ghost);
+  const dx=b.x-(r.left+r.width/2), dy=b.y-(r.top+r.height/2);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    ghost.style.transform=`translate(${dx}px, ${dy}px) scale(.16) rotate(-6deg)`;
+    ghost.style.opacity='0';
+  }));
+  setTimeout(()=>{ ghost.remove(); const t=elPlayer(toIndex); if(t) ringPop(t); }, 560+delay);
 }
 function floatText(text, atEl, delay=0){
   if(REDUCE||!atEl) return; const L=fxLayer(); if(!L) return;
@@ -1109,6 +1338,7 @@ document.addEventListener("click",(e)=>{
     case "deselect": onDeselect(t.dataset.color); break;
     case "confirm-take": confirmTake(); break;
     case "clear-take": clearTake(); break;
+    case "clear-sel": UI.selectedCard=null; render(); break;
     case "card": {
       const loc = t.dataset.reserved!=null ? {reserved:+t.dataset.reserved}
                 : {tier:+t.dataset.tier, idx:+t.dataset.idx};
@@ -1116,32 +1346,37 @@ document.addEventListener("click",(e)=>{
     }
     case "buy": e.stopPropagation(); doBuy(); break;
     case "reserve": e.stopPropagation(); doReserve(); break;
-    case "reserve-deck": onDeckReserve(+t.dataset.tier); break;
+    case "deck": onCardClick({deck:+t.dataset.tier}); break;
+    case "hold-deck": e.stopPropagation(); onDeckReserve(+t.dataset.tier); break;
     case "discard": onDiscard(t.dataset.color); break;
     case "pick-noble": { const n=UI._nobleList[+t.dataset.i]; closeModal(); UI._nobleCb(n); break; }
     case "toggle-ledger": toggleLedger(); break;
     case "close-ledger": closeLedger(); break;
+    case "cycle-opp": cycleOpp(); break;
+    case "toggle-hud": document.body.classList.toggle("gems-hidden"); break;
     case "open-menu": openMenu(); break;
     case "open-settings": openSettings(); break;
     case "save-game": saveGame(); break;
     case "load-game": loadGame(); break;
     case "set-theme": setTheme(t.dataset.v); break;
     case "set-max": setMax(t.dataset.v); break;
-    case "set-cb": setCB(t.dataset.v); break;
+    case "set-cvd": setCVD(t.dataset.v); break;
   }
 });
 scrim.addEventListener("click",(e)=>{ if(e.target===scrim && scrim.dataset.dismiss==="1") closeModal(); });
-window.addEventListener("resize", syncHudSpace);
+window.addEventListener("resize", ()=>{ syncHudSpace(); if(G) layoutPlayers(); });
 
 /* ---------- ledger drawer ---------- */
 function toggleLedger(){
-  const d=document.getElementById('ledgerDrawer'), s=document.getElementById('ledgerScrim');
-  const open=d.classList.toggle('open'); s.classList.toggle('show',open);
-  d.setAttribute('aria-hidden', open?'false':'true');
+  const d=document.getElementById('ledgerDrawer');
+  const open=d.classList.toggle('open');
+  document.body.classList.toggle('ledger-open', open);
+  d.querySelector('.ledger-tab').setAttribute('aria-expanded', open?'true':'false');
 }
 function closeLedger(){
-  const d=document.getElementById('ledgerDrawer'), s=document.getElementById('ledgerScrim');
-  d.classList.remove('open'); s.classList.remove('show'); d.setAttribute('aria-hidden','true');
+  const d=document.getElementById('ledgerDrawer');
+  d.classList.remove('open'); document.body.classList.remove('ledger-open');
+  d.querySelector('.ledger-tab').setAttribute('aria-expanded','false');
 }
 
 /* ---------- boot ---------- */
@@ -1150,7 +1385,7 @@ function seenTutorial(){ try{ return localStorage.getItem('gilded_tutorial_seen'
 function markTutorialSeen(){ try{ localStorage.setItem('gilded_tutorial_seen','1'); }catch(e){} }
 
 applySettings();
-startGame(1);
+startGame(SETTINGS.opponents||1);
 if(!seenTutorial()){ openTutorial(); markTutorialSeen(); }
 </script>
 </body>
