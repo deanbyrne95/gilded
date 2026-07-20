@@ -1017,6 +1017,7 @@ function aiDiscardIfNeeded(p){
 /* ---------- rendering ---------- */
 function render(){
   if(!G) return;
+  const _scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
   renderNobles(); renderTiers(); renderBank(); renderTakeTray();
   renderBanner(); renderPlayers(); renderLog();
   const gh=document.getElementById("gemHud"), hc=document.getElementById("hudControls");
@@ -1030,6 +1031,13 @@ function render(){
   [1,2,3].forEach(t=>G.board[t].forEach(c=>{ if(c) ids.add(c.id); }));
   G.players[0].reserved.forEach(c=>ids.add(c.id));
   PREV_CARD_IDS=ids;
+  restoreScroll(_scrollY);
+}
+function restoreScroll(y){
+  if(!y) return;
+  const fix=()=>{ if(Math.abs((window.pageYOffset||0)-y)>1) window.scrollTo(0,y); };
+  fix();
+  if(typeof requestAnimationFrame==="function") requestAnimationFrame(fix);
 }
 function gem(cls,extra=""){ return `<div class="gem g-${cls}" ${extra}></div>`; }
 function dot(color,n){ return `<span class="dot" style="background:var(--${color})">${n!=null?`<span class="dv">${n}</span>`:""}</span>`; }
