@@ -30,12 +30,16 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 .wrap{max-width:1180px; margin:0 auto; padding:18px 16px 60px}
 
 /* Topbar */
-.topbar{display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+.topbar{display:flex; align-items:center; gap:16px; flex-wrap:nowrap;
   border-bottom:1px solid var(--line); padding-bottom:14px; margin-bottom:18px}
 .brand{display:flex; align-items:baseline; gap:12px}
 .brand h1{font-size:34px; letter-spacing:.5px; color:var(--gilt-soft)}
 .brand .sub{font-size:12.5px; letter-spacing:3px; text-transform:uppercase; color:var(--ink-dim)}
 .topbar .spacer{flex:1}
+.hdr-actions{display:flex; align-items:center; gap:8px; flex:0 0 auto}
+.hdr-actions .gbtn{flex:0 0 auto; white-space:nowrap}
+.theme-toggle{flex:0 0 auto; white-space:nowrap; display:inline-flex; align-items:center; gap:6px}
+.hdr-actions[hidden], .menu-btn[hidden]{display:none}
 .pill{font-size:12.5px; letter-spacing:1.5px; text-transform:uppercase;
   color:var(--ink-dim); border:1px solid var(--line); border-radius:999px; padding:7px 13px; background:var(--felt-2)}
 .pill b{color:var(--gilt-soft)}
@@ -77,7 +81,7 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
   transition:transform .42s cubic-bezier(.2,.8,.2,1), opacity .34s ease}
 .gem-hud.show{transform:translate(-50%, 12px); opacity:1; pointer-events:auto}
 /* collapsed: slide the panel down so only its ledger-style tab shows */
-body.gems-hidden .gem-hud.show{transform:translate(-50%, 100%)}
+body.gems-hidden .gem-hud.show{transform:translate(-50%, 100%); box-shadow:none}
 .gem-tab{position:absolute; top:0; left:50%; transform:translate(-50%,-100%);
   display:flex; align-items:center; gap:7px; padding:5px 16px;
   background:linear-gradient(180deg,#332942,#271f33); color:var(--gilt-soft);
@@ -87,7 +91,7 @@ body.gems-hidden .gem-hud.show{transform:translate(-50%, 100%)}
 .gem-tab:hover{color:#fff; border-color:var(--gilt-soft)}
 .gem-tab .chev{font-size:10px; line-height:1; transition:transform .28s ease}
 body.gems-hidden .gem-tab .chev{transform:rotate(180deg)}
-body.light .gem-tab{color:#e6cd86}
+body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7d5c21}
 .hud-players{flex:1 1 240px; display:flex; align-items:stretch; gap:8px; overflow-x:auto; padding-bottom:2px;
   scrollbar-width:thin; scrollbar-color:var(--line) transparent}
 .hud-players::-webkit-scrollbar{height:5px}
@@ -117,7 +121,7 @@ body.light .gem-tab{color:#e6cd86}
   display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;
   line-height:1; color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.55)}
 .pchip .cg .bon.g-white, .pchip .cg .bon.g-gold{color:#241d2b; text-shadow:0 1px 0 rgba(255,255,255,.4)}
-.pchip .cg .gem{width:15px; height:15px}
+.pchip .cg .gem{width:15px; height:15px; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
 .pchip .cg .tk{color:var(--ink); font-variant-numeric:tabular-nums}
 .pchip .cg .tk.tk0{color:var(--ink-dim); opacity:.45}
 .pchip .cg .tk-add{color:#7fd39a; font-weight:700}
@@ -222,7 +226,7 @@ body.light .gem-tab{color:#e6cd86}
 .card.afford{border-color:#6fae7e}
 .card-band{flex:0 0 38%; position:relative; display:flex; justify-content:flex-end;
   align-items:flex-start; padding:7px 8px; border-radius:11px 11px 0 0;
-  box-shadow:inset 0 -10px 14px rgba(0,0,0,.16)}
+  box-shadow:inset 0 -10px 14px rgba(0,0,0,.16); border-bottom:1px solid rgba(255,255,255,.12)}
 .card-pts{font-family:"Cormorant Garamond",serif; font-weight:700; line-height:1;
   font-size:clamp(15px,26cqi,26px); color:var(--gilt-soft);
   font-variant-numeric:lining-nums tabular-nums; font-feature-settings:"lnum" 1,"tnum" 1;
@@ -354,9 +358,9 @@ html,body{overflow-x:hidden}
 .brand .sub{font-size:clamp(10px,2.4vw,12.5px)}
 .token{width:clamp(46px,12vw,66px)}
 .token .gem{width:clamp(36px,9.5vw,52px); height:clamp(36px,9.5vw,52px)}
-.tier-row{gap:6px}
+.tier-row{gap:clamp(8px,1.6vw,24px)}
 .deck{flex:0 0 auto; width:clamp(92px,46cqi,112px); height:auto; aspect-ratio:112/150}
-.cards{flex:1 1 auto; flex-wrap:wrap; min-width:0; gap:8px; align-content:flex-start; container-type:inline-size}
+.cards{flex:1 1 auto; flex-wrap:wrap; min-width:0; gap:clamp(8px,1.6vw,24px); align-content:flex-start; container-type:inline-size}
 .card{flex:0 0 auto; width:clamp(92px,46cqi,112px); height:auto; aspect-ratio:112/150; container-type:inline-size}
 .modal{padding:clamp(18px,5vw,28px)}
 .modal h2{font-size:clamp(24px,6vw,30px)}
@@ -368,6 +372,7 @@ html,body{overflow-x:hidden}
 /* small screens: same layout, just tighter spacing and type */
 @media (max-width:640px){
   .topbar{gap:10px; padding-bottom:10px}
+  .brand .sub{display:none}
   .nobles{gap:6px}
   .take-tray{padding:10px 12px}
   .panel{padding:11px 10px}
@@ -416,10 +421,10 @@ body.ledger-open .ledger-tab .chev{transform:rotate(180deg)}
   background:linear-gradient(180deg, rgba(30,23,40,.985), rgba(23,17,30,.95));
   backdrop-filter:blur(6px);
   border:1px solid var(--gilt); border-right:none; border-radius:16px 0 0 16px;
-  box-shadow:-12px 0 40px rgba(0,0,0,.5); padding:16px 18px 18px;
-  transition:transform .42s cubic-bezier(.2,.8,.2,1);
+  box-shadow:none; padding:16px 18px 18px;
+  transition:transform .42s cubic-bezier(.2,.8,.2,1), box-shadow .42s ease;
   display:flex; flex-direction:column}
-.ledger-drawer.open{transform:translateX(0)}
+.ledger-drawer.open{transform:translateX(0); box-shadow:-12px 0 40px rgba(0,0,0,.5)}
 .ledger-head{display:flex; align-items:center; justify-content:space-between;
   margin-bottom:12px; border-bottom:1px solid var(--line); padding-bottom:10px}
 .ledger-head h3{font-size:24px; color:var(--gilt-soft)}
@@ -462,18 +467,32 @@ body.cvd-trit{ --blue:#3b3bdb; --green:#2a9d3a; --red:#d6334c; --gold:#cfae2b; }
 
 /* light theme */
 body.light{
-  --felt:#ece3d1; --felt-2:#f6efe0; --panel:#fbf6ea; --panel-2:#f0e8d6;
-  --gilt:#a9812f; --gilt-soft:#8a6626; --ink:#2c2430; --ink-dim:#6a5e50; --line:#dccfb5;
-  --shadow:0 8px 24px rgba(90,66,20,.16);
-  background:radial-gradient(1200px 700px at 50% -10%, #fffdf6 0%, var(--felt) 55%), var(--felt);
+  --felt:#dccdaa; --felt-2:#f6efe0; --panel:#fbf6ea; --panel-2:#f0e8d6;
+  --gilt:#9c7629; --gilt-soft:#7d5c21; --ink:#241d29; --ink-dim:#5c5042; --line:#c6b384;
+  --shadow:0 10px 26px rgba(70,50,12,.22);
+  background:radial-gradient(1200px 700px at 50% -10%, #efe6ce 0%, var(--felt) 58%), var(--felt);
 }
-body.light .gbtn{color:#f4ecdd}
+body.light .gbtn{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#4a3a22}
+body.light .gbtn:hover{color:#2c2216; border-color:var(--gilt-soft)}
 body.light .card{background:linear-gradient(165deg,#fbf6ea,#efe5d2)}
+body.light .card-band.g-white{background:#ded7c4}
+body.light .card-band{border-bottom-color:rgba(0,0,0,.14)}
+body.light .card-pts{color:#e9c96a; background:rgba(28,20,34,.9)}
+body.light .deck.t1{background:linear-gradient(160deg,#66b28c,#509f78)}
+body.light .deck.t2{background:linear-gradient(160deg,#bc9b4e,#a6873f)}
+body.light .deck.t3{background:linear-gradient(160deg,#bc4e72,#a63f62)}
+body.light .deck .dnum{color:#f4e6b8}
+body.light .deck .dlabel{color:rgba(255,255,255,.72)}
+body.light .deck .dleft{color:rgba(255,255,255,.82)}
 body.light .noble{background:linear-gradient(160deg,#f4ecdd,#e8dec8)}
 body.light .hud{background:linear-gradient(0deg,#f1e9d7,#f8f2e5)}
 body.light .modal{background:linear-gradient(170deg,#fbf6ea,#f1e9d7)}
 body.light .ledger-drawer{background:linear-gradient(180deg,#fbf6ea,#eee5d3)}
-body.light .ledger-tab{color:#e6cd86}
+body.light .gem-hud{background:linear-gradient(0deg,#e7dabc,#f1e8d4)}
+body.light .gem{filter:drop-shadow(0 0 1px rgba(58,42,10,.55)) drop-shadow(0 2px 4px rgba(58,42,10,.26))}
+body.light .pchip .cg .gem{filter:drop-shadow(0 0 .6px rgba(58,42,10,.5)) drop-shadow(0 1px 1px rgba(58,42,10,.3))}
+body.light .ledger-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7d5c21}
+body.light .ledger-tab:hover, body.light .gem-tab:hover{color:#4a3a22}
 </style>
 </head>
 <body>
@@ -484,7 +503,15 @@ body.light .ledger-tab{color:#e6cd86}
       <span class="sub">A Gem Merchant's Game</span>
     </div>
     <div class="spacer"></div>
-    <button class="gbtn" data-action="open-menu">&#9776; Menu</button>
+    <button class="gbtn theme-toggle" id="themeToggle" data-action="toggle-theme" aria-label="Toggle light or dark theme" aria-pressed="false"></button>
+    <nav class="hdr-actions" id="hdrActions" aria-label="Game menu">
+      <button class="gbtn ghost" data-action="open-newgame">New game</button>
+      <button class="gbtn ghost" data-action="save-game">Save</button>
+      <button class="gbtn ghost" id="hdrLoad" data-action="load-game">Load</button>
+      <button class="gbtn ghost" data-action="open-settings">Settings</button>
+      <button class="gbtn ghost" data-action="open-tutorial">How to play</button>
+    </nav>
+    <button class="gbtn menu-btn" id="menuBtn" data-action="open-menu" hidden>&#9776; Menu</button>
   </div>
 
   <div class="goal-banner" id="goalBanner"></div>
@@ -1151,10 +1178,15 @@ function applySettings(){
   document.body.classList.toggle('cvd-deut', cvd==='deut');
   document.body.classList.toggle('cvd-trit', cvd==='trit');
   WIN = SETTINGS.maxVP || 15;
+  const tt=document.getElementById('themeToggle');
+  if(tt){ const light=SETTINGS.theme==='light';
+    tt.innerHTML = light ? '<span aria-hidden="true">\u2600</span> Light' : '<span aria-hidden="true">\u263E</span> Dark';
+    tt.setAttribute('aria-pressed', light?'true':'false');
+  }
 }
 function hasSave(){ try{ return !!localStorage.getItem('gilded_save'); }catch(e){ return false; } }
 function saveGame(){
-  try{ localStorage.setItem('gilded_save', JSON.stringify({G:G, WIN:WIN})); openMenu("Game saved on this device."); }
+  try{ localStorage.setItem('gilded_save', JSON.stringify({G:G, WIN:WIN})); syncHeaderActions(); openMenu("Game saved on this device."); }
   catch(e){ openMenu("Couldn't save (storage unavailable here)."); }
 }
 function loadGame(){
@@ -1173,27 +1205,47 @@ function menuHTML(note){
     <button class="menu-item" data-action="open-newgame">New game</button>
     <button class="menu-item" data-action="save-game">Save game</button>
     <button class="menu-item" data-action="load-game" ${hasSave()?"":"disabled"}>Load game${hasSave()?"":" — none saved"}</button>
-    <button class="menu-item" data-action="open-settings">Settings</button>
+    <button class="menu-item" data-action="settings-from-menu">Settings</button>
     <button class="menu-item" data-action="open-tutorial">How to play</button>
   </div>
   <div class="foot"><button class="gbtn ghost" data-action="close-modal">Close</button></div>`;
 }
 function openMenu(note){ openModal(menuHTML(note), true); }
-function settingsHTML(){
-  const theme=SETTINGS.theme||'dark', maxVP=SETTINGS.maxVP||15, cvd=SETTINGS.cvd||'off';
+function settingsHTML(fromMenu){
+  const maxVP=SETTINGS.maxVP||15, cvd=SETTINGS.cvd||'off';
   const seg=(name,val,cur,label)=>`<button class="seg ${String(val)===String(cur)?'on':''}" data-action="set-${name}" data-v="${val}">${label}</button>`;
+  const back=fromMenu?`<button class="gbtn ghost" data-action="open-menu">Back</button>`:'';
   return `<div class="eyebrow">Settings</div><h2>Settings</h2>
-  <div class="set-row"><div class="set-label">Theme</div><div class="seg-group">
-    ${seg('theme','dark',theme,'Dark')}${seg('theme','light',theme,'Light')}</div></div>
   <div class="set-row"><div class="set-label">Prestige to win</div><div class="seg-group">
     ${seg('max','10',maxVP,'10')}${seg('max','15',maxVP,'15')}${seg('max','20',maxVP,'20')}</div></div>
   <div class="set-row"><div class="set-label">Colour-vision mode<span class="set-hint">recolours gems for clarity</span></div><div class="seg-group">
     ${seg('cvd','off',cvd,'Off')}${seg('cvd','prot',cvd,'Protanopia')}${seg('cvd','deut',cvd,'Deuteranopia')}${seg('cvd','trit',cvd,'Tritanopia')}</div></div>
   <p class="set-note">Prestige-to-win applies now and to new games. Settings are saved on this device.</p>
-  <div class="foot"><button class="gbtn ghost" data-action="open-menu">Back</button><button class="gbtn" data-action="close-modal">Done</button></div>`;
+  <div class="foot">${back}<button class="gbtn" data-action="close-modal">${fromMenu?'Done':'Close'}</button></div>`;
 }
-function openSettings(){ openModal(settingsHTML(), true); }
-function setTheme(v){ SETTINGS.theme=v; saveSettings(); applySettings(); openSettings(); }
+let settingsFromMenu=false;
+function openSettings(fromMenu){ if(fromMenu!==undefined) settingsFromMenu=fromMenu; openModal(settingsHTML(settingsFromMenu), true); }
+function toggleTheme(){
+  SETTINGS.theme = SETTINGS.theme==='light' ? 'dark' : 'light';
+  saveSettings(); applySettings();
+}
+// Show the full menu options inline in the header; collapse to a single "Menu"
+// button when they can't fit (small screens or long text).
+function layoutHeader(){
+  const bar=document.querySelector('.topbar');
+  const actions=document.getElementById('hdrActions');
+  const menuBtn=document.getElementById('menuBtn');
+  if(!bar||!actions||!menuBtn) return;
+  actions.hidden=false; menuBtn.hidden=true;
+  const fits = bar.scrollWidth <= bar.clientWidth + 1;
+  actions.hidden = !fits;
+  menuBtn.hidden = fits;
+}
+function syncHeaderActions(){
+  const load=document.getElementById('hdrLoad');
+  if(load) load.disabled=!hasSave();
+  layoutHeader();
+}
 function setMax(v){ SETTINGS.maxVP=+v; saveSettings(); applySettings(); if(G) renderBanner(); openSettings(); }
 function setCVD(v){ SETTINGS.cvd=v; saveSettings(); applySettings(); openSettings(); }
 
@@ -1355,16 +1407,17 @@ document.addEventListener("click",(e)=>{
     case "cycle-opp": cycleOpp(); break;
     case "toggle-hud": document.body.classList.toggle("gems-hidden"); break;
     case "open-menu": openMenu(); break;
-    case "open-settings": openSettings(); break;
+    case "open-settings": openSettings(false); break;
+    case "settings-from-menu": openSettings(true); break;
     case "save-game": saveGame(); break;
     case "load-game": loadGame(); break;
-    case "set-theme": setTheme(t.dataset.v); break;
+    case "toggle-theme": toggleTheme(); break;
     case "set-max": setMax(t.dataset.v); break;
     case "set-cvd": setCVD(t.dataset.v); break;
   }
 });
 scrim.addEventListener("click",(e)=>{ if(e.target===scrim && scrim.dataset.dismiss==="1") closeModal(); });
-window.addEventListener("resize", ()=>{ syncHudSpace(); if(G) layoutPlayers(); });
+window.addEventListener("resize", ()=>{ syncHudSpace(); layoutHeader(); if(G) layoutPlayers(); });
 
 /* ---------- ledger drawer ---------- */
 function toggleLedger(){
@@ -1386,6 +1439,7 @@ function markTutorialSeen(){ try{ localStorage.setItem('gilded_tutorial_seen','1
 
 applySettings();
 startGame(SETTINGS.opponents||1);
+syncHeaderActions();
 if(!seenTutorial()){ openTutorial(); markTutorialSeen(); }
 </script>
 </body>
