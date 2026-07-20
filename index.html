@@ -61,42 +61,43 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 
 /* Bottom player HUD (action bar) */
 .hud{position:fixed; left:0; right:0; bottom:0; z-index:44;
-  display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; padding:8px clamp(10px,3vw,18px);
+  display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; padding:6px clamp(8px,2.5vw,16px);
   background:linear-gradient(0deg, rgba(15,11,20,.98), rgba(23,17,30,.92));
-  border-top:1px solid var(--gilt); backdrop-filter:blur(6px); max-height:50vh; overflow-y:auto}
-.hud-bank{flex:1 1 300px; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px}
+  border-top:1px solid var(--gilt); backdrop-filter:blur(6px); max-height:44vh; overflow-y:auto}
+.hud-bank{flex:1 1 260px; display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px}
 .hud-bank.hidden{display:none}
-.hud-players{flex:1 1 240px; display:flex; gap:8px; overflow-x:auto; padding-bottom:2px;
+.hud-players{flex:1 1 220px; display:flex; gap:6px; overflow-x:auto; padding-bottom:2px;
   scrollbar-width:thin; scrollbar-color:var(--line) transparent}
 .hud-players::-webkit-scrollbar{height:5px}
 .hud-players::-webkit-scrollbar-thumb{background:var(--line); border-radius:99px}
-.pchip{flex:0 0 auto; min-width:130px; border-radius:11px; padding:6px 10px;
+.pchip{flex:0 0 auto; min-width:118px; border-radius:10px; padding:5px 9px;
   background:var(--felt-2); border:1px solid var(--line)}
 .pchip.active{border-color:var(--gilt); animation:breathe 2.6s ease-in-out infinite}
-.pchip .pc-top{display:flex; align-items:baseline; justify-content:space-between; gap:8px}
-.pchip .pc-name{font-family:"Cormorant Garamond",serif; font-size:16px}
-.pchip .pc-vp{font-family:"Cormorant Garamond",serif; font-size:18px; color:var(--gilt-soft)}
-.pchip .pc-vp small{font-family:"Jost"; font-size:9px; letter-spacing:1px; color:var(--ink-dim)}
-.pchip .pc-row{display:flex; flex-wrap:wrap; gap:5px; margin-top:4px}
-.pchip .pc-sub{display:flex; flex-wrap:wrap; gap:7px; margin-top:4px; font-size:10.5px; color:var(--ink-dim)}
-.pchip .stack{display:flex; align-items:center; gap:3px; font-size:11px}
-.pchip .stack .gem{width:14px; height:14px}
-.pchip .stack .bon{width:14px; height:14px; border-radius:4px; border:1px solid rgba(0,0,0,.4)}
+.pchip .pc-top{display:flex; align-items:baseline; gap:6px}
+.pchip .pc-name{font-family:"Cormorant Garamond",serif; font-size:15px; line-height:1.1}
+.pchip .pc-meta{font-size:9px; color:var(--ink-dim); letter-spacing:.3px}
+.pchip .pc-vp{margin-left:auto; font-family:"Cormorant Garamond",serif; font-size:16px; color:var(--gilt-soft); line-height:1.1}
+.pchip .pc-vp small{font-family:"Jost"; font-size:8px; letter-spacing:1px; color:var(--ink-dim)}
+.pchip .pc-row{display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin-top:3px}
+.pchip .pc-div{width:1px; height:13px; background:var(--line); margin:0 2px}
+.pchip .stack{display:flex; align-items:center; gap:2px; font-size:10px}
+.pchip .stack .gem{width:12px; height:12px}
+.pchip .stack .bon{width:12px; height:12px; border-radius:3px; border:1px solid rgba(0,0,0,.4)}
 /* compact bank inside the HUD */
-.hud-bank .bank{margin:0; gap:clamp(6px,2vw,12px); flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px}
-.hud-bank .token{width:auto; gap:1px}
-.hud-bank .token .gem{width:clamp(26px,6.4vw,34px); height:clamp(26px,6.4vw,34px)}
-.hud-bank .token .cnt{font-size:10.5px}
+.hud-bank .bank{margin:0; gap:clamp(5px,1.6vw,10px); flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px}
+.hud-bank .token{width:auto; gap:0}
+.hud-bank .token .gem{width:clamp(24px,5.6vw,30px); height:clamp(24px,5.6vw,30px)}
+.hud-bank .token .cnt{font-size:10px}
 .hud-bank .token .lbl{display:none}
 /* controls: permanent slot between gems and players — never displaces */
 .hud-controls{flex:0 0 auto; display:flex; align-items:center}
 .hud-controls.hidden{display:none}
 .hud-controls .take-tray{margin:0; padding:0; border:none; background:none;
-  display:flex; align-items:center; gap:8px}
-.hud-controls .take-chips{display:flex; gap:5px; min-width:78px; justify-content:flex-start}
-.hud-controls .take-chips .gem{width:20px; height:20px}
-.hud-controls .take-note{font-size:11px; color:var(--gilt-soft)}
-.hud-controls .gbtn{padding:6px 12px; font-size:13px}
+  display:flex; align-items:center; gap:6px}
+.hud-controls .take-chips{display:flex; gap:4px; min-width:64px; justify-content:flex-start}
+.hud-controls .take-chips .gem{width:18px; height:18px}
+.hud-controls .take-note{font-size:10.5px; color:var(--gilt-soft)}
+.hud-controls .gbtn{padding:5px 10px; font-size:12.5px}
 .gbtn:disabled{opacity:.4; cursor:not-allowed}
 
 .section-label{font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--ink-dim); margin:2px 0 10px}
@@ -893,9 +894,10 @@ function renderPlayers(){
     const bonus=KEYS.map(k=>`<span class="stack"><span class="bon g-${k}"></span>${p.bonus[k]}</span>`).join("");
     const toks=ALL.filter(k=>p.tokens[k]).map(k=>`<span class="stack"><span class="gem g-${k}"></span>${p.tokens[k]}</span>`).join("");
     return `<div class="pchip ${i===G.current&&!G.over?"active":""}" data-pi="${i}">
-      <div class="pc-top"><span class="pc-name">${p.name}</span><span class="pc-vp">${p.points}<small> VP</small></span></div>
-      <div class="pc-row">${bonus}</div>
-      <div class="pc-sub">${toks||"<span>no gems</span>"}<span>${p.cards.length} cards</span><span>${p.nobles.length} patrons</span></div>
+      <div class="pc-top"><span class="pc-name">${p.name}</span>
+        <span class="pc-meta">${p.cards.length}c · ${p.nobles.length}&#9733;</span>
+        <span class="pc-vp">${p.points}<small> VP</small></span></div>
+      <div class="pc-row">${bonus}${toks?`<span class="pc-div"></span>${toks}`:""}</div>
     </div>`;
   }).join("");
 }
