@@ -308,6 +308,13 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
 .log b{color:var(--ink)}
 .log .fin{color:#e8b04a; font-weight:600; letter-spacing:.3px}
 .log .fin b{color:#ffdf8e}
+.log .log-round{position:sticky; top:-2px; padding:5px 0 3px; margin-top:4px; border-bottom:none;
+  font-family:"Jost"; font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase;
+  color:var(--gilt-soft); background:rgb(30,23,40);
+  display:flex; align-items:center; gap:8px}
+.log .log-round::after{content:""; flex:1; height:1px; background:var(--line)}
+.log .log-round:first-child{margin-top:0}
+body.light .log .log-round{background:#fbf6ea}
 
 /* Modal */
 .scrim{position:fixed; inset:0; background:rgba(8,5,12,.72); backdrop-filter:blur(3px);
@@ -340,6 +347,27 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
 .mode-card .mc-t{font-family:"Cormorant Garamond",serif; font-size:21px; color:var(--gilt-soft)}
 .mode-card .mc-s{font-size:12px; letter-spacing:.3px; color:var(--ink-dim)}
 .mode-card.disabled{opacity:.45; cursor:not-allowed}
+.ng-load{margin-top:12px}
+.ng-load .gbtn{width:100%}
+.sess-list{display:flex; flex-direction:column; gap:8px; margin:14px 0 6px; max-height:46vh; overflow:auto}
+.sess{display:flex; align-items:center; justify-content:space-between; gap:12px;
+  background:var(--felt-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px}
+.sess-name{font-family:"Cormorant Garamond",serif; font-size:18px; color:var(--gilt-soft)}
+.sess-scores{display:flex; flex-wrap:wrap; gap:4px 10px; margin:3px 0 1px}
+.sess-scores .sc{display:inline-flex; align-items:center; gap:4px; font-size:12.5px; color:var(--ink-dim); letter-spacing:.2px}
+.sess-scores .sc b{color:var(--ink); font-weight:600}
+.sess-scores .sc.lead{color:var(--gilt-soft)}
+.sess-scores .sc.lead b{color:var(--gilt)}
+.sess-scores .sc-mark{font-size:9px; color:var(--gilt)}
+.sess-scores .sess-lead{font-family:"Jost"; font-size:10px; font-weight:600; letter-spacing:.6px;
+  text-transform:uppercase; color:var(--ink-dim); border:1px solid var(--line); border-radius:20px;
+  padding:1px 8px; align-self:center}
+.sess-sub{font-size:12px; color:var(--ink-dim); letter-spacing:.3px}
+.sess-acts{display:flex; gap:6px; flex:0 0 auto}
+.sess .gbtn{padding:6px 12px; font-size:13px}
+.sess-del{color:#d98a8a}
+.sess-empty{color:var(--ink-dim); text-align:center; padding:18px 0}
+.sess-cap{color:var(--ink-dim); font-size:12px; margin:4px 0 0; letter-spacing:.3px}
 .win-name{font-family:"Cormorant Garamond",serif; font-size:38px; color:var(--gilt-soft); text-align:center; margin:6px 0}
 .hidden{display:none !important}
 
@@ -582,6 +610,7 @@ body.light .ledger-tab:hover, body.light .gem-tab:hover{color:#4a3a22}
 const KEYS = ["white","blue","green","red","black"];       // gem colours (indexes 0..4)
 const ALL  = ["white","blue","green","red","black","gold"];
 const NAME = {white:"Diamond",blue:"Sapphire",green:"Emerald",red:"Ruby",black:"Onyx",gold:"Gold"};
+const article = s => /^[aeiou]/i.test(s||"") ? "an" : "a";
 let WIN = 15;
 const GLET = {white:"D",blue:"S",green:"E",red:"R",black:"O",gold:"G"};
 const ROMAN = {1:"I",2:"II",3:"III"};
@@ -657,6 +686,7 @@ function startGame(opts, silent){
   G = { players, current:starter, starter, mode, level, bank, decks, board, nobles:buildNobles(total+1),
         finalRound:false, over:false, turn:0 };
   UI = { sel:{}, selectedCard:null, phase:"play", discardResolve:null, oppView:starter };
+  currentSessionId=null;
   if(!silent){
     if(mode==="hotseat") log(`<b>A new game begins.</b> ${total} players, pass-and-play.`);
     else log(`<b>A new game begins.</b> ${total} merchants · ${LEVEL_LABEL[level]} rivals.`);
@@ -734,10 +764,12 @@ function advance(){
   UI.selectedCard=null; UI.sel={};
   const starter = G.starter||0;
   G.current=(G.current+1)%G.players.length;
-  if(G.current===starter) G.turn++;
+  const roundDone = (G.current===starter);
+  if(roundDone) G.turn++;
   // end game check: game ends when the round in which someone hit 15 completes (back to the starter)
-  if(G.finalRound && G.current===starter){ endGame(); return; }
+  if(G.finalRound && roundDone){ endGame(); return; }
   render();
+  if(roundDone) autoSave();
   if(!G.over && me().isAI){ scheduleAI(); }
 }
 function endGame(){
@@ -750,9 +782,10 @@ function endGame(){
   });
   const rounds=G.turn||1;
   const verdict = best.name==="You" ? `<b>You win</b>` : `<b>${best.name}</b> wins`;
-  log(`<span class="fin">&#9670; The books are closed after ${rounds} round${rounds===1?"":"s"}.</span>`);
-  log(`<span class="fin">${verdict} with <b>${best.points}</b> prestige across <b>${best.cards.length}</b> card${best.cards.length===1?"":"s"}.</span>`);
+  log(`<span class="fin">&#9670; The books are closed after ${rounds} round${rounds===1?"":"s"}.</span>`, rounds);
+  log(`<span class="fin">${verdict} with <b>${best.points}</b> prestige across <b>${best.cards.length}</b> card${best.cards.length===1?"":"s"}.</span>`, rounds);
   render();
+  autoSave();
   showWinner(best);
 }
 
@@ -817,7 +850,7 @@ function doBuy(){
   if(card.points) floatText('+'+card.points+' prestige', cardEl);
   UI.selectedCard=null;
   const paid=costText(plan.pay);
-  postAction(p, `<b>You</b> buy a ${NAME[card.color]} card${card.points?` (<b>+${card.points}</b>)`:""} for ${paid||"free"}.`);
+  postAction(p, `<b>You</b> buy ${article(NAME[card.color])} ${NAME[card.color]} card${card.points?` (<b>+${card.points}</b>)`:""} for ${paid||"free"}.`);
 }
 function doReserve(){
   const loc=UI.selectedCard; if(!loc||loc.reserved!=null) return; const p=me();
@@ -826,7 +859,7 @@ function doReserve(){
   const gotGold=G.bank.gold>0;
   reserveCard(p,card,{tier:card.tier});
   UI.selectedCard=null;
-  postAction(p, `<b>You</b> reserve a ${NAME[card.color]} card (tier ${ROMAN[card.tier]})${gotGold?" and take a <b>Gold</b>":""}.`);
+  postAction(p, `<b>You</b> reserve ${article(NAME[card.color])} ${NAME[card.color]} card (tier ${ROMAN[card.tier]})${gotGold?" and take a <b>Gold</b>":""}.`);
 }
 function onDeckReserve(tier){
   if(!humanControls()) return; const p=me();
@@ -836,7 +869,7 @@ function onDeckReserve(tier){
   reserveCard(p,null,{deck:tier});
   const card=p.reserved[p.reserved.length-1];
   UI.selectedCard=null;
-  postAction(p, `<b>You</b> reserve the top card of tier ${ROMAN[tier]} (a ${NAME[card.color]} card)${gotGold?" and take a <b>Gold</b>":""}.`);
+  postAction(p, `<b>You</b> reserve the top card of tier ${ROMAN[tier]} (${article(NAME[card.color])} ${NAME[card.color]} card)${gotGold?" and take a <b>Gold</b>":""}.`);
 }
 
 // after a human action: check discard, then finish turn
@@ -884,7 +917,7 @@ function aiTurn(){
       flyCard(bEl, G.current);
       if(best.c.points) floatText('+'+best.c.points+' prestige', bEl);
       const paid=costText(plan.pay);
-      finishTurn(p,`<b>${p.name}</b> buys a ${NAME[best.c.color]} card${best.c.points?` (<b>+${best.c.points}</b>)`:""} for ${paid||"free"}.`);
+      finishTurn(p,`<b>${p.name}</b> buys ${article(NAME[best.c.color])} ${NAME[best.c.color]} card${best.c.points?` (<b>+${best.c.points}</b>)`:""} for ${paid||"free"}.`);
       return;
     }
   }
@@ -906,7 +939,7 @@ function aiTurn(){
       reserveCard(p,strong,{tier:strong.tier});
       // may exceed 10 -> AI discards
       aiDiscardIfNeeded(p,target);
-      finishTurn(p,`<b>${p.name}</b> reserves a ${NAME[strong.color]} card (tier ${ROMAN[strong.tier]}) and takes a <b>Gold</b>.`);
+      finishTurn(p,`<b>${p.name}</b> reserves ${article(NAME[strong.color])} ${NAME[strong.color]} card (tier ${ROMAN[strong.tier]}) and takes a <b>Gold</b>.`);
       return;
     }
   }
@@ -926,7 +959,7 @@ function aiTurn(){
   if(p.reserved.length<3){
     const any=G.board[1].concat(G.board[2],G.board[3]).filter(Boolean)[0];
     if(any){ const gotGold=G.bank.gold>0; reserveCard(p,any,{tier:any.tier}); aiDiscardIfNeeded(p,target);
-      finishTurn(p,`<b>${p.name}</b> reserves a ${NAME[any.color]} card (tier ${ROMAN[any.tier]})${gotGold?" and takes a <b>Gold</b>":""}.`); return; }
+      finishTurn(p,`<b>${p.name}</b> reserves ${article(NAME[any.color])} ${NAME[any.color]} card (tier ${ROMAN[any.tier]})${gotGold?" and takes a <b>Gold</b>":""}.`); return; }
   }
   finishTurn(p,`<b>${p.name}</b> passes.`);
 }
@@ -1133,7 +1166,7 @@ function renderPlayers(){
       resStrip = `<div class="pc-res${mine?" mine":""}" title="Reserved cards">${items}</div>`;
     }
     return `<div class="pchip ${role} ${i===G.current&&!G.over?"active":""}" data-pi="${i}">
-      <div class="pc-top"><span class="pc-name">${p.name}</span>${(i===G.starter&&G.turn===0&&!G.over)?`<span class="pc-first" title="Starts the game">1st</span>`:""}${(i===G.current&&!G.over&&p.isAI)?`<span class="pc-think" aria-label="thinking"><i></i><i></i><i></i></span>`:""}<span class="pc-vp"><span class="pc-pat" title="Patrons">${patronIco}${p.nobles.length}</span>${p.points}<small> VP</small></span></div>
+      <div class="pc-top"><span class="pc-name">${p.name}</span>${(i===G.starter&&!G.over)?`<span class="pc-first" title="Started the game">1st</span>`:""}${(i===G.current&&!G.over&&p.isAI)?`<span class="pc-think" aria-label="thinking"><i></i><i></i><i></i></span>`:""}<span class="pc-vp"><span class="pc-pat" title="Patrons">${patronIco}${p.nobles.length}</span>${p.points}<small> VP</small></span></div>
       <div class="pc-hold">${hold}${gold}</div>${resStrip}
     </div>`;
   }).join("");
@@ -1167,9 +1200,18 @@ function cycleOpp(){
 }
 function renderLog(){
   const el=document.getElementById("log");
-  el.innerHTML=(G.logs||[]).slice().reverse().map(l=>`<div>${l}</div>`).join("");
+  const items=(G.logs||[]).slice().reverse();
+  let html="", lastR=null;
+  for(const it of items){
+    const isObj = it && typeof it==="object";
+    const r = isObj ? it.r : null;
+    const s = isObj ? it.s : it;
+    if(r!=null && r!==lastR){ html+=`<div class="log-round">Round ${r}</div>`; lastR=r; }
+    html+=`<div>${s}</div>`;
+  }
+  el.innerHTML=html;
 }
-function log(s){ (G.logs=G.logs||[]).push(s); if(document.getElementById("log")) renderLog(); }
+function log(s, r){ (G.logs=G.logs||[]).push({ r: (r!=null?r:(G.turn||0)+1), s }); if(document.getElementById("log")) renderLog(); }
 
 let flashT=null;
 function flash(msg){
@@ -1228,7 +1270,8 @@ function newGameHTML(force){
     sub=`<div class="set-row"><div class="set-label">Rivals</div><div class="seg-group">
         ${seg('ng-ai-count',1,opp,'1')}${seg('ng-ai-count',2,opp,'2')}${seg('ng-ai-count',3,opp,'3')}</div></div>
       <div class="set-row"><div class="set-label">Difficulty<span class="set-hint">how sharply rivals play</span></div><div class="seg-group">
-        ${seg('ng-ai-level','easy',lvl,'Easy')}${seg('ng-ai-level','normal',lvl,'Normal')}${seg('ng-ai-level','hard',lvl,'Hard')}</div></div>`;
+        ${seg('ng-ai-level','easy',lvl,'Easy')}${seg('ng-ai-level','normal',lvl,'Normal')}${seg('ng-ai-level','hard',lvl,'Hard')}</div></div>
+      <div class="ng-load"><button class="gbtn ghost" data-action="load-game" data-from="newgame" ${hasSave()?'':'disabled'}>${hasSave()?'Load a saved game…':'No saved games yet'}</button></div>`;
   }
   const cancel = force ? '' : `<button class="gbtn ghost" data-action="close-modal">Cancel</button>`;
   return `<div class="eyebrow">New game</div><h2>Choose your game</h2>
@@ -1265,27 +1308,132 @@ function applySettings(){
     tt.setAttribute('aria-pressed', light?'true':'false');
   }
 }
-function hasSave(){ try{ return !!localStorage.getItem('gilded_save'); }catch(e){ return false; } }
+let currentSessionId=null, sessionsFrom='header';
+function sessionMeta(g){
+  const scores=g.players.map(p=>({ name:p.name, vp:p.points||0, cards:(p.cards||[]).length, isAI:!!p.isAI }));
+  const top=Math.max(0,...scores.map(s=>s.vp));
+  let leader=g.players[0], lv=g.players[0].points;
+  g.players.forEach(p=>{ if(p.points>lv){ lv=p.points; leader=p; } });
+  return { mode:g.mode||'ai', level:g.level||null, players:g.players.length,
+           turn:g.turn||0, over:!!g.over, scores, top, leader:leader.name, leaderVP:lv };
+}
+function sessionName(g){
+  const m=sessionMeta(g);
+  return m.mode==='hotseat' ? `Pass-and-play · ${m.players}P` : `Vs AI · ${LEVEL_LABEL[m.level]||'Normal'}`;
+}
+function saveSessions(list){ try{ localStorage.setItem('gilded_sessions', JSON.stringify(list)); }catch(e){} }
+const MAX_SESSIONS=3;
+function loadSessions(){
+  let list=[];
+  try{ list=JSON.parse(localStorage.getItem('gilded_sessions'))||[]; }catch(e){ list=[]; }
+  if(!Array.isArray(list)) list=[];
+  try{
+    const legacy=localStorage.getItem('gilded_save');
+    if(legacy){
+      const s=JSON.parse(legacy);
+      if(s&&s.G) list.unshift({ id:'legacy'+Date.now(), name:sessionName(s.G), savedAt:Date.now(), meta:sessionMeta(s.G), data:{G:s.G, WIN:s.WIN||15} });
+      localStorage.removeItem('gilded_save');
+      saveSessions(list);
+    }
+  }catch(e){}
+  return list;
+}
+function hasSave(){ return loadSessions().length>0; }
+function persistSession(){
+  let list=loadSessions();
+  const entry={ id: currentSessionId || ('s'+Date.now()), name: sessionName(G), savedAt: Date.now(), meta: sessionMeta(G), data:{ G:G, WIN:WIN } };
+  const idx=list.findIndex(s=>s.id===entry.id);
+  let evicted=false;
+  if(idx>=0){ list[idx]=entry; }
+  else {
+    list.unshift(entry);
+    if(list.length>MAX_SESSIONS){
+      list.sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
+      list=list.slice(0,MAX_SESSIONS);
+      evicted=true;
+    }
+  }
+  currentSessionId=entry.id;
+  saveSessions(list); syncHeaderActions();
+  return evicted;
+}
 function saveGame(){
-  try{ localStorage.setItem('gilded_save', JSON.stringify({G:G, WIN:WIN})); syncHeaderActions(); openMenu("Game saved on this device."); }
+  try{ const evicted=persistSession(); openMenu(evicted ? "Game saved — the oldest session was replaced." : "Game saved on this device."); }
   catch(e){ openMenu("Couldn't save (storage unavailable here)."); }
 }
-function loadGame(){
-  try{
-    const s=JSON.parse(localStorage.getItem('gilded_save')); if(!s||!s.G) return;
-    G=s.G; if(s.WIN) WIN=s.WIN;
-    UI={sel:{}, selectedCard:null, phase:"play", discardResolve:null, oppView:0};
-    closeModal(); render();
-    if(!G.over && me().isAI) scheduleAI();
-  }catch(e){}
+function autoSave(){ if(!G) return; try{ persistSession(); }catch(e){} }
+function loadSession(id){
+  const s=loadSessions().find(x=>x.id===id); if(!s||!s.data||!s.data.G) return;
+  G=s.data.G; if(s.data.WIN) WIN=s.data.WIN;
+  currentSessionId=id; ngForce=false; pendingStartMenu=false;
+  UI={sel:{}, selectedCard:null, phase:"play", discardResolve:null, oppView:G.current||0};
+  closeModal(); render(); syncHeaderActions();
+  if(!G.over && me().isAI) scheduleAI();
 }
+function deleteSession(id){
+  saveSessions(loadSessions().filter(s=>s.id!==id));
+  if(currentSessionId===id) currentSessionId=null;
+  syncHeaderActions();
+}
+function sessionsHTML(from){
+  const list=loadSessions();
+  const rows = list.length ? list.map(s=>{
+    const m=s.meta||{};
+    const when=new Date(s.savedAt||Date.now()).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const stage = m.over ? 'Finished' : `Turn ${m.turn||0}`;
+    let board;
+    if(Array.isArray(m.scores) && m.scores.length){
+      const top = m.top!=null ? m.top : Math.max(0,...m.scores.map(x=>x.vp));
+      let highlight=()=>false, status='';
+      if(m.over){
+        // winner: most prestige, ties broken by fewer cards
+        const winner=m.scores.slice().sort((a,b)=> (b.vp-a.vp) || ((a.cards||0)-(b.cards||0)))[0];
+        highlight = sc=>sc===winner;
+      } else {
+        const leaders = m.scores.filter(x=>x.vp===top);
+        const noLeader = top===0 || leaders.length===m.scores.length;
+        const tiedLead = !noLeader && leaders.length>1;
+        status = noLeader ? (top===0 ? 'No points yet' : 'All square')
+               : tiedLead ? 'Tied for the lead' : '';
+        highlight = sc=>!noLeader && sc.vp===top;
+      }
+      board = `<div class="sess-scores">` + m.scores.map(sc=>{
+        const lead = highlight(sc);
+        return `<span class="sc${lead?' lead':''}">${lead?'<span class="sc-mark" aria-hidden="true">&#9670;</span>':''}${sc.name}<b>${sc.vp}</b></span>`;
+      }).join("") + (status?`<span class="sess-lead">${status}</span>`:'') + `</div>`;
+    } else {
+      // legacy sessions saved before per-player scores existed
+      const nm=m.leader||'—', verb=nm==='You'?'lead':'leads';
+      let inner;
+      if(m.over) inner = `<span class="sc lead">${nm==='—'?'Finished':nm+' won'}</span>`;
+      else if(!m.leaderVP) inner = `<span class="sess-lead">No points yet</span>`;
+      else inner = `<span class="sc lead">${nm} ${verb} · ${m.leaderVP} VP</span>`;
+      board = `<div class="sess-scores">${inner}</div>`;
+    }
+    return `<div class="sess">
+      <div class="sess-info"><div class="sess-name">${s.name}</div>${board}<div class="sess-sub">${stage} · ${when}</div></div>
+      <div class="sess-acts">
+        <button class="gbtn" data-action="load-session" data-id="${s.id}">Load</button>
+        <button class="gbtn ghost sess-del" data-action="del-session" data-id="${s.id}">Delete</button>
+      </div></div>`;
+  }).join("") : `<p class="sess-empty">No saved sessions yet. Use “Save game” during play to store one.</p>`;
+  let footBtn;
+  if(from==='newgame') footBtn=`<button class="gbtn ghost" data-action="back-newgame">Back</button>`;
+  else if(from==='menu') footBtn=`<button class="gbtn ghost" data-action="open-menu">Back</button>`;
+  else footBtn=`<button class="gbtn ghost" data-action="close-modal">Close</button>`;
+  return `<div class="eyebrow">Saved sessions</div><h2>Load a game</h2>
+    <p class="sess-cap">Up to ${MAX_SESSIONS} games are kept — saving a new one replaces the oldest.</p>
+    <div class="sess-list">${rows}</div>
+    <div class="foot">${footBtn}</div>`;
+}
+function openSessions(from){ sessionsFrom=from||'header'; const forced=(from==='newgame'&&ngForce); openModal(sessionsHTML(sessionsFrom), !forced); }
 function menuHTML(note){
   return `<div class="eyebrow">Menu</div><h2>Gilded</h2>
   ${note?`<p style="color:var(--gilt-soft)">${note}</p>`:""}
   <div class="menu-list">
     <button class="menu-item" data-action="open-newgame">New game</button>
     <button class="menu-item" data-action="save-game">Save game</button>
-    <button class="menu-item" data-action="load-game" ${hasSave()?"":"disabled"}>Load game${hasSave()?"":" — none saved"}</button>
+    <button class="menu-item" data-action="load-game" data-from="menu" ${hasSave()?"":"disabled"}>Load game${hasSave()?"":" — none saved"}</button>
     <button class="menu-item" data-action="settings-from-menu">Settings</button>
     <button class="menu-item" data-action="open-tutorial">How to play</button>
   </div>
@@ -1495,7 +1643,10 @@ document.addEventListener("click",(e)=>{
     case "open-settings": openSettings(false); break;
     case "settings-from-menu": openSettings(true); break;
     case "save-game": saveGame(); break;
-    case "load-game": loadGame(); break;
+    case "load-game": openSessions(t.dataset.from||"header"); break;
+    case "load-session": loadSession(t.dataset.id); break;
+    case "del-session": deleteSession(t.dataset.id); openSessions(sessionsFrom); break;
+    case "back-newgame": openNewGame(ngForce); break;
     case "toggle-theme": toggleTheme(); break;
     case "set-max": setMax(t.dataset.v); break;
     case "set-cvd": setCVD(t.dataset.v); break;
