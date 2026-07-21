@@ -106,6 +106,8 @@ function applySettings(){
   document.body.classList.toggle('cvd-deut', cvd==='deut');
   document.body.classList.toggle('cvd-trit', cvd==='trit');
   WIN = SETTINGS.maxVP || 15;
+  const toasts=document.getElementById('toasts');
+  if(toasts) toasts.className='toasts pos-'+(SETTINGS.toastPos||'br');
   const tt=document.getElementById('themeToggle');
   if(tt){ const light=SETTINGS.theme==='light';
     tt.innerHTML = light ? '<span aria-hidden="true">\u2600</span> Light' : '<span aria-hidden="true">\u263E</span> Dark';
@@ -277,6 +279,7 @@ function openMenu(note){ openModal(menuHTML(note), true); }
 // Markup for the settings modal (win target and colour-vision mode).
 function settingsHTML(fromMenu){
   const maxVP=SETTINGS.maxVP||15, cvd=SETTINGS.cvd||'off';
+  const tpos=SETTINGS.toastPos||'br', tms=SETTINGS.toastMs||3000;
   const seg=(name,val,cur,label)=>`<button class="seg ${String(val)===String(cur)?'on':''}" data-action="set-${name}" data-v="${val}">${label}</button>`;
   const back=fromMenu?`<button class="gbtn ghost" data-action="open-menu">Back</button>`:'';
   return `<div class="eyebrow">Settings</div><h2>Settings</h2>
@@ -284,6 +287,10 @@ function settingsHTML(fromMenu){
     ${seg('max','10',maxVP,'10')}${seg('max','15',maxVP,'15')}${seg('max','20',maxVP,'20')}</div></div>
   <div class="set-row"><div class="set-label">Colour-vision mode<span class="set-hint">recolours gems for clarity</span></div><div class="seg-group">
     ${seg('cvd','off',cvd,'Off')}${seg('cvd','prot',cvd,'Protanopia')}${seg('cvd','deut',cvd,'Deuteranopia')}${seg('cvd','trit',cvd,'Tritanopia')}</div></div>
+  <div class="set-row"><div class="set-label">Alert position<span class="set-hint">where warnings pop up</span></div><div class="seg-group">
+    ${seg('toastpos','tl',tpos,'Top left')}${seg('toastpos','tr',tpos,'Top right')}${seg('toastpos','bl',tpos,'Bottom left')}${seg('toastpos','br',tpos,'Bottom right')}</div></div>
+  <div class="set-row"><div class="set-label">Alert timeout<span class="set-hint">how long alerts stay</span></div><div class="seg-group">
+    ${seg('toastms','2000',tms,'2s')}${seg('toastms','3000',tms,'3s')}${seg('toastms','5000',tms,'5s')}</div></div>
   <p class="set-note">Prestige-to-win applies now and to new games. Settings are saved on this device.</p>
   <div class="foot">${back}<button class="gbtn" data-action="close-modal">${fromMenu?'Done':'Close'}</button></div>`;
 }
@@ -319,6 +326,11 @@ function syncHeaderActions(){
 // Settings segment handlers: change win target / colour-vision mode live.
 function setMax(v){ SETTINGS.maxVP=+v; saveSettings(); applySettings(); if(G) renderBanner(); openSettings(); }
 function setCVD(v){ SETTINGS.cvd=v; saveSettings(); applySettings(); openSettings(); }
+
+// Alert (toast) preferences: corner position and on-screen lifetime. Each change
+// re-renders the modal and fires a sample toast so the effect is visible at once.
+function setToastPos(v){ SETTINGS.toastPos=v; saveSettings(); applySettings(); openSettings(); flash("Alerts will appear here."); }
+function setToastMs(v){ SETTINGS.toastMs=+v; saveSettings(); openSettings(); flash(`Alerts stay for ${(+v)/1000}s.`); }
 
 // Prompt a human to choose between two eligible patrons; `cb` receives the pick.
 function chooseNoble(list,cb){

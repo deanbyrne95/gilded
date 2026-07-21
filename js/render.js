@@ -256,10 +256,17 @@ function renderLog(){
 // refresh the log if it's mounted.
 function log(s, r){ (G.logs=G.logs||[]).push({ r: (r!=null?r:(G.turn||0)+1), s }); if(document.getElementById("log")) renderLog(); }
 
-// Transient inline hint shown in the take tray, auto-clearing after ~1.6s.
-let flashT=null;
+// Show a transient toast popup for warnings/hints. It appears in the screen
+// corner chosen in Settings (toastPos) and auto-dismisses after toastMs; a
+// click dismisses it early. Falls back silently if the host is missing.
 function flash(msg){
-  const el=document.getElementById("takeTray"); if(!el) return;
-  el.innerHTML=`<span class="take-empty" style="color:var(--gilt-soft)">${msg}</span>`;
-  clearTimeout(flashT); flashT=setTimeout(renderTakeTray,1600);
+  const host=document.getElementById("toasts"); if(!host) return;
+  const t=document.createElement("div");
+  t.className="toast"; t.textContent=msg;
+  host.appendChild(t);
+  requestAnimationFrame(()=>t.classList.add("show"));
+  const ms=(typeof SETTINGS!=="undefined" && SETTINGS.toastMs) || 3000;
+  const dismiss=()=>{ t.classList.remove("show"); setTimeout(()=>t.remove(),240); };
+  const timer=setTimeout(dismiss, ms);
+  t.addEventListener("click",()=>{ clearTimeout(timer); dismiss(); });
 }

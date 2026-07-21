@@ -53,6 +53,8 @@ document.addEventListener("click",(e)=>{
     case "toggle-theme": toggleTheme(); break;
     case "set-max": setMax(t.dataset.v); break;
     case "set-cvd": setCVD(t.dataset.v); break;
+    case "set-toastpos": setToastPos(t.dataset.v); break;
+    case "set-toastms": setToastMs(t.dataset.v); break;
   }
 });
 // Dismiss a dismissible modal by clicking its backdrop; keep layout in sync on resize.

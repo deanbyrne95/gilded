@@ -489,6 +489,22 @@ body.ledger-open .ledger-tab .chev{transform:rotate(180deg)}
 .seg.on{border-color:var(--gilt); color:var(--gilt-soft); background:var(--panel-2)}
 .set-note{font-size:12px; color:var(--ink-dim); margin-top:16px}
 
+/* toast popups: transient warnings/hints anchored to a screen corner. The host
+   is fixed and click-through; individual toasts capture clicks to dismiss. */
+.toasts{position:fixed; z-index:130; display:flex; flex-direction:column; gap:8px;
+  padding:16px; max-width:min(320px,82vw); pointer-events:none}
+.toasts.pos-tl{top:0; left:0; align-items:flex-start}
+.toasts.pos-tr{top:0; right:0; align-items:flex-end}
+.toasts.pos-bl{bottom:0; left:0; align-items:flex-start; flex-direction:column-reverse}
+.toasts.pos-br{bottom:0; right:0; align-items:flex-end; flex-direction:column-reverse}
+.toast{pointer-events:auto; cursor:pointer; max-width:100%;
+  background:linear-gradient(170deg,var(--panel-2),var(--panel));
+  border:1px solid var(--gilt); color:var(--ink); border-radius:10px;
+  padding:11px 14px; font-size:14px; line-height:1.35; box-shadow:var(--shadow);
+  opacity:0; transform:translateY(8px); transition:opacity .22s ease, transform .22s ease}
+.toast.show{opacity:1; transform:none}
+@media (prefers-reduced-motion: reduce){ .toast{transition:opacity .01s} }
+
 /* colour-vision modes: remap gem hues so blue / green / red stay distinguishable
    (white stays light, black stays dark, so they separate by luminance).
    Palettes verified with a Machado-2009 CVD simulation + CIEDE2000: every token
