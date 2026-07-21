@@ -47,6 +47,7 @@ function cardDeficit(p,card){
 // Move a set of tokens ({colour:count}) from the bank to the player.
 function takeGems(p,plan){
   for(const k in plan){ p.tokens[k]+=plan[k]; G.bank[k]-=plan[k]; }
+  sfx("take");
 }
 
 // Buy `card` (from the board `{tier}` or from reserve `{reserved:idx}`): pay
@@ -61,6 +62,7 @@ function buyCard(p,card,from){
   } else {
     const arr=G.board[card.tier]; const i=arr.indexOf(card); arr[i]=G.decks[card.tier].pop()||null;
   }
+  sfx("buy");
   return true;
 }
 
@@ -76,6 +78,7 @@ function reserveCard(p,card,from){
     card.blind=false; p.reserved.push(card); arr[i]=G.decks[card.tier].pop()||null;
   }
   if(G.bank.gold>0){ G.bank.gold--; p.tokens.gold++; }
+  sfx("reserve");
   return true;
 }
 
@@ -85,7 +88,7 @@ function qualifyingNobles(p){
 }
 
 // Give patron `n` to player `p` (removes it from the pool, adds its prestige).
-function awardNoble(p,n){ const i=G.nobles.indexOf(n); if(i>=0)G.nobles.splice(i,1); p.nobles.push(n); p.points+=n.points; p._vpGain=n.points; }
+function awardNoble(p,n){ const i=G.nobles.indexOf(n); if(i>=0)G.nobles.splice(i,1); p.nobles.push(n); p.points+=n.points; p._vpGain=n.points; sfx("noble"); }
 
 /* ---------- turn flow ---------- */
 
@@ -146,5 +149,6 @@ function endGame(){
   // A finished game shouldn't linger in saved games — drop its slot (it was
   // autosaved while in progress) so only resumable games remain.
   try{ if(currentSessionId) deleteSession(currentSessionId); }catch(e){}
+  sfx("win");
   showWinner(best);
 }
