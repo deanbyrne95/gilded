@@ -110,6 +110,11 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
 .pchip .pc-think i:nth-child(3){animation-delay:.36s}
 @keyframes thinkPulse{0%,80%,100%{opacity:.28; transform:translateY(0)} 40%{opacity:1; transform:translateY(-2px)}}
 .pchip .pc-vp{margin-left:auto; font-family:"Cormorant Garamond",serif; font-size:18px; color:var(--gilt-soft)}
+.pchip .pc-vp.bump{animation:vpBump .8s cubic-bezier(.3,.7,.2,1)}
+@keyframes vpBump{
+  0%{transform:scale(1)} 22%{transform:scale(1.42); color:#8fe0a6}
+  55%{transform:scale(1.08)} 100%{transform:scale(1); color:var(--gilt-soft)}
+}
 .pchip .pc-vp small{font-family:"Jost"; font-size:9px; letter-spacing:1px; color:var(--ink-dim)}
 .pchip .pc-pat{font-family:"Jost"; font-weight:500; font-size:12px; color:var(--ink-dim); margin-right:9px}
 .pchip .pc-pat .pc-ico{vertical-align:-0.14em; margin-right:2px}
@@ -372,6 +377,11 @@ body.light .log .log-round{background:#fbf6ea}
   font-size:26px; color:var(--gilt-soft); text-shadow:0 2px 10px rgba(0,0,0,.65);
   transition:transform 1s cubic-bezier(.2,.6,.2,1), opacity 1s ease;
   will-change:transform,opacity; white-space:nowrap}
+.float-txt.vp{font-size:36px; font-weight:800; color:#8fe0a6;
+  text-shadow:0 2px 12px rgba(0,0,0,.7), 0 0 16px rgba(90,200,120,.6)}
+.float-txt.reserve{font-family:"Jost",sans-serif; font-size:15px; font-weight:600; letter-spacing:1.5px;
+  text-transform:uppercase; color:var(--gilt-soft);
+  text-shadow:0 2px 10px rgba(0,0,0,.7), 0 0 12px rgba(199,162,76,.5)}
 .fx-ring{position:fixed; width:40px; height:40px; border-radius:50%;
   border:2px solid var(--gilt-soft);
   transition:transform .7s ease-out, opacity .7s ease-out; will-change:transform,opacity}

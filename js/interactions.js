@@ -82,7 +82,6 @@ function doBuy(){
   const cardEl=elCardById(card.id);
   buyCard(p,card,loc.reserved!=null?{reserved:loc.reserved}:{tier:card.tier});
   flyCard(cardEl, 0);
-  if(card.points) floatText('+'+card.points+' prestige', cardEl);
   UI.selectedCard=null;
   const paid=costText(plan.pay);
   postAction(p, `<b>You</b> buy ${article(NAME[card.color])} ${NAME[card.color]} card${card.points?` (<b>+${card.points}</b>)`:""} for ${paid||"free"}.`);
@@ -94,7 +93,9 @@ function doReserve(){
   if(p.reserved.length>=3) return flash("You can hold at most 3 reserved cards.");
   const card=G.board[loc.tier][loc.idx];
   const gotGold=G.bank.gold>0;
+  const cardEl=elCardById(card.id);
   reserveCard(p,card,{tier:card.tier});
+  flyReserve(cardEl, G.current);
   UI.selectedCard=null;
   postAction(p, `<b>You</b> reserve ${article(NAME[card.color])} ${NAME[card.color]} card (tier ${ROMAN[card.tier]})${gotGold?" and take a <b>Gold</b>":""}.`);
 }
@@ -105,8 +106,10 @@ function onDeckReserve(tier){
   if(p.reserved.length>=3) return flash("You can hold at most 3 reserved cards.");
   if(!G.decks[tier].length) return flash("That deck is empty.");
   const gotGold=G.bank.gold>0;
+  const deckEl=document.querySelector('.deck[data-tier="'+tier+'"]');
   reserveCard(p,null,{deck:tier});
   const card=p.reserved[p.reserved.length-1];
+  flyReserve(deckEl, G.current);
   UI.selectedCard=null;
   postAction(p, `<b>You</b> reserve the top card of tier ${ROMAN[tier]} (${article(NAME[card.color])} ${NAME[card.color]} card)${gotGold?" and take a <b>Gold</b>":""}.`);
 }

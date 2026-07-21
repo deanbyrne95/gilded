@@ -201,12 +201,15 @@ function renderPlayers(){
       resStrip = `<div class="pc-res${mine?" mine":""}" title="Reserved cards">${items}</div>`;
     }
     return `<div class="pchip ${role} ${i===G.current&&!G.over?"active":""}" data-pi="${i}">
-      <div class="pc-top"><span class="pc-name">${p.name}</span>${(i===G.starter&&!G.over)?`<span class="pc-first" title="Started the game">1st</span>`:""}${(i===G.current&&!G.over&&p.isAI)?`<span class="pc-think" aria-label="thinking"><i></i><i></i><i></i></span>`:""}<span class="pc-vp"><span class="pc-pat" title="Patrons">${patronIco}${p.nobles.length}</span>${p.points}<small> VP</small></span></div>
+      <div class="pc-top"><span class="pc-name">${p.name}</span>${(i===G.starter&&!G.over)?`<span class="pc-first" title="Started the game">1st</span>`:""}${(i===G.current&&!G.over&&p.isAI)?`<span class="pc-think" aria-label="thinking"><i></i><i></i><i></i></span>`:""}<span class="pc-vp${p._vpGain?" bump":""}"><span class="pc-pat" title="Patrons">${patronIco}${p.nobles.length}</span>${p.points}<small> VP</small></span></div>
       <div class="pc-hold">${hold}${gold}</div>${resStrip}
     </div>`;
   }).join("");
   const nav=`<button class="pchip-nav" data-action="cycle-opp" hidden aria-label="Show next player"><span class="nav-chev" aria-hidden="true">&rsaquo;</span><span class="nav-count"></span></button>`;
   el.innerHTML=chips+nav;
+  // Fire prestige-gain flourishes on the freshly rendered chips, then clear the
+  // one-shot flags set when points changed (buyCard / awardNoble).
+  G.players.forEach((p,i)=>{ if(p._buyFloat){ prestigeFloat(i,p._buyFloat); p._buyFloat=0; } p._vpGain=0; });
   if(!G.over) UI.oppView=G.current;      // keep the active player's chip in view
   layoutPlayers();
 }

@@ -55,6 +55,7 @@ function buyCard(p,card,from){
   const plan=affordPlan(p,card); if(!plan.ok) return false;
   for(const k of ALL){ if(plan.pay[k]){ p.tokens[k]-=plan.pay[k]; G.bank[k]+=plan.pay[k]; } }
   p.bonus[card.color]++; p.points+=card.points; p.cards.push(card);
+  if(card.points){ p._vpGain=card.points; p._buyFloat=card.points; }
   if(from.reserved!=null){
     p.reserved.splice(from.reserved,1);
   } else {
@@ -84,7 +85,7 @@ function qualifyingNobles(p){
 }
 
 // Give patron `n` to player `p` (removes it from the pool, adds its prestige).
-function awardNoble(p,n){ const i=G.nobles.indexOf(n); if(i>=0)G.nobles.splice(i,1); p.nobles.push(n); p.points+=n.points; }
+function awardNoble(p,n){ const i=G.nobles.indexOf(n); if(i>=0)G.nobles.splice(i,1); p.nobles.push(n); p.points+=n.points; p._vpGain=n.points; }
 
 /* ---------- turn flow ---------- */
 

@@ -91,12 +91,21 @@ function flyCard(fromEl, toIndex, delay=0){
   setTimeout(()=>{ ghost.remove(); const t=elPlayer(toIndex); if(t) ringPop(t); }, 560+delay);
 }
 
-// Float a short text label (e.g. "+2 prestige") upward from an element, fading out.
-function floatText(text, atEl, delay=0){
+// Indicate a card being reserved: fly it (or a face-down deck card) into the
+// owner's chip and float a "Reserved" tag from the source, so a hold reads
+// differently from an outright buy.
+function flyReserve(fromEl, toIndex){
+  flyCard(fromEl, toIndex);
+  floatText('Reserved', fromEl, 0, 'reserve');
+}
+
+// Float a short text label (e.g. "+2 prestige") upward from an element, fading
+// out. `cls` adds an optional style variant (e.g. "vp" for prestige gains).
+function floatText(text, atEl, delay=0, cls=''){
   if(REDUCE||!atEl) return; const L=fxLayer(); if(!L) return;
   const c=centerOf(atEl);
   const t=document.createElement('div');
-  t.className='float-txt'; t.textContent=text;
+  t.className='float-txt'+(cls?' '+cls:''); t.textContent=text;
   t.style.left=c.x+'px'; t.style.top=c.y+'px'; t.style.transform='translate(-50%,-50%)'; t.style.transitionDelay=delay+'ms';
   L.appendChild(t);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{ t.style.transform='translate(-50%,-165%)'; t.style.opacity='0'; }));
@@ -127,6 +136,15 @@ function animateTake(plan, playerIndex){
 
 // Celebrate a patron visit on a player chip (ring + floating label).
 function patronFlourish(playerIndex){ const el=elPlayer(playerIndex); ringPop(el); floatText('Patron +3', el); }
+
+// Emphasise a prestige gain on a player's chip: pop a ring and float a bold "+N"
+// from the VP counter, so score changes are obvious for every player — including
+// when an opponent buys a hidden reserved card.
+function prestigeFloat(playerIndex, amount){
+  const el=elPlayer(playerIndex); if(!el) return;
+  const vp=el.querySelector('.pc-vp')||el;
+  ringPop(vp); floatText('+'+amount, vp, 0, 'vp');
+}
 
 // Center-screen announcement (e.g. "Final Round"): fades/scales in, holds, then
 // auto-dismisses. Shown even under reduce-motion since it conveys game state,

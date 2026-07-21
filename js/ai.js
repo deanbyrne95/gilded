@@ -35,7 +35,6 @@ function aiTurn(){
       const plan=affordPlan(p,best.c);
       buyCard(p,best.c,best.from);
       flyCard(bEl, G.current);
-      if(best.c.points) floatText('+'+best.c.points+' prestige', bEl);
       const paid=costText(plan.pay);
       finishTurn(p,`<b>${p.name}</b> buys ${article(NAME[best.c.color])} ${NAME[best.c.color]} card${best.c.points?` (<b>+${best.c.points}</b>)`:""} for ${paid||"free"}.`);
       return;
@@ -56,7 +55,9 @@ function aiTurn(){
     const minPts = lvl==="hard"?3:4, maxDef = lvl==="hard"?8:6;
     const strong=G.board[3].concat(G.board[2]).find(c=>c && c.points>=minPts && cardDeficit(p,c)>=3 && cardDeficit(p,c)<=maxDef);
     if(strong && G.bank.gold>0 && Math.random()<resP){
+      const sEl=elCardById(strong.id);
       reserveCard(p,strong,{tier:strong.tier});
+      flyReserve(sEl, G.current);
       // Reserving grants a gold, which may exceed 10 tokens -> auto-discard.
       aiDiscardIfNeeded(p,target);
       finishTurn(p,`<b>${p.name}</b> reserves ${article(NAME[strong.color])} ${NAME[strong.color]} card (tier ${ROMAN[strong.tier]}) and takes a <b>Gold</b>.`);
@@ -79,7 +80,7 @@ function aiTurn(){
   if(p.reserved.length<3){
     const any=G.board[1].concat(G.board[2],G.board[3]).filter(Boolean)[0];
     if(any){
-      const gotGold=G.bank.gold>0; reserveCard(p,any,{tier:any.tier}); aiDiscardIfNeeded(p,target);
+      const gotGold=G.bank.gold>0; const aEl=elCardById(any.id); reserveCard(p,any,{tier:any.tier}); flyReserve(aEl, G.current); aiDiscardIfNeeded(p,target);
       finishTurn(p,`<b>${p.name}</b> reserves ${article(NAME[any.color])} ${NAME[any.color]} card (tier ${ROMAN[any.tier]})${gotGold?" and takes a <b>Gold</b>":""}.`); return;
     }
   }
