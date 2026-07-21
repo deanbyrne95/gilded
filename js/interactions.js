@@ -137,7 +137,7 @@ function onDiscard(color){
 }
 
 // True when the local player may take a play-phase action.
-function humanControls(){ return !G.over && !me().isAI && UI.phase==="play"; }
+function humanControls(){ return !G.over && !paused && !me().isAI && UI.phase==="play"; }
 
 // Compare two card locations (board slot / reserved index / deck) for equality.
 function sameLoc(a,b){ if(!a||!b)return false; return a.tier===b.tier&&a.idx===b.idx&&a.reserved===b.reserved&&a.deck===b.deck; }

@@ -11,8 +11,25 @@
 // Randomized "thinking" pause (~1.2–2.1s) so rivals feel deliberate, not instant.
 function aiThinkTime(){ return 1200 + Math.random()*900; }
 
-// Schedule the current AI player's turn after a think delay.
-function scheduleAI(){ if(G.over) return; setTimeout(aiTurn, aiThinkTime()); }
+// AI-loop control. `paused` is true while the game is paused — which now means
+// the in-game menu is open (opening the menu pauses; closing it resumes). A turn
+// may run only when the game is live, it's an AI's turn, we're not paused, and no
+// modal is open.
+let paused=false, aiTimer=null;
+function modalOpen(){ const s=document.getElementById("scrim"); return !!s && s.classList.contains("show"); }
+function aiRunnable(){ return !!G && !G.over && !paused && me().isAI && !modalOpen(); }
+
+// Schedule the current AI player's turn after a think delay. No-op unless the AI
+// may currently act; clears any pending timer so we never double-schedule.
+function scheduleAI(){
+  if(!aiRunnable()) return;
+  clearTimeout(aiTimer);
+  aiTimer=setTimeout(()=>{ aiTimer=null; if(aiRunnable()) aiTurn(); }, aiThinkTime());
+}
+
+// Suspend the pending AI turn (manual pause or an open menu) / restart it.
+function haltAI(){ clearTimeout(aiTimer); aiTimer=null; }
+function resumeAI(){ scheduleAI(); }
 
 // Play one AI turn. Priority order, with difficulty tuning the thresholds and
 // randomness: (1) buy the best affordable card, (2) reserve a strong card for a
