@@ -47,8 +47,10 @@ function confirmTake(){
   if(!humanControls()) return;
   const total=selCount(); if(total===0) return flash("Select some gems first.");
   const colors=Object.keys(UI.sel).filter(k=>UI.sel[k]>0);
-  const two=colors.find(k=>UI.sel[k]===2);
-  if(two && colors.length>1) return flash("Two-of-a-kind must be a single colour.");
+  // A legal take is exactly 3 different colours, or 2 of a single colour — nothing else.
+  const isDouble = colors.length===1 && UI.sel[colors[0]]===2;
+  const isTriple = colors.length===3 && colors.every(k=>UI.sel[k]===1);
+  if(!isDouble && !isTriple) return flash("Take 3 different gems, or 2 of the same colour.");
   const p=me(); const plan={}; colors.forEach(k=>plan[k]=UI.sel[k]);
   animateTake(plan,0);
   takeGems(p,plan);

@@ -135,7 +135,10 @@ function renderTakeTray(){
     }
   }
   const has=selCount()>0;
-  el.innerHTML=`<button class="gbtn" data-action="confirm-take" ${has?"":"disabled"}>Take</button>
+  const sel=UI.sel, cols=Object.keys(sel).filter(k=>sel[k]>0);
+  // Take is only offered for a legal selection: 2 of one colour, or 3 different colours.
+  const canTake=(cols.length===1&&sel[cols[0]]===2)||(cols.length===3&&cols.every(k=>sel[k]===1));
+  el.innerHTML=`<button class="gbtn" data-action="confirm-take" ${canTake?"":"disabled"}>Take</button>
     <button class="gbtn ghost" data-action="clear-take" ${has?"":"disabled"}>Clear</button>`;
 }
 
