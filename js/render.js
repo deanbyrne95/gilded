@@ -26,7 +26,7 @@ function render(){
   // Remember which cards are on the board so newly dealt ones can animate in.
   const ids=new Set();
   [1,2,3].forEach(t=>G.board[t].forEach(c=>{ if(c) ids.add(c.id); }));
-  G.players[0].reserved.forEach(c=>ids.add(c.id));
+  G.players[localSeat()].reserved.forEach(c=>ids.add(c.id));
   PREV_CARD_IDS=ids;
   restoreScroll(_scrollY);
 }
@@ -57,7 +57,7 @@ function renderNobles(){
 // selected) followed by its four face-up card slots.
 function renderTiers(){
   const el=document.getElementById("tiers");
-  const p=G.players[0];
+  const p=me();
   el.innerHTML=[3,2,1].map(t=>{
     const dsel = sameLoc(UI.selectedCard,{deck:t});
     const canRes = humanControls() && p.reserved.length<3 && G.decks[t].length>0;
@@ -72,7 +72,7 @@ function renderTiers(){
 // Build one development card's markup, including its buy/hold menu when selected
 // and the deal-in class when it wasn't on the board last render.
 function cardHTML(c,loc){
-  const p=G.players[0];
+  const p=me();
   const afford = humanControls() && affordPlan(p,c).ok;
   const sel = sameLoc(UI.selectedCard,loc);
   const cost=KEYS.filter(k=>c.cost[k]).map(k=>dot(k,c.cost[k])).join("");
