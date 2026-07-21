@@ -18,7 +18,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="pre-game">
 <div class="wrap">
   <div class="topbar">
     <div class="brand">
@@ -27,14 +27,7 @@
     </div>
     <div class="spacer"></div>
     <button class="gbtn theme-toggle" id="themeToggle" data-action="toggle-theme" aria-label="Toggle light or dark theme" aria-pressed="false"></button>
-    <nav class="hdr-actions" id="hdrActions" aria-label="Game menu">
-      <button class="gbtn ghost" data-action="open-newgame">New game</button>
-      <button class="gbtn ghost" data-action="save-game">Save</button>
-      <button class="gbtn ghost" id="hdrLoad" data-action="load-game">Load</button>
-      <button class="gbtn ghost" data-action="open-settings">Settings</button>
-      <button class="gbtn ghost" data-action="open-tutorial">How to play</button>
-    </nav>
-    <button class="gbtn menu-btn" id="menuBtn" data-action="open-menu" hidden>&#9776; Menu</button>
+    <button class="gbtn menu-btn" id="menuBtn" data-action="open-menu" aria-haspopup="dialog">&#9776; Menu</button>
   </div>
 
   <div class="goal-banner" id="goalBanner"></div>
@@ -85,6 +78,7 @@
 <script src="js/ai.js"></script>
 <script src="js/render.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/audio.js"></script>
 <script src="js/animations.js"></script>
 <script src="js/events.js"></script>
 </body>

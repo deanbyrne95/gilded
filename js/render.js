@@ -23,6 +23,7 @@ function render(){
   if(hc) hc.classList.toggle("hidden", !yourTurn);
   layoutPlayers();
   syncHudSpace();
+  syncPauseUI();
   // Remember which cards are on the board so newly dealt ones can animate in.
   const ids=new Set();
   [1,2,3].forEach(t=>G.board[t].forEach(c=>{ if(c) ids.add(c.id); }));
@@ -148,6 +149,7 @@ function renderBanner(){
   const leader=G.players.reduce((a,b)=> b.points>a.points?b:a, G.players[0]);
   let tag;
   if(G.over){ tag=`<span class="gb-tag">The books are closed</span>`; }
+  else if(paused){ tag=`<span class="gb-final">&#9208; Paused</span>`; }
   else if(G.finalRound){ tag=`<span class="gb-final">&#9670; Final round — last turns!</span>`; }
   else {
     tag = leader.points>0 ? `<span class="gb-tag">Leader <b>${leader.name}</b> · ${leader.points}</span>`
@@ -156,7 +158,9 @@ function renderBanner(){
   el.innerHTML=`<div class="gb-main">First to ${WIN} prestige</div><div class="gb-sep"></div>${tag}`;
 }
 
-// Reserve bottom padding equal to the fixed HUD's height so it never covers content.
+// Reserve bottom padding equal to the fixed HUD's height so it never covers
+// content, and expose the HUD and header extents (--hud-h / --hdr-h) so toasts
+// can float inside the page content, clear of both.
 function syncHudSpace(){
   const hud=document.getElementById("hud"), wrap=document.querySelector(".wrap");
   if(!hud||!wrap) return;
@@ -164,6 +168,9 @@ function syncHudSpace(){
     const h=hud.offsetHeight;
     wrap.style.paddingBottom=(h+16)+"px";
     document.documentElement.style.setProperty("--hud-h", h+"px");
+    const bar=document.querySelector(".topbar");
+    if(bar){ const r=bar.getBoundingClientRect(); const y=(window.pageYOffset||0);
+      document.documentElement.style.setProperty("--hdr-h", Math.round(r.top+y+r.height)+"px"); }
   });
 }
 

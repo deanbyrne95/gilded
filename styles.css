@@ -26,10 +26,13 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 .brand h1{font-size:34px; letter-spacing:.5px; color:var(--gilt-soft)}
 .brand .sub{font-size:12.5px; letter-spacing:3px; text-transform:uppercase; color:var(--ink-dim)}
 .topbar .spacer{flex:1}
-.hdr-actions{display:flex; align-items:center; gap:8px; flex:0 0 auto}
-.hdr-actions .gbtn{flex:0 0 auto; white-space:nowrap}
 .theme-toggle{flex:0 0 auto; white-space:nowrap; display:inline-flex; align-items:center; gap:6px}
-.hdr-actions[hidden], .menu-btn[hidden]{display:none}
+.menu-btn{flex:0 0 auto; white-space:nowrap}
+.menu-btn[hidden]{display:none}
+.menu-btn.on{border-color:var(--gilt); color:var(--gilt-soft); box-shadow:0 0 0 1px var(--gilt)}
+/* paused: dim the play area so the frozen state reads clearly */
+body.paused #nobles, body.paused #tiers, body.paused #bank{
+  opacity:.5; filter:grayscale(.4); pointer-events:none; transition:opacity .2s ease, filter .2s ease}
 .pill{font-size:12.5px; letter-spacing:1.5px; text-transform:uppercase;
   color:var(--ink-dim); border:1px solid var(--line); border-radius:999px; padding:7px 13px; background:var(--felt-2)}
 .pill b{color:var(--gilt-soft)}
@@ -348,6 +351,32 @@ body.light .log .log-round{background:#fbf6ea}
 .mode-card .mc-t{font-family:"Cormorant Garamond",serif; font-size:21px; color:var(--gilt-soft)}
 .mode-card .mc-s{font-size:12px; letter-spacing:.3px; color:var(--ink-dim)}
 .mode-card.disabled{opacity:.45; cursor:not-allowed}
+
+/* full-screen main menu (landing) */
+.scrim:has(.mainmenu){padding:0}
+.modal.mainmenu{max-width:none; width:100%; height:100%; max-height:100%; border:none; border-radius:0;
+  background:radial-gradient(ellipse at 50% 28%, #2b2338, #16111e 72%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; padding:6vh 24px}
+.mm{width:100%; max-width:520px; display:flex; flex-direction:column; align-items:center; text-align:center}
+.mm-hero{margin-bottom:clamp(24px,5vh,44px)}
+.mm-hero .eyebrow{font-size:12px; letter-spacing:4px}
+.mm-title{font-family:"Cormorant Garamond",serif; font-weight:600; line-height:.95;
+  font-size:clamp(64px,15vw,120px); color:var(--gilt-soft); letter-spacing:2px; margin:8px 0 6px;
+  text-shadow:0 2px 30px rgba(212,175,110,.25)}
+.mm-tag{font-size:15px; color:var(--ink-dim); max-width:420px; margin:6px auto 0}
+.mm-tag b{color:var(--gilt-soft)}
+.mm-menu{display:flex; flex-direction:column; gap:12px; width:100%}
+.mm-item{display:flex; flex-direction:column; gap:2px; text-align:left; cursor:pointer;
+  background:var(--felt-2); border:1px solid var(--line); border-radius:14px; padding:15px 20px;
+  font-family:"Jost"; transition:border-color .15s ease, transform .12s ease}
+.mm-item:hover:not(:disabled){border-color:var(--gilt); transform:translateY(-1px)}
+.mm-item:disabled{opacity:.45; cursor:not-allowed}
+.mm-i-t{font-family:"Cormorant Garamond",serif; font-size:24px; color:var(--gilt-soft)}
+.mm-i-s{font-size:12.5px; letter-spacing:.3px; color:var(--ink-dim)}
+body.light .modal.mainmenu{background:radial-gradient(ellipse at 50% 28%, #fbf6ea, #ece1c9 72%)}
+/* pre-game: keep the game out of sight until New/Load is fully set up, so the
+   menu and its sub-modals never reveal a board behind them */
+body.pre-game .wrap, body.pre-game .hud, body.pre-game .gem-hud, body.pre-game .ledger-drawer, body.pre-game #fxLayer{display:none}
 .ng-load{margin-top:12px}
 .ng-load .gbtn{width:100%}
 .sess-list{display:flex; flex-direction:column; gap:8px; margin:14px 0 6px; max-height:46vh; overflow:auto}
@@ -514,6 +543,8 @@ body.ledger-open .ledger-tab .chev{transform:rotate(180deg)}
   color:var(--ink); border-radius:10px; padding:13px 15px; font-size:15px; font-family:"Jost"; cursor:pointer}
 .menu-item:hover:not(:disabled){border-color:var(--gilt)}
 .menu-item:disabled{opacity:.5; cursor:not-allowed}
+.menu-item.leave{margin-top:6px; color:var(--ink-dim); background:transparent; border-style:dashed}
+.menu-item.leave:hover{color:var(--ink); border-color:var(--gilt); border-style:solid}
 .set-row{display:flex; align-items:center; justify-content:space-between; gap:14px;
   padding:13px 0; border-bottom:1px solid var(--line)}
 .set-label{font-size:15px; color:var(--ink); display:flex; flex-direction:column}
@@ -522,16 +553,51 @@ body.ledger-open .ledger-tab .chev{transform:rotate(180deg)}
 .seg{background:var(--felt-2); border:1px solid var(--line); color:var(--ink-dim);
   border-radius:8px; padding:8px 13px; font-size:14px; cursor:pointer; font-family:"Jost"}
 .seg.on{border-color:var(--gilt); color:var(--gilt-soft); background:var(--panel-2)}
+/* volume sliders (Settings ▸ Audio) */
+.slider-group{display:flex; align-items:center; gap:12px; flex:0 1 auto; min-width:170px; justify-content:flex-end}
+.vol-slider{-webkit-appearance:none; appearance:none; width:150px; height:6px; border-radius:5px;
+  background:var(--felt-2); border:1px solid var(--line); cursor:pointer; accent-color:var(--gilt)}
+.vol-slider:focus-visible{outline:2px solid var(--gilt); outline-offset:3px}
+.vol-slider::-webkit-slider-thumb{-webkit-appearance:none; appearance:none; width:17px; height:17px; border-radius:50%;
+  background:var(--gilt); border:1px solid var(--gilt-soft); cursor:pointer}
+.vol-slider::-moz-range-thumb{width:17px; height:17px; border:1px solid var(--gilt-soft); border-radius:50%;
+  background:var(--gilt); cursor:pointer}
+.vol-val{font-size:13px; color:var(--gilt-soft); font-family:"Jost"; min-width:40px; text-align:right; font-variant-numeric:tabular-nums}
 .set-note{font-size:12px; color:var(--ink-dim); margin-top:16px}
+/* tabbed settings */
+.set-tabs{display:flex; gap:6px; flex-wrap:wrap; margin:16px 0 4px; padding-bottom:12px; border-bottom:1px solid var(--line)}
+.set-tab{background:transparent; border:1px solid transparent; color:var(--ink-dim); border-radius:9px;
+  padding:8px 15px; font-size:14px; cursor:pointer; font-family:"Jost"; letter-spacing:.3px}
+.set-tab:hover{color:var(--ink)}
+.set-tab.on{background:var(--felt-2); border-color:var(--gilt); color:var(--gilt-soft)}
+.set-panel{min-height:132px}
+.set-panel .set-row:last-of-type{border-bottom:none}
+.set-panel .set-note{margin-top:12px}
+/* keyboard-shortcut reference (Settings ▸ Controls) */
+.key-list{display:flex; flex-direction:column; gap:10px; margin-top:16px}
+.key-row{display:flex; align-items:center; gap:14px; font-size:13px; color:var(--ink-dim)}
+.key-keys{flex:0 0 auto; display:flex; gap:5px; min-width:96px}
+.key-desc{flex:1 1 auto}
+kbd{display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:24px;
+  padding:0 7px; font-family:"Jost"; font-size:12px; color:var(--ink);
+  background:var(--felt-2); border:1px solid var(--line); border-bottom-width:2px; border-radius:6px}
+/* visible focus ring for keyboard navigation only */
+button:focus-visible, [tabindex]:focus-visible, .choice:focus-visible{
+  outline:2px solid var(--gilt); outline-offset:2px; border-radius:8px}
+.set-empty{display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:30px 12px; color:var(--ink-dim)}
+.set-empty-icon{font-size:34px; line-height:1; color:var(--gilt-soft); opacity:.85}
+.set-empty p{max-width:320px; margin:0}
+.set-foot-note{font-size:12px; color:var(--ink-dim); margin-top:14px; padding-top:12px; border-top:1px solid var(--line)}
 
 /* toast popups: transient warnings/hints anchored to a screen corner. The host
    is fixed and click-through; individual toasts capture clicks to dismiss. */
 .toasts{position:fixed; z-index:130; display:flex; flex-direction:column; gap:8px;
-  padding:16px; max-width:min(320px,82vw); pointer-events:none}
-.toasts.pos-tl{top:0; left:0; align-items:flex-start}
-.toasts.pos-tr{top:0; right:0; align-items:flex-end}
-.toasts.pos-bl{bottom:0; left:0; align-items:flex-start; flex-direction:column-reverse}
-.toasts.pos-br{bottom:0; right:0; align-items:flex-end; flex-direction:column-reverse}
+  padding:16px; max-width:min(320px,82vw); pointer-events:none;
+  --edge:max(0px, calc((100vw - 1180px) / 2))}
+.toasts.pos-tl{top:var(--hdr-h,72px); left:var(--edge); align-items:flex-start}
+.toasts.pos-tr{top:var(--hdr-h,72px); right:var(--edge); align-items:flex-end}
+.toasts.pos-bl{bottom:var(--hud-h,58px); left:var(--edge); align-items:flex-start; flex-direction:column-reverse}
+.toasts.pos-br{bottom:var(--hud-h,58px); right:var(--edge); align-items:flex-end; flex-direction:column-reverse}
 .toast{pointer-events:auto; cursor:pointer; max-width:100%;
   background:linear-gradient(170deg,var(--panel-2),var(--panel));
   border:1px solid var(--gilt); color:var(--ink); border-radius:10px;
