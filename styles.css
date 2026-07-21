@@ -132,15 +132,15 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
 .pchip .pc-ico{width:13px; height:13px; opacity:.9}
 /* opponents' reserved cards: face-up ones are public, deck-holds show as a back */
 .pchip .pc-res{display:flex; gap:4px; margin-top:6px}
-.pchip .rcard{width:15px; height:21px; border-radius:3px; border:1px solid rgba(0,0,0,.45);
-  display:inline-flex; align-items:flex-start; justify-content:flex-start; padding:1px 0 0 2px;
-  font-size:9px; font-weight:700; line-height:1; color:#fff;
+.pchip .rcard{width:18px; height:25px; flex:0 0 auto; border-radius:3px; border:1px solid rgba(0,0,0,.45);
+  display:inline-flex; align-items:flex-start; justify-content:flex-end; padding:1px 2px 0 0; overflow:hidden;
+  font-size:10px; font-weight:700; line-height:1; color:#fff;
   text-shadow:0 1px 1px rgba(0,0,0,.6); box-shadow:0 1px 2px rgba(0,0,0,.3)}
 .pchip .rcard.g-white{color:#241d2b; text-shadow:0 1px 0 rgba(255,255,255,.4)}
 .pchip .rcard.back{align-items:center; justify-content:center; padding:0;
   background:repeating-linear-gradient(45deg,#2c2338,#2c2338 3px,#221b2e 3px,#221b2e 6px); border-color:var(--line)}
 .pchip .rcard.back::after{content:"\2666"; color:var(--gilt-soft); font-size:9px}
-.pchip.you .pc-res .rcard{cursor:pointer; width:18px; height:25px; font-size:10px; transition:transform .12s ease, box-shadow .12s ease}
+.pchip.you .pc-res .rcard{cursor:pointer; transition:transform .12s ease, box-shadow .12s ease}
 .pchip.you .pc-res .rcard:hover{transform:translateY(-2px); box-shadow:0 3px 8px rgba(0,0,0,.45)}
 .pchip .rcard.sel{outline:2px solid var(--gilt-soft); outline-offset:1px}
 .pchip.you .pc-res .rcard.buyable{border-color:#6fae7e}
