@@ -70,17 +70,22 @@ Gilded is deliberately dependency-free. The markup, styles, and logic are separa
 
 ```
 gilded/
-├── index.html        # Markup + favicon; links the stylesheet and modules
-├── styles.css        # All styling (theme, layout, responsive, animations)
-└── js/
-    ├── constants.js    # Game data, deck/noble generation, state, startGame()
-    ├── game.js         # Rules engine: payments, actions, turn/round flow
-    ├── interactions.js # Human input handlers
-    ├── ai.js           # Computer-rival policy and heuristics
-    ├── render.js       # View layer — rebuilds the board/HUD from state
-    ├── ui.js           # Modals, menu, settings, save/load sessions
-    ├── animations.js   # Optional visual effects + reserved-card tooltip
-    └── events.js       # Delegated event handling, ledger drawer, boot
+├── index.html            # Markup + favicon; links the stylesheet and modules
+└── assets/
+    ├── site.webmanifest    # PWA manifest
+    ├── css/
+    │   └── styles.css        # All styling (theme, layout, responsive, animations)
+    ├── images/               # Icons and favicons (png/svg)
+    └── js/
+        ├── constants.js    # Game data, deck/noble generation, state, startGame()
+        ├── game.js         # Rules engine: payments, actions, turn/round flow
+        ├── interactions.js # Human input handlers
+        ├── ai.js           # Computer-rival policy and heuristics
+        ├── render.js       # View layer — rebuilds the board/HUD from state
+        ├── ui.js           # Modals, menu, settings, save/load sessions
+        ├── audio.js        # Synthesised sound effects + generative music
+        ├── animations.js   # Optional visual effects + reserved-card tooltip
+        └── events.js       # Delegated event handling, ledger drawer, boot
 ```
 
 ### How it fits together
