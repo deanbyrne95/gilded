@@ -1,0 +1,14 @@
+{
+  "name": "Gilded",
+  "short_name": "Gilded",
+  "description": "A gem merchant game.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#17131d",
+  "theme_color": "#17131d",
+  "icons": [
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512" },
+    { "src": "apple-touch-icon.png", "type": "image/png", "sizes": "180x180", "purpose": "maskable" }
+  ]
+}
