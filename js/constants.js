@@ -96,7 +96,7 @@ function newPlayer(name,isAI){
 }
 
 // Rival display names and difficulty labels.
-const AI_NAMES=["Aldo","Bianca","Cosimo"];
+const AI_NAMES=["Aldo","Bianca","Cosimo","Donata"];
 const LEVEL_LABEL={easy:"Easy",normal:"Normal",hard:"Hard"};
 
 // Start a fresh match. `opts` selects mode (ai/hotseat), rival count/difficulty
@@ -112,6 +112,11 @@ function startGame(opts, silent){
     const humans = Math.min(4, Math.max(2, opts.humans || SETTINGS.humans || 2));
     for(let i=0;i<humans;i++) players.push(newPlayer(`Player ${i+1}`, false));
     SETTINGS.humans=humans;
+  } else if(mode==="watch"){
+    const count = Math.min(4, Math.max(2, opts.players || SETTINGS.watchers || 2));
+    level = opts.level || SETTINGS.aiLevel || "normal";
+    for(let i=0;i<count;i++){ const ai=newPlayer(AI_NAMES[i], true); ai.level=level; players.push(ai); }
+    SETTINGS.watchers=count; SETTINGS.aiLevel=level;
   } else {
     const opponents = Math.min(3, Math.max(1, opts.opponents || SETTINGS.opponents || 1));
     level = opts.level || SETTINGS.aiLevel || "normal";
@@ -134,9 +139,11 @@ function startGame(opts, silent){
         finalRound:false, over:false, turn:0 };
   UI = { sel:{}, selectedCard:null, phase:"play", discardResolve:null, oppView:starter };
   currentSessionId=null;
+  paused=false; haltAI();
 
   if(!silent){
     if(mode==="hotseat") log(`<b>A new game begins.</b> ${total} players, pass-and-play.`);
+    else if(mode==="watch") log(`<b>A new game begins.</b> ${total} AI merchants · ${LEVEL_LABEL[level]} rivals. Sit back and watch.`);
     else log(`<b>A new game begins.</b> ${total} merchants · ${LEVEL_LABEL[level]} rivals.`);
     log(`<b>${players[starter].name}</b> ${players[starter].name==="You"?"go":"goes"} first.`);
   }
