@@ -159,8 +159,10 @@ function loadSessions(){
 function hasSave(){ return loadSessions().length>0; }
 
 // Persist the live game: update its existing slot, or add a new one and evict
-// the oldest when over the cap. Returns true if a session was evicted.
+// the oldest when over the cap. Finished games are never stored — any existing
+// slot is dropped instead. Returns true if a session was evicted.
 function persistSession(){
+  if(G && G.over){ if(currentSessionId) deleteSession(currentSessionId); return false; }
   let list=loadSessions();
   const entry={ id: currentSessionId || ('s'+Date.now()), name: sessionName(G), savedAt: Date.now(), meta: sessionMeta(G), data:{ G:G, WIN:WIN } };
   const idx=list.findIndex(s=>s.id===entry.id);
@@ -181,6 +183,7 @@ function persistSession(){
 
 // Manual save (with a confirming toast in the menu).
 function saveGame(){
+  if(G && G.over){ openMenu("This game is finished — nothing to save."); return; }
   try{ const evicted=persistSession(); openMenu(evicted ? "Game saved — the oldest session was replaced." : "Game saved on this device."); }
   catch(e){ openMenu("Couldn't save (storage unavailable here)."); }
 }

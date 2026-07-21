@@ -143,6 +143,8 @@ function endGame(){
   log(`<span class="fin">&#9670; The books are closed after ${rounds} round${rounds===1?"":"s"}.</span>`, rounds);
   log(`<span class="fin">${verdict} with <b>${best.points}</b> prestige across <b>${best.cards.length}</b> card${best.cards.length===1?"":"s"}.</span>`, rounds);
   render();
-  autoSave();
+  // A finished game shouldn't linger in saved games — drop its slot (it was
+  // autosaved while in progress) so only resumable games remain.
+  try{ if(currentSessionId) deleteSession(currentSessionId); }catch(e){}
   showWinner(best);
 }
