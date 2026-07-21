@@ -96,7 +96,7 @@ function finishTurn(p, actionText){
   const q=qualifyingNobles(p);
   const proceed=()=>{
     // Token cap is enforced before this point (AI auto-discards; humans via UI).
-    if(p.points>=WIN) G.finalRound=true;
+    if(p.points>=WIN && !G.finalRound){ G.finalRound=true; announce("Final Round","Everyone gets one last turn."); }
     advance();
   };
   if(q.length===0){ proceed(); return; }

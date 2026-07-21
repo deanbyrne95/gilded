@@ -385,6 +385,22 @@ body.light .log .log-round{background:#fbf6ea}
   50%{box-shadow:0 0 0 1px var(--gilt) inset, 0 0 16px rgba(199,162,76,.5)} }
 .pl.active{ animation:breathe 2.6s ease-in-out infinite }
 @keyframes conffall{ to{ transform:translateY(105vh) rotate(var(--spin)); opacity:.15 } }
+
+/* center-screen announcement (final round, etc.) */
+.splash{position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center;
+  pointer-events:none; opacity:0; transition:opacity .4s ease;
+  background:radial-gradient(closest-side, rgba(8,5,12,.6), rgba(8,5,12,0) 68%)}
+.splash.show{opacity:1}
+.splash-card{text-align:center; padding:22px 34px; transform:scale(.9);
+  transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.splash.show .splash-card{transform:none}
+.splash-eyebrow{color:var(--gilt); font-size:22px; letter-spacing:5px; margin-bottom:4px}
+.splash-title{font-family:"Cormorant Garamond",serif; font-weight:700; color:var(--gilt-soft);
+  font-size:clamp(46px,12vw,84px); line-height:1; letter-spacing:1px;
+  text-shadow:0 4px 26px rgba(0,0,0,.7), 0 0 30px rgba(199,162,76,.35)}
+.splash-sub{margin-top:12px; color:var(--ink); font-size:clamp(15px,3.4vw,19px); letter-spacing:.5px;
+  text-shadow:0 2px 10px rgba(0,0,0,.6)}
+
 .token .gem{ transition:transform .18s ease, filter .18s ease }
 .token .gem:not(.disabled):hover{ transform:translateY(-3px); filter:brightness(1.12) }
 /* ---------- responsive / fluid sizing ---------- */
@@ -438,6 +454,8 @@ html,body{overflow-x:hidden}
   .pchip.active{animation:none}
   .pc-think i{animation:none; opacity:.7}
   .token .gem{transition:none}
+  .splash{transition:opacity .01s}
+  .splash-card{transition:none; transform:none}
 }
 /* footer */
 .footer{display:flex; justify-content:center; gap:12px; margin-top:26px; padding-top:18px; border-top:1px solid var(--line)}

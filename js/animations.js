@@ -128,6 +128,25 @@ function animateTake(plan, playerIndex){
 // Celebrate a patron visit on a player chip (ring + floating label).
 function patronFlourish(playerIndex){ const el=elPlayer(playerIndex); ringPop(el); floatText('Patron +3', el); }
 
+// Center-screen announcement (e.g. "Final Round"): fades/scales in, holds, then
+// auto-dismisses. Shown even under reduce-motion since it conveys game state,
+// just with the motion trimmed to a plain fade. Click-through (pointer-events
+// none) so it never blocks play.
+let announceT=null;
+function announce(title, sub){
+  const old=document.getElementById('splash'); if(old) old.remove();
+  clearTimeout(announceT);
+  const s=document.createElement('div');
+  s.id='splash'; s.className='splash';
+  s.innerHTML=`<div class="splash-card">
+    <div class="splash-eyebrow" aria-hidden="true">&#9670;</div>
+    <div class="splash-title">${title}</div>
+    ${sub?`<div class="splash-sub">${sub}</div>`:''}</div>`;
+  document.body.appendChild(s);
+  requestAnimationFrame(()=>s.classList.add('show'));
+  announceT=setTimeout(()=>{ s.classList.remove('show'); setTimeout(()=>s.remove(),420); }, 2600);
+}
+
 // Confetti burst for a human win.
 function celebrate(){
   if(REDUCE) return; const L=fxLayer(); if(!L) return;
