@@ -137,7 +137,10 @@ const Sfx = (function(){
     const fn=CUES[name]; if(fn){ try{ fn(c.currentTime+0.001, opts); }catch(e){} }
   }
 
-  return { cue, unlock, setVolume, ensure };
+  // Expose the shared AudioContext so the Music player can loop through the same
+  // graph (one context avoids double audio-hardware init and lets a single
+  // gesture unlock both effects and music).
+  return { cue, unlock, setVolume, ensure, context:()=>ensure() };
 })();
 
 // Global convenience wrapper used across the game; never throws.
@@ -153,9 +156,12 @@ try{ Sfx.ensure(); }catch(e){}
  * on a loop, so the game has a realistic acoustic soundtrack (lively strings,
  * hand percussion and winds) rather than synthesised tones. The track is
  * "Lord of the Land" by Kevin MacLeod (incompetech.com), licensed CC BY 3.0 —
- * see README credits. It streams through a single <audio> element, which works
- * from a plain file:// open as well as a web server, respects the Music volume
- * slider, and only begins once the player interacts (browser autoplay policy).
+ * see README credits. It is decoded once into an AudioBuffer and looped through
+ * the Web Audio API (a single AudioBufferSourceNode with loop=true), which loops
+ * sample-accurately with NO gap — unlike an <audio> element, whose native loop
+ * re-buffers and leaves an audible seam. Works from a plain file:// open as well
+ * as a web server, respects the Music volume slider, and only begins once the
+ * player interacts (browser autoplay policy).
  * Public API is unchanged: start / stop / setVolume / toggle.
  * ------------------------------------------------------------------------- */
 const Music = (function(){
@@ -164,41 +170,65 @@ const Music = (function(){
   // rather than blasting at full scale. Tuned low so a mid-slider (50%) setting
   // lands at a gentle listening level, leaving fine control across the range.
   const MUSIC_CEILING=0.1;
-  let el=null, on=false;
+  let ctx=null, gain=null, src=null, buf=null, on=false, decoding=false;
 
   function mvol(){ const v=(typeof SETTINGS!=="undefined"&&SETTINGS.musicVol!=null)?+SETTINGS.musicVol:0.5; return Math.max(0,Math.min(1,v))*MUSIC_CEILING; }
   function wanted(){ return typeof SETTINGS!=="undefined" && SETTINGS.music!==false; }
 
   // The track is bundled as an inline base64 data URI (assets/js/music.js ->
-  // window.GILDED_MUSIC), which plays even from a file:// page, where browsers
-  // refuse to load a separate <audio> file as a subresource.
-  function srcUrl(){ return (typeof window!=="undefined" && window.GILDED_MUSIC) || ""; }
-
-  // Lazily create the streaming element so nothing loads until music is wanted.
-  function ensure(){
-    if(el) return el;
-    el=document.createElement("audio");
-    el.src=srcUrl();
-    el.loop=true;
-    el.preload="auto";
-    el.volume=mvol();
-    el.setAttribute("playsinline","");         // allow inline playback on mobile
-    el.style.display="none";
-    el.addEventListener("error",()=>{ try{ console.warn("[Gilded] music failed to load:", el.error&&el.error.message); }catch(e){} });
-    try{ (document.body||document.documentElement).appendChild(el); }catch(e){}  // in-DOM helps some browsers
-    return el;
+  // window.GILDED_MUSIC), which loads even from a file:// page, where browsers
+  // refuse to fetch a separate audio file as a subresource.
+  function srcUri(){ return (typeof window!=="undefined" && window.GILDED_MUSIC) || ""; }
+  function b64ToBuf(uri){
+    const b64=String(uri).split(",")[1]||"";
+    const bin=atob(b64), n=bin.length, bytes=new Uint8Array(n);
+    for(let i=0;i<n;i++) bytes[i]=bin.charCodeAt(i);
+    return bytes.buffer;
   }
+
+  // Borrow the effects engine's AudioContext and hang a dedicated gain node off
+  // it for the Music volume (kept separate from the SFX master so the two
+  // sliders are independent).
+  function ensureCtx(){
+    if(!ctx) ctx = (typeof Sfx!=="undefined" && Sfx.context && Sfx.context()) || null;
+    if(ctx && !gain){ gain=ctx.createGain(); gain.gain.value=mvol(); gain.connect(ctx.destination); }
+    return ctx;
+  }
+
+  // Decode the compressed track into a raw AudioBuffer once. decodeAudioData
+  // works while the context is still suspended (before the first gesture).
+  function decode(cb){
+    if(buf){ if(cb) cb(); return; }
+    const c=ensureCtx(); if(!c || decoding) return;
+    decoding=true;
+    let ab; try{ ab=b64ToBuf(srcUri()); }catch(e){ decoding=false; return; }
+    const store=(b)=>{ decoding=false; if(b){ buf=b; if(cb) cb(); } };
+    try{ const p=c.decodeAudioData(ab, store, ()=>{ decoding=false; }); if(p&&p.then) p.then(store, ()=>{ decoding=false; }); }
+    catch(e){ decoding=false; }
+  }
+
+  // (Re)start the looping source. loop=true on a buffer source loops the whole
+  // buffer with sample-accurate timing, so there is no gap at the seam.
+  function play(){
+    const c=ensureCtx(); if(!c || !buf || !on) return;
+    stopSrc();
+    src=c.createBufferSource(); src.buffer=buf; src.loop=true;
+    src.connect(gain);
+    try{ src.start(0); }catch(e){}
+  }
+  function stopSrc(){ if(src){ try{ src.onended=null; src.stop(); }catch(e){} try{ src.disconnect(); }catch(e){} src=null; } }
 
   function start(){
-    if(!wanted()) return;
-    const a=ensure(); a.volume=mvol(); on=true;
-    // play() may reject until the first user gesture; armAudio() retries on every
-    // pointer/key event, so it starts as soon as the browser allows it.
-    const p=a.play();
-    if(p&&p.catch) p.catch(()=>{});
+    if(!wanted()) return; on=true;
+    const c=ensureCtx(); if(!c) return;
+    if(c.state==="suspended"){ try{ c.resume(); }catch(e){} }
+    // If the buffer is scheduled while suspended it simply begins the moment the
+    // context resumes on the first gesture, so nothing is lost to autoplay policy.
+    if(buf){ if(!src) play(); }
+    else decode(()=>{ if(on) play(); });
   }
-  function stop(){ on=false; if(el){ try{ el.pause(); }catch(e){} } }
-  function setVolume(){ if(el){ el.volume=mvol(); } }
+  function stop(){ on=false; stopSrc(); }
+  function setVolume(){ if(gain&&ctx){ try{ gain.gain.setTargetAtTime(mvol(), ctx.currentTime, 0.02); }catch(e){ gain.gain.value=mvol(); } } }
   function toggle(){ if(wanted()) start(); else stop(); }
   return { start, stop, setVolume, toggle };
 })();
