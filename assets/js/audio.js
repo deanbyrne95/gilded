@@ -274,6 +274,11 @@ const Music = (function(){
   function ensureGain(c){ if(mg) return mg; mg=c.createGain(); mg.gain.value=mvol(); mg.connect(c.destination); return mg; }
   function nbuf(c){ if(_nb) return _nb; const len=(c.sampleRate*0.3)|0; _nb=c.createBuffer(1,len,c.sampleRate); const d=_nb.getChannelData(0); for(let i=0;i<len;i++) d[i]=Math.random()*2-1; return _nb; }
 
+  // Deterministically tear down a voice's sub-graph the instant its source ends,
+  // so the long-running generative loop never leaves orphaned nodes connected to
+  // the persistent music bus (belt-and-braces on top of GC).
+  function bye(src,nodes){ src.onended=()=>{ for(const n of nodes){ try{ n.disconnect(); }catch(e){} } try{ src.disconnect(); }catch(e){} }; }
+
   // Plucked lute string — bright, fast attack, quick decay, filter closing as it
   // rings so the note darkens like a real plucked string.
   function pluck(c,freq,t0,dur,peak){
@@ -287,6 +292,7 @@ const Music = (function(){
     g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
     o.connect(f); o2.connect(f); f.connect(g); g.connect(mg);
     o.start(t0); o2.start(t0); o.stop(t0+dur+0.05); o2.stop(t0+dur+0.05);
+    bye(o,[o2,f,g]);
   }
   // Rolled lute chord — the offbeat "chuck" of the boom-chuck groove.
   function strum(c,tones,t0,peak){ tones.forEach((fr,i)=> pluck(c,fr,t0+i*0.012,0.42,peak||0.055)); }
@@ -301,6 +307,7 @@ const Music = (function(){
     g.gain.exponentialRampToValueAtTime(0.0001,t0+0.4);
     o.connect(f); f.connect(g); g.connect(mg);
     o.start(t0); o.stop(t0+0.45);
+    bye(o,[f,g]);
   }
 
   // Sustained hurdy-gurdy drone reed — gentle swell, dark and quiet.
@@ -314,6 +321,7 @@ const Music = (function(){
     g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
     o.connect(f); f.connect(g); g.connect(mg);
     o.start(t0); o.stop(t0+dur+0.05);
+    bye(o,[f,g]);
   }
 
   // Bowed fiddle lead — sawtooth with a light vibrato LFO and a bowed attack;
@@ -332,6 +340,7 @@ const Music = (function(){
     g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
     o.connect(f); f.connect(g); g.connect(mg);
     o.start(t0); lfo.start(t0); o.stop(t0+dur+0.05); lfo.stop(t0+dur+0.05);
+    bye(o,[lfo,lg,f,g]);
   }
 
   // Frame drum — a pitched membrane body (fast downward glide) plus a noise slap.
@@ -341,48 +350,66 @@ const Music = (function(){
       const o=c.createOscillator(), g=c.createGain();
       o.type="sine"; o.frequency.setValueAtTime(170,t0); o.frequency.exponentialRampToValueAtTime(58,t0+0.12);
       g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(0.3,t0+0.005); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.22);
-      o.connect(g); g.connect(mg); o.start(t0); o.stop(t0+0.26);
+      o.connect(g); g.connect(mg); o.start(t0); o.stop(t0+0.26); bye(o,[g]);
       const s=c.createBufferSource(); s.buffer=nbuf(c); const f=c.createBiquadFilter(); f.type="lowpass"; f.frequency.value=1200; const sg=c.createGain();
-      sg.gain.setValueAtTime(0.12,t0); sg.gain.exponentialRampToValueAtTime(0.0001,t0+0.05); s.connect(f); f.connect(sg); sg.connect(mg); s.start(t0); s.stop(t0+0.06);
+      sg.gain.setValueAtTime(0.12,t0); sg.gain.exponentialRampToValueAtTime(0.0001,t0+0.05); s.connect(f); f.connect(sg); sg.connect(mg); s.start(t0); s.stop(t0+0.06); bye(s,[f,sg]);
     } else if(code===1){                        // high "tek"
       const o=c.createOscillator(), g=c.createGain();
       o.type="sine"; o.frequency.setValueAtTime(340,t0); o.frequency.exponentialRampToValueAtTime(190,t0+0.05);
       g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(0.14,t0+0.004); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.08);
-      o.connect(g); g.connect(mg); o.start(t0); o.stop(t0+0.1);
+      o.connect(g); g.connect(mg); o.start(t0); o.stop(t0+0.1); bye(o,[g]);
       const s=c.createBufferSource(); s.buffer=nbuf(c); const f=c.createBiquadFilter(); f.type="highpass"; f.frequency.value=2500; const sg=c.createGain();
-      sg.gain.setValueAtTime(0.1,t0); sg.gain.exponentialRampToValueAtTime(0.0001,t0+0.04); s.connect(f); f.connect(sg); sg.connect(mg); s.start(t0); s.stop(t0+0.05);
+      sg.gain.setValueAtTime(0.1,t0); sg.gain.exponentialRampToValueAtTime(0.0001,t0+0.04); s.connect(f); f.connect(sg); sg.connect(mg); s.start(t0); s.stop(t0+0.05); bye(s,[f,sg]);
     } else {                                    // ghost tap (0.5)
       const s=c.createBufferSource(); s.buffer=nbuf(c); const f=c.createBiquadFilter(); f.type="bandpass"; f.frequency.value=1800; const sg=c.createGain();
-      sg.gain.setValueAtTime(0.05,t0); sg.gain.exponentialRampToValueAtTime(0.0001,t0+0.03); s.connect(f); f.connect(sg); sg.connect(mg); s.start(t0); s.stop(t0+0.04);
+      sg.gain.setValueAtTime(0.05,t0); sg.gain.exponentialRampToValueAtTime(0.0001,t0+0.03); s.connect(f); f.connect(sg); sg.connect(mg); s.start(t0); s.stop(t0+0.04); bye(s,[f,sg]);
     }
   }
 
-  function scheduleBar(){
+  const EIGHTH=0.27, BAR_SEC=8*EIGHTH;   // eighth note; ~112 BPM
+  const LOOKAHEAD=0.30, TICK=120;        // queue bars up to 300ms ahead; poll every 120ms
+  let nextBarTime=0;
+
+  // Lay down one full bar starting at the given audio-clock time.
+  function scheduleBarAt(c,t){
+    const b=idx%BARS, ch=CH[b], mel=MEL[b];
+    DRONE.forEach(fr=> drone(c, fr, t, BAR_SEC*1.02, 0.035));   // hurdy-gurdy pedal
+    const kit=drumsOn(b), pat=(b%8===7)?DR_FILL:DR;            // fill each section end
+    for(let i=0;i<8;i++){
+      const tt=t+i*EIGHTH;
+      if(kit) drum(c, tt, pat[i]);               // frame-drum groove (drops in C)
+      if(i%2===0) bass(c, ch.b, tt);             // "boom" on the beat
+      else strum(c, ch.l, tt);                   // "chuck" on the offbeat
+      const m=mel[i]; if(m) fiddle(c, m, tt, EIGHTH*1.7, 0.15);   // fiddle line
+    }
+    idx++;
+  }
+
+  // Lookahead scheduler: a light poll that queues every bar whose start falls
+  // within the lookahead window on the *audio* clock. Unlike the old
+  // "schedule one bar 60ms before it plays" setTimeout, this is immune to the
+  // main-thread jank and background-tab timer throttling that made the music
+  // stutter and drift the longer the game ran.
+  function tick(){
     if(!on) return;
     const c=ctx(); if(!c){ on=false; return; }
     if(c.state==="suspended"){ try{ c.resume(); }catch(e){} }
     ensureGain(c);
-    const b=idx%BARS, ch=CH[b], mel=MEL[b];
-    const E=0.27, bar=8*E;                       // eighth note; ~112 BPM
-    const t=c.currentTime+0.06;
-    DRONE.forEach(fr=> drone(c, fr, t, bar*1.02, 0.035));   // hurdy-gurdy pedal
-    const kit=drumsOn(b), pat=(b%8===7)?DR_FILL:DR;         // fill each section end
-    for(let i=0;i<8;i++){
-      const tt=t+i*E;
-      if(kit) drum(c, tt, pat[i]);               // frame-drum groove (drops in C)
-      if(i%2===0) bass(c, ch.b, tt);             // "boom" on the beat
-      else strum(c, ch.l, tt);                   // "chuck" on the offbeat
-      const m=mel[i]; if(m) fiddle(c, m, tt, E*1.7, 0.15);   // fiddle line
+    // If we fell far behind (e.g. the tab was backgrounded and timers were
+    // throttled), resync instead of dumping a burst of overlapping bars.
+    if(nextBarTime < c.currentTime - 0.5) nextBarTime = c.currentTime + 0.06;
+    while(nextBarTime < c.currentTime + LOOKAHEAD){
+      scheduleBarAt(c, nextBarTime);
+      nextBarTime += BAR_SEC;
     }
-    idx++;
-    timer=setTimeout(scheduleBar, bar*1000);
+    timer=setTimeout(tick, TICK);
   }
   function start(){
     if(on || !wanted()) return;
     const c=ctx(); if(!c) return;
     if(c.state==="suspended"){ try{ c.resume(); }catch(e){} }
     ensureGain(c); mg.gain.setTargetAtTime(mvol(), c.currentTime, 0.1);
-    on=true; idx=0; scheduleBar();
+    on=true; idx=0; nextBarTime=c.currentTime+0.10; tick();
   }
   function stop(){ on=false; if(timer){ clearTimeout(timer); timer=null; } if(mg && ctx()){ try{ mg.gain.setTargetAtTime(0.0001, ctx().currentTime, 0.2); }catch(e){} } }
   function setVolume(){ if(mg && ctx()){ try{ mg.gain.setTargetAtTime(mvol(), ctx().currentTime, 0.05); }catch(e){} } }
