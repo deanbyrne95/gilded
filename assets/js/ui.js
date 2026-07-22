@@ -22,10 +22,10 @@ function closeModal(){ scrim.classList.remove("show"); paused=false; resumeAI();
 function ig(c){ return `<span class="inline-gem g-${c}"></span>`; }
 
 // Markup for the how-to-play tutorial.
-function tutorialHTML(){
-  return `<div class="eyebrow">How to play</div>
-  <h2>Gilded</h2>
-  <p>You're a Renaissance gem merchant building an empire. Buy development cards, earn prestige, and be the first to <b>${WIN} points</b>.</p>
+// The how-to-play body (no chrome), shared by the standalone tutorial modal and
+// the Settings ▸ How to Play tab.
+function tutorialBodyHTML(){
+  return `<p>You're a Renaissance gem merchant building an empire. Buy development cards, earn prestige, and be the first to reach the game's prestige target (set when you start a new game).</p>
 
   <h3>Your turn — do exactly one thing</h3>
   <ul>
@@ -43,17 +43,35 @@ function tutorialHTML(){
   <p>The tiles up top are patrons, worth <b>3</b> prestige each. When your <i>card bonuses</i> meet a patron's requirement (tokens don't count), they visit you automatically — no action needed.</p>
 
   <h3>Winning</h3>
-  <p>The moment anyone reaches <b>${WIN}</b>, the round is played out so everyone has had the same number of turns. Highest prestige wins; ties go to whoever owns fewer cards.</p>
-
+  <p>The moment anyone reaches the target, the round is played out so everyone has had the same number of turns. Highest prestige wins; ties go to whoever owns fewer cards.</p>`;
+}
+function tutorialHTML(){
+  return `<div class="eyebrow">How to play</div>
+  <h2>Gilded</h2>
+  ${tutorialBodyHTML()}
   <div class="foot"><button class="gbtn" data-action="${landing?'open-mainmenu':'close-modal'}">${landing?'Back to menu':'Got it'}</button></div>`;
 }
 function openTutorial(){ openModal(tutorialHTML(), !landing); }
 
 // Start-game menu state. `ngForce` blocks cancel (forced on first load);
 // `pendingMainMenu` opens the main menu right after the tutorial is dismissed;
-// `landing` is true while the full-screen main menu (and its sub-modals) is the
-// active pre-game flow, so those sub-modals return here rather than a blank board.
+// `landing` is true while the full-screen main menu (and its sub-pages) is the
+// active pre-game flow, so those sub-pages return here rather than a blank board.
 let ngForce=false, pendingMainMenu=false, landing=false;
+
+// Open a pre-game screen as a "page" that stays inside the main menu: the
+// "Gilded" title stays pinned at the top, the section content sits below it, the
+// board stays hidden, and it is not backdrop-dismissable.
+function openLandingPage(inner){
+  document.body.classList.add("pre-game");
+  openModal(`<div class="mm-page">
+    <div class="mm-hero mm-page-hero">
+      <div class="eyebrow">A Gem Merchant's Game</div>
+      <h1 class="mm-title">Gilded</h1>
+    </div>
+    <div class="mm-page-body">${inner}</div>
+  </div>`, false, "mainmenu page");
+}
 
 // The full-screen landing menu: the game's front door before a game is chosen.
 function mainMenuHTML(){
@@ -61,12 +79,11 @@ function mainMenuHTML(){
     <div class="mm-hero">
       <div class="eyebrow">A Gem Merchant's Game</div>
       <h1 class="mm-title">Gilded</h1>
-      <p class="mm-tag">Build your Renaissance empire — first to <b>${WIN}</b> prestige wins.</p>
+      <p class="mm-tag">Build your Renaissance empire — outshine your rivals in prestige.</p>
     </div>
     <div class="mm-menu">
       <button class="mm-item" data-action="open-newgame"><span class="mm-i-t">New Game</span><span class="mm-i-s">Vs AI, pass-and-play, or watch</span></button>
       <button class="mm-item" data-action="load-game" data-from="main" ${hasSave()?'':'disabled'}><span class="mm-i-t">Load Game</span><span class="mm-i-s">${hasSave()?'Continue a saved game':'No saved games yet'}</span></button>
-      <button class="mm-item" data-action="open-tutorial"><span class="mm-i-t">How to Play</span><span class="mm-i-s">Learn the rules</span></button>
       <button class="mm-item" data-action="open-settings"><span class="mm-i-t">Settings</span><span class="mm-i-s">${SET_TABS.map(t=>t[1]).join(', ')}</span></button>
     </div>
   </div>`;
@@ -74,55 +91,91 @@ function mainMenuHTML(){
 function openMainMenu(){ landing=true; ngForce=false; document.body.classList.add("pre-game"); if(typeof Music!=="undefined") Music.setMode("menu"); openModal(mainMenuHTML(), false, "mainmenu"); }
 
 // Markup for the start-game menu, reflecting the current SETTINGS. Shows mode
-// cards (Vs AI / Vs Player / Online), the relevant sub-options, and — for AI —
-// a Load button. `force` hides the Cancel button.
-function newGameHTML(force){
+// New Game is a two-step flow: step 1 picks the mode, step 2 sets that mode's
+// options (rivals/players, difficulty, prestige target, names). `ngStep` tracks
+// which screen is showing; `ngForce` hides the cancel/back-out on first load.
+let ngStep=1;
+function escAttr(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function humanNamesFor(n){ const saved=Array.isArray(SETTINGS.humanNames)?SETTINGS.humanNames:[]; const out=[]; for(let i=0;i<n;i++) out.push((saved[i]&&String(saved[i]).trim())||`Player ${i+1}`); return out; }
+// Read any name fields currently on screen so a re-render (e.g. changing the
+// player count) doesn't discard what's been typed.
+function captureNames(){ const els=modalEl.querySelectorAll('.name-input'); if(!els.length) return; const names=SETTINGS.humanNames?SETTINGS.humanNames.slice():[]; els.forEach(el=>{ names[+el.dataset.idx]=el.value; }); SETTINGS.humanNames=names; saveSettings(); }
+
+const seg=(act,val,cur,label)=>`<button class="seg ${String(val)===String(cur)?'on':''}" data-action="${act}" data-v="${val}">${label}</button>`;
+function prestigeRow(){
+  const win=SETTINGS.maxVP||15;
+  return `<div class="set-row"><div class="set-label">Prestige to win<span class="set-hint">points that end the game</span></div><div class="seg-group">
+      ${seg('ng-win',10,win,'10')}${seg('ng-win',15,win,'15')}${seg('ng-win',20,win,'20')}</div></div>`;
+}
+
+// Step 1 — choose the game mode. Picking a card commits immediately and moves to
+// its options (no confirm step); the only button here is Back.
+function newGameStep1HTML(){
+  const modeBtn=(m,label,sub,dis)=>`<button class="mode-card${dis?' disabled':''}" ${dis?'disabled aria-disabled="true"':`data-action="ng-mode" data-mode="${m}"`}><span class="mc-t">${label}</span><span class="mc-s">${sub}</span></button>`;
+  const back = ngForce ? '' : `<button class="gbtn ghost" data-action="${landing?'open-mainmenu':'close-modal'}">${landing?'Back':'Cancel'}</button>`;
+  return `<div class="eyebrow">New game</div><h2>Choose a mode</h2>
+  <div class="mode-cards">
+    ${modeBtn('ai','Vs AI','Play computer merchants')}
+    ${modeBtn('hotseat','Vs Player','Local pass-and-play')}
+    ${modeBtn('watch','Watch','Spectate AI merchants')}
+    ${modeBtn('online','Online','Coming soon',true)}
+  </div>
+  ${back?`<div class="foot">${back}</div>`:''}`;
+}
+
+// Step 2 — options for the chosen mode.
+function newGameStep2HTML(){
   const mode = SETTINGS.mode || "ai";
   const opp = SETTINGS.opponents || 1;
   const lvl = SETTINGS.aiLevel || "normal";
   const humans = SETTINGS.humans || 2;
   const watchers = SETTINGS.watchers || 2;
-  const modeBtn=(m,label,sub,dis)=>`<button class="mode-card${mode===m&&!dis?' sel':''}${dis?' disabled':''}" ${dis?'disabled aria-disabled="true"':`data-action="ng-mode" data-mode="${m}"`}><span class="mc-t">${label}</span><span class="mc-s">${sub}</span></button>`;
-  const seg=(act,val,cur,label)=>`<button class="seg ${String(val)===String(cur)?'on':''}" data-action="${act}" data-v="${val}">${label}</button>`;
-  let sub;
+  let title, sub;
   if(mode==="hotseat"){
+    title="Vs Player";
+    const names=humanNamesFor(humans);
     sub=`<div class="set-row"><div class="set-label">Players<span class="set-hint">pass the device between turns</span></div><div class="seg-group">
-        ${seg('ng-players',2,humans,'2')}${seg('ng-players',3,humans,'3')}${seg('ng-players',4,humans,'4')}</div></div>`;
+        ${seg('ng-players',2,humans,'2')}${seg('ng-players',3,humans,'3')}${seg('ng-players',4,humans,'4')}</div></div>
+      <div class="set-row col"><div class="set-label">Names</div><div class="name-grid">
+        ${names.map((nm,i)=>`<input class="name-input" data-idx="${i}" type="text" maxlength="16" value="${escAttr(nm)}" aria-label="Player ${i+1} name" placeholder="Player ${i+1}">`).join("")}</div></div>
+      ${prestigeRow()}`;
   } else if(mode==="watch"){
+    title="Watch";
     sub=`<div class="set-row"><div class="set-label">Merchants<span class="set-hint">computer players to watch</span></div><div class="seg-group">
         ${seg('ng-watchers',2,watchers,'2')}${seg('ng-watchers',3,watchers,'3')}${seg('ng-watchers',4,watchers,'4')}</div></div>
       <div class="set-row"><div class="set-label">Difficulty<span class="set-hint">how sharply they play</span></div><div class="seg-group">
-        ${seg('ng-ai-level','easy',lvl,'Easy')}${seg('ng-ai-level','normal',lvl,'Normal')}${seg('ng-ai-level','hard',lvl,'Hard')}</div></div>`;
+        ${seg('ng-ai-level','easy',lvl,'Easy')}${seg('ng-ai-level','normal',lvl,'Normal')}${seg('ng-ai-level','hard',lvl,'Hard')}</div></div>
+      ${prestigeRow()}`;
   } else {
+    title="Vs AI";
     sub=`<div class="set-row"><div class="set-label">Rivals</div><div class="seg-group">
         ${seg('ng-ai-count',1,opp,'1')}${seg('ng-ai-count',2,opp,'2')}${seg('ng-ai-count',3,opp,'3')}</div></div>
       <div class="set-row"><div class="set-label">Difficulty<span class="set-hint">how sharply rivals play</span></div><div class="seg-group">
         ${seg('ng-ai-level','easy',lvl,'Easy')}${seg('ng-ai-level','normal',lvl,'Normal')}${seg('ng-ai-level','hard',lvl,'Hard')}</div></div>
-      <div class="ng-load"><button class="gbtn ghost" data-action="load-game" data-from="newgame" ${hasSave()?'':'disabled'}>${hasSave()?'Load a saved game…':'No saved games yet'}</button></div>`;
+      ${prestigeRow()}`;
   }
-  const cancel = force ? '' : (landing
-    ? `<button class="gbtn ghost" data-action="open-mainmenu">Back</button>`
-    : `<button class="gbtn ghost" data-action="close-modal">Cancel</button>`);
-  return `<div class="eyebrow">New game</div><h2>Choose your game</h2>
-  <div class="mode-cards">
-    ${modeBtn('ai','Vs AI','Play computer merchants')}
-    ${modeBtn('hotseat','Vs Player','Local pass-and-play')}
-    ${modeBtn('watch','Watch','Spectate AI vs AI')}
-    ${modeBtn('online','Online','Coming soon',true)}
-  </div>
+  return `<div class="eyebrow">New game · ${title}</div><h2>Set it up</h2>
   ${sub}
-  <div class="foot">${cancel}<button class="gbtn" data-action="start-game">Start game</button></div>`;
+  <div class="foot"><button class="gbtn ghost" data-action="ng-back">Back</button><button class="gbtn" data-action="start-game">Start game</button></div>`;
 }
-function openNewGame(force){ ngForce=!!force; openModal(newGameHTML(!!force), (force||landing)?false:!!G); }
-function ngRerender(){ openModal(newGameHTML(ngForce), (ngForce||landing)?false:!!G); }
+
+function newGameHTML(){ return ngStep===2 ? newGameStep2HTML() : newGameStep1HTML(); }
+// Present the new-game flow: a full page in the landing flow, a dialog in-game.
+function ngRender(){ if(landing) openLandingPage(newGameHTML()); else openModal(newGameHTML(), (ngForce)?false:!!G); }
+function openNewGame(force){ ngForce=!!force; ngStep=1; ngRender(); }
+function ngRerender(){ ngRender(); }
+function ngNext(){ ngStep=2; ngRender(); }
+function ngBack(){ captureNames(); ngStep=1; ngRender(); }
 
 // Start the game described by the current start-menu selections.
 function startFromMenu(){
+  captureNames();
   const mode=SETTINGS.mode||"ai";
-  ngForce=false; landing=false; document.body.classList.remove("pre-game"); closeModal();
-  if(mode==="hotseat") startGame({mode:"hotseat", humans:SETTINGS.humans||2});
-  else if(mode==="watch") startGame({mode:"watch", players:SETTINGS.watchers||2, level:SETTINGS.aiLevel||"normal"});
-  else startGame({mode:"ai", opponents:SETTINGS.opponents||1, level:SETTINGS.aiLevel||"normal"});
+  const win=SETTINGS.maxVP||15;
+  ngForce=false; ngStep=1; landing=false; document.body.classList.remove("pre-game"); closeModal();
+  if(mode==="hotseat") startGame({mode:"hotseat", humans:SETTINGS.humans||2, names:humanNamesFor(SETTINGS.humans||2), win});
+  else if(mode==="watch") startGame({mode:"watch", players:SETTINGS.watchers||2, level:SETTINGS.aiLevel||"normal", win});
+  else startGame({mode:"ai", opponents:SETTINGS.opponents||1, level:SETTINGS.aiLevel||"normal", win});
 }
 
 /* ---------- menu / settings / save-load ---------- */
@@ -259,8 +312,12 @@ function loadSession(id){
 function deleteSession(id){
   saveSessions(loadSessions().filter(s=>s.id!==id));
   if(currentSessionId===id) currentSessionId=null;
+  delConfirmId=null;
   syncHeaderActions();
 }
+// Inline delete confirmation: which session row is awaiting a Yes/No.
+let delConfirmId=null;
+function askDeleteSession(id){ delConfirmId=id; sessRerender(); }
 
 // Markup for the saved-sessions list. Renders a per-player scoreboard that
 // highlights the leader/winner and describes no-leader and tie states; falls
@@ -300,16 +357,19 @@ function sessionsHTML(from){
       else inner = `<span class="sc lead">${nm} ${verb} · ${m.leaderVP} VP</span>`;
       board = `<div class="sess-scores">${inner}</div>`;
     }
+    const acts = (delConfirmId===s.id)
+      ? `<div class="sess-acts confirm"><span class="sess-confirm-q">Delete this save?</span>
+        <button class="gbtn danger" data-action="del-confirm" data-id="${s.id}">Delete</button>
+        <button class="gbtn ghost" data-action="del-cancel">Cancel</button></div>`
+      : `<div class="sess-acts">
+        <button class="gbtn" data-action="load-session" data-id="${s.id}">Load</button>
+        <button class="gbtn ghost sess-del" data-action="del-session" data-id="${s.id}">Delete</button></div>`;
     return `<div class="sess">
       <div class="sess-info"><div class="sess-name">${s.name}</div>${board}<div class="sess-sub">${stage} · ${when}</div></div>
-      <div class="sess-acts">
-        <button class="gbtn" data-action="load-session" data-id="${s.id}">Load</button>
-        <button class="gbtn ghost sess-del" data-action="del-session" data-id="${s.id}">Delete</button>
-      </div></div>`;
+      ${acts}</div>`;
   }).join("") : `<p class="sess-empty">No saved sessions yet. Use “Save game” during play to store one.</p>`;
   let footBtn;
-  if(from==='newgame') footBtn=`<button class="gbtn ghost" data-action="back-newgame">Back</button>`;
-  else if(from==='menu') footBtn=`<button class="gbtn ghost" data-action="open-menu">Back</button>`;
+  if(from==='menu') footBtn=`<button class="gbtn ghost" data-action="open-menu">Back</button>`;
   else if(from==='main') footBtn=`<button class="gbtn ghost" data-action="open-mainmenu">Back</button>`;
   else footBtn=`<button class="gbtn ghost" data-action="close-modal">Close</button>`;
   return `<div class="eyebrow">Saved sessions</div><h2>Load a game</h2>
@@ -317,7 +377,9 @@ function sessionsHTML(from){
     <div class="sess-list">${rows}</div>
     <div class="foot">${footBtn}</div>`;
 }
-function openSessions(from){ sessionsFrom=from||'header'; const forced=(from==='newgame'&&ngForce)||from==='main'||landing; openModal(sessionsHTML(sessionsFrom), !forced); }
+// Render the sessions list — a full page in the landing flow, a dialog in-game.
+function sessRerender(){ if(landing) openLandingPage(sessionsHTML(sessionsFrom)); else openModal(sessionsHTML(sessionsFrom), true); }
+function openSessions(from){ sessionsFrom=from||'header'; delConfirmId=null; sessRerender(); }
 
 // Markup for the compact menu (small screens / overflow), with an optional note.
 function menuHTML(note){
@@ -342,14 +404,13 @@ function openMenu(note){ openModal(menuHTML(note), true); paused=true; syncPause
 // their slot first, so they can be resumed later via Load Game.
 function returnToMainMenu(){ autoSave(); openMainMenu(); }
 
-// Markup for the settings modal (win target and colour-vision mode).
-// Settings modal — organised into tabs (Gameplay / Visual / Alerts / Audio).
-// `settingsTab` is preserved across re-renders so changing a control keeps you
-// on the same tab.
-let settingsTab='gameplay';
-const SET_TABS=[['gameplay','Gameplay'],['visual','Visual'],['alerts','Alerts'],['audio','Audio'],['controls','Controls']];
+// Settings — organised into tabs (How to Play / Visual / Audio / Alerts /
+// Controls). `settingsTab` is preserved across re-renders so changing a control
+// keeps you on the same tab. The prestige target now lives in New Game.
+let settingsTab='howto';
+const SET_TABS=[['howto','How to Play'],['visual','Visual'],['audio','Audio'],['alerts','Alerts'],['controls','Controls']];
 function settingsHTML(fromMenu){
-  const maxVP=SETTINGS.maxVP||15, cvd=SETTINGS.cvd||'off';
+  const cvd=SETTINGS.cvd||'off';
   const tpos=SETTINGS.toastPos||'br', tms=SETTINGS.toastMs||3000, theme=SETTINGS.theme||'dark';
   const svol=SETTINGS.volume!=null?String(+SETTINGS.volume):'0.6';
   const mvol=SETTINGS.musicVol!=null?String(+SETTINGS.musicVol):'0.5';
@@ -361,9 +422,7 @@ function settingsHTML(fromMenu){
     return `<div class="set-row"><div class="set-label">${label}${hint?`<span class="set-hint">${hint}</span>`:''}</div>`
       +`<div class="slider-group"><input type="range" class="vol-slider" min="0" max="100" step="5" value="${pct}" data-action="set-${action}" aria-label="${label}" aria-valuetext="${pct}%"><output class="vol-val">${pct}%</output></div></div>`; };
   const panels={
-    gameplay:`${row('Prestige to win','first to this many points wins',
-        seg('max','10',maxVP,'10')+seg('max','15',maxVP,'15')+seg('max','20',maxVP,'20'))}
-      <p class="set-note">Applies to the current game and to new games.</p>`,
+    howto:`<div class="howto-panel">${tutorialBodyHTML()}</div>`,
     visual:`${row('Theme','light or dark table',
         seg('theme','dark',theme,'Dark')+seg('theme','light',theme,'Light'))}
       ${row('Colour-vision mode','recolours gems for clarity',
@@ -383,7 +442,7 @@ function settingsHTML(fromMenu){
         <div class="key-row"><span class="key-keys"><kbd>Enter</kbd><kbd>Space</kbd></span><span class="key-desc">Select the highlighted option.</span></div>
       </div>`,
   };
-  const tab = panels[settingsTab] ? settingsTab : 'gameplay';
+  const tab = panels[settingsTab] ? settingsTab : 'howto';
   const tabs = SET_TABS.map(([id,label])=>`<button class="set-tab ${id===tab?'on':''}" data-action="set-tab" data-v="${id}" role="tab" aria-selected="${id===tab}">${label}</button>`).join("");
   let foot;
   if(landing) foot=`<button class="gbtn" data-action="open-mainmenu">Back to menu</button>`;
@@ -396,7 +455,7 @@ function settingsHTML(fromMenu){
   <div class="foot">${foot}</div>`;
 }
 let settingsFromMenu=false;
-function openSettings(fromMenu){ if(fromMenu!==undefined) settingsFromMenu=fromMenu; openModal(settingsHTML(settingsFromMenu), !landing); }
+function openSettings(fromMenu){ if(fromMenu!==undefined) settingsFromMenu=fromMenu; if(landing) openLandingPage(settingsHTML(settingsFromMenu)); else openModal(settingsHTML(settingsFromMenu), !landing); }
 
 // Toggle light/dark theme and persist it.
 function toggleTheme(){
@@ -428,7 +487,6 @@ function syncPauseUI(){
 
 // Settings segment handlers: change win target / colour-vision mode live.
 function setTab(v){ settingsTab=v; openSettings(); }
-function setMax(v){ SETTINGS.maxVP=+v; saveSettings(); applySettings(); if(G) renderBanner(); openSettings(); }
 function setCVD(v){ SETTINGS.cvd=v; saveSettings(); applySettings(); openSettings(); }
 function setTheme(v){ SETTINGS.theme=v; saveSettings(); applySettings(); openSettings(); }
 function setMaster(v, el){ SETTINGS.masterVol=Math.max(0,Math.min(1,(+v)/100)); saveSettings(); Sfx.unlock(); Sfx.setVolume(); Music.start(); Music.setVolume(); updateVolLabel(el); }

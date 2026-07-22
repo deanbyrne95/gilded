@@ -356,7 +356,7 @@ body.light .log .log-round{background:#fbf6ea}
 .scrim:has(.mainmenu){padding:0}
 .modal.mainmenu{max-width:none; width:100%; height:100%; max-height:100%; border:none; border-radius:0;
   background:radial-gradient(ellipse at 50% 28%, #2b2338, #16111e 72%);
-  display:flex; flex-direction:column; align-items:center; justify-content:center; padding:6vh 24px}
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:15vh 24px 6vh; overflow:auto}
 .mm{width:100%; max-width:520px; display:flex; flex-direction:column; align-items:center; text-align:center}
 .mm-hero{margin-bottom:clamp(24px,5vh,44px)}
 .mm-hero .eyebrow{font-size:12px; letter-spacing:4px}
@@ -374,11 +374,34 @@ body.light .log .log-round{background:#fbf6ea}
 .mm-i-t{font-family:"Cormorant Garamond",serif; font-size:24px; color:var(--gilt-soft)}
 .mm-i-s{font-size:12.5px; letter-spacing:.3px; color:var(--ink-dim)}
 body.light .modal.mainmenu{background:radial-gradient(ellipse at 50% 28%, #fbf6ea, #ece1c9 72%)}
+/* main-menu "pages" (New Game / Load / Settings): stay inside the menu with the
+   "Gilded" title anchored at the SAME fixed offset as the main menu. Both the
+   menu and the pages top-anchor the identical eyebrow+title hero, so the title
+   never shifts between screens; content flows below and the panel scrolls when
+   it is taller than the viewport. */
+.mm-page{width:100%; max-width:640px; margin:0 auto}
+.mm-page-hero{text-align:center; margin-bottom:clamp(20px,4vh,38px)}
+.mm-page-body{width:100%}
+.mm-page .foot{margin-top:22px}
+/* On landing pages the leading button is always a "Back" — anchor it to the
+   left while primary actions (Start game) stay on the right. */
+.mm-page .foot > .gbtn:first-child{margin-right:auto}
+.howto-panel{max-height:none}
+/* stacked settings row: label on top, controls (e.g. name inputs) below */
+.set-row.col{display:block}
+.set-row.col .set-label{margin-bottom:8px}
+.name-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:8px}
+.name-input{background:var(--felt-2); border:1px solid var(--line); border-radius:9px;
+  padding:9px 12px; color:var(--ink); font-family:"Jost"; font-size:14px; width:100%}
+.name-input:focus{outline:none; border-color:var(--gilt)}
+/* inline delete confirmation inside a saved-session row */
+.sess-acts.confirm{align-items:center}
+.sess-confirm-q{font-size:12.5px; color:#d98a8a; letter-spacing:.2px; margin-right:2px}
+.gbtn.danger{color:#f0c9c9; border-color:#7a3b3b; background:rgba(122,59,59,.22)}
+.gbtn.danger:hover{border-color:#d98a8a; background:rgba(160,70,70,.32)}
 /* pre-game: keep the game out of sight until New/Load is fully set up, so the
    menu and its sub-modals never reveal a board behind them */
 body.pre-game .wrap, body.pre-game .hud, body.pre-game .gem-hud, body.pre-game .ledger-drawer, body.pre-game #fxLayer{display:none}
-.ng-load{margin-top:12px}
-.ng-load .gbtn{width:100%}
 .sess-list{display:flex; flex-direction:column; gap:8px; margin:14px 0 6px; max-height:46vh; overflow:auto}
 .sess{display:flex; align-items:center; justify-content:space-between; gap:12px;
   background:var(--felt-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px}

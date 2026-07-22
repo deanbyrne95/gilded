@@ -110,7 +110,8 @@ function startGame(opts, silent){
 
   if(mode==="hotseat"){
     const humans = Math.min(4, Math.max(2, opts.humans || SETTINGS.humans || 2));
-    for(let i=0;i<humans;i++) players.push(newPlayer(`Player ${i+1}`, false));
+    const names = Array.isArray(opts.names) ? opts.names : null;
+    for(let i=0;i<humans;i++){ const nm=(names && names[i] && String(names[i]).trim()) || `Player ${i+1}`; players.push(newPlayer(nm, false)); }
     SETTINGS.humans=humans;
   } else if(mode==="watch"){
     const count = Math.min(4, Math.max(2, opts.players || SETTINGS.watchers || 2));
@@ -125,6 +126,10 @@ function startGame(opts, silent){
     SETTINGS.opponents=opponents; SETTINGS.aiLevel=level;
   }
   SETTINGS.mode=mode; saveSettings();
+
+  // Prestige target: New Game passes an explicit win value; otherwise fall back
+  // to the saved preference (default 15).
+  if(opts.win){ WIN=+opts.win; SETTINGS.maxVP=+opts.win; saveSettings(); }
 
   // Bank size scales with player count; four board cards are dealt per tier.
   const total = players.length;
