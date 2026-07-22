@@ -18,9 +18,20 @@ function render(){
   renderBanner(); renderPlayers(); renderLog();
   const gh=document.getElementById("gemHud"), hc=document.getElementById("hudControls");
   const yourTurn = !me().isAI && !G.over;
+  const watching = G.mode==="watch";
+  const dock = window.matchMedia("(min-width:1200px)").matches;
   if(UI._lastCurrent !== G.current){ UI._lastCurrent = G.current; if(yourTurn) document.body.classList.remove("gems-hidden"); }
-  if(gh) gh.classList.toggle("show", yourTurn);
+  if(gh) gh.classList.toggle("show", yourTurn || watching || dock);
   if(hc) hc.classList.toggle("hidden", !yourTurn);
+  document.body.classList.toggle("watching", watching);
+  document.body.classList.toggle("dock-bank", dock);
+  // On wide screens the bank docks beside the development cards (inside the
+  // board) in every mode; otherwise it floats at body level as before.
+  if(gh){
+    const board=document.querySelector(".board");
+    if(dock && board){ if(gh.parentElement!==board) board.appendChild(gh); }
+    else if(gh.parentElement && gh.parentElement!==document.body){ document.body.appendChild(gh); }
+  }
   layoutPlayers();
   syncHudSpace();
   syncPauseUI();

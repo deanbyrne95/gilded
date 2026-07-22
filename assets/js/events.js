@@ -85,7 +85,11 @@ document.addEventListener("change",(e)=>{
   const a=t.dataset.action;
   if(a==="set-vol" || a==="set-master"){ Sfx.unlock(); sfx('gem'); }
 });
-window.addEventListener("resize", ()=>{ syncHudSpace(); layoutHeader(); if(G) layoutPlayers(); });
+let _rszRAF=0;
+window.addEventListener("resize", ()=>{
+  syncHudSpace(); layoutHeader(); if(G) layoutPlayers();
+  if(G && !_rszRAF) _rszRAF=requestAnimationFrame(()=>{ _rszRAF=0; render(); });
+});
 
 /* ---------- keyboard navigation ---------- */
 
