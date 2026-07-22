@@ -60,6 +60,26 @@ const Sfx = (function(){
     tone(freq*3.4, t0, D*0.4,  "sine", p*0.2,  0.003);
   }
 
+  // Per-colour gem pitches (a bright, consonant pentatonic so any combination of
+  // gems still sounds pleasing). Darker stones ring lower; Diamond is brightest,
+  // Gold brightest of all. Used so each gem has its own recognisable voice.
+  const GEM_HZ={ black:1046.50, red:1174.66, green:1396.91, blue:1567.98, white:1760.00, gold:2093.00 };
+  function gemFreq(c){ return GEM_HZ[c] || 1567.98; }
+
+  // A single, more authentic gemstone "clink": a very short hard-contact noise
+  // transient (stone tapping stone) followed by a crystalline body built from
+  // *inharmonic* partials with a touch of random detune, so it rings like a cut
+  // gem rather than a pure tone. Decays fast and glassy.
+  function gemTink(t0,freq,peak,dur){
+    const D=dur||0.42, p=peak||0.22, d=1+(Math.random()*0.012-0.006);
+    noise(t0,0.016,"highpass",4200,0.7,p*0.55);        // contact transient
+    tone(freq*d,      t0, D,      "sine", p,      0.001);
+    tone(freq*2.76*d, t0, D*0.55, "sine", p*0.36, 0.001);
+    tone(freq*5.40*d, t0, D*0.28, "sine", p*0.15, 0.001);
+  }
+  // A soft, low settle — gems coming to rest in a hand or leather pouch.
+  function pouch(t0,peak){ noise(t0,0.16,"lowpass",300,1,peak||0.13); }
+
   // Reusable white-noise buffer (for card flicks and the settle thud).
   let noiseBuf=null;
   function noiseBuffer(){
@@ -92,15 +112,29 @@ const Sfx = (function(){
   }
 
   // Named cues, sound-designed to evoke the action rather than beep generically.
+  // Some accept an options object `o` (e.g. the gem colour, or a take plan).
   const CUES={
-    // gems picked up — a couple of bright glass tinkles
-    take:(t)=>{ ting(t,1760,0.20,0.34); ting(t+0.07,2093,0.17,0.30); },
+    // a single gem lifted from the bank — one crystalline clink at that gem's pitch
+    pick:(t,o)=>{ gemTink(t, gemFreq(o&&o.color), 0.24, 0.42); },
+    // a gem promoted to a double take — a quick paired clink of the same stone
+    pickDouble:(t,o)=>{ const f=gemFreq(o&&o.color); gemTink(t,f,0.20,0.34); gemTink(t+0.075,f,0.18,0.44); },
+    // a gem put back — a softer, slightly muted clink a little lower
+    deselect:(t,o)=>{ gemTink(t, gemFreq(o&&o.color)*0.75, 0.15, 0.28); },
+    // gems taken on a turn — scoop each chosen stone as a staggered clink at its
+    // own pitch (so count *and* colours are audible), then a soft pouch settle.
+    take:(t,o)=>{
+      const seq=[];
+      if(o&&typeof o==="object"){ for(const k in o){ const n=o[k]|0; for(let i=0;i<n;i++) seq.push(k); } }
+      if(!seq.length){ seq.push("white","blue"); }              // fallback (e.g. previews)
+      seq.forEach((k,i)=> gemTink(t+i*0.062+Math.random()*0.014, gemFreq(k)*(0.99+Math.random()*0.02), 0.21, 0.38));
+      pouch(t+seq.length*0.062+0.02, 0.12);
+    },
     // a card bought — a handful of gems tumbling down onto a pile, then a settle
     buy:(t)=>{
-      noise(t+0.02,0.13,"lowpass",320,1,0.22);                 // soft settle thud
-      const notes=[2093,1760,1976,1568,1318,1760,1174];
+      pouch(t+0.02,0.20);                                       // soft settle thud
+      const notes=["gold","white","blue","green","red","white","black"];
       for(let i=0;i<notes.length;i++)
-        ting(t+0.01+i*0.045+Math.random()*0.012, notes[i]*(0.97+Math.random()*0.06), 0.13, 0.22);
+        gemTink(t+0.01+i*0.045+Math.random()*0.012, gemFreq(notes[i])*(0.98+Math.random()*0.04), 0.13, 0.24);
     },
     // a card reserved — a paper flick (bandpass noise sweeping down) then a tap
     reserve:(t)=>{
@@ -116,19 +150,20 @@ const Sfx = (function(){
       [523,659,784,1046].forEach((f,i)=> tone(f,t+i*0.14,0.30,"triangle",0.3,0.01));
       ting(t+0.5,1568,0.20,0.8); ting(t+0.62,2093,0.17,0.9);
     },
-    // single tinkle (volume preview)
-    gem:(t)=>{ ting(t,1760,0.20,0.34); },
+    // single gem clink (volume preview)
+    gem:(t)=>{ gemTink(t,gemFreq("white"),0.22,0.42); },
     // soft, subtle UI tick for menu/header buttons
     click:(t)=>{ tone(1050,t,0.030,"triangle",0.09,0.001); noise(t,0.022,"highpass",2600,0.4,0.06); },
     error:(t)=>{ tone(160,t,0.20,"sawtooth",0.18,0.01); tone(150,t+0.05,0.18,"sawtooth",0.14,0.01); },
   };
-  function cue(name){ const fn=CUES[name]; if(fn) play(fn); }
+  function cue(name,opts){ const fn=CUES[name]; if(fn) play((t)=>fn(t,opts)); }
 
   return { cue, unlock, setVolume, ensure };
 })();
 
 // Global convenience wrapper used across the game; never throws.
-function sfx(name){ try{ Sfx.cue(name); }catch(e){} }
+// `opts` is cue-specific (e.g. { color } for pick/deselect, or a take plan for take).
+function sfx(name,opts){ try{ Sfx.cue(name,opts); }catch(e){} }
 
 // Create the AudioContext eagerly (it starts suspended until a gesture), so the
 // first sound isn't lost to context-startup latency. Harmless if unsupported.

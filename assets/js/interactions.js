@@ -22,13 +22,13 @@ function onTakeGem(color){
     if(distinct.some(k=>UI.sel[k]===2)) return flash("You're already taking two of one kind.");
     if(distinct.length>=3) return flash("Take at most 3 different gems.");
     if(G.bank[color]<1) return;
-    UI.sel[color]=1;
+    UI.sel[color]=1; sfx("pick",{color});
   } else if(cur===1){
     // Second tap: promote to two-of-a-kind if allowed, otherwise deselect.
-    if(onlyThis && G.bank[color]>=4) UI.sel[color]=2;
-    else delete UI.sel[color];
+    if(onlyThis && G.bank[color]>=4){ UI.sel[color]=2; sfx("pickDouble",{color}); }
+    else { delete UI.sel[color]; sfx("deselect",{color}); }
   } else {
-    delete UI.sel[color];               // tap a doubled gem to clear it
+    delete UI.sel[color]; sfx("deselect",{color});   // tap a doubled gem to clear it
   }
 
   if(hadCard){ render(); return; }
@@ -39,6 +39,7 @@ function onTakeGem(color){
 function onDeselect(color){
   if(!UI.sel[color]) return;
   UI.sel[color]--; if(UI.sel[color]<=0) delete UI.sel[color];
+  sfx("deselect",{color});
   renderBank(); renderTakeTray(); renderPlayers();
 }
 

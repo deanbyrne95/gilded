@@ -47,7 +47,7 @@ function cardDeficit(p,card){
 // Move a set of tokens ({colour:count}) from the bank to the player.
 function takeGems(p,plan){
   for(const k in plan){ p.tokens[k]+=plan[k]; G.bank[k]-=plan[k]; }
-  sfx("take");
+  sfx("take",plan);
 }
 
 // Buy `card` (from the board `{tier}` or from reserve `{reserved:idx}`): pay
