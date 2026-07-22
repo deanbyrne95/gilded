@@ -341,7 +341,7 @@ function settingsHTML(fromMenu){
   const maxVP=SETTINGS.maxVP||15, cvd=SETTINGS.cvd||'off';
   const tpos=SETTINGS.toastPos||'br', tms=SETTINGS.toastMs||3000, theme=SETTINGS.theme||'dark';
   const snd=SETTINGS.sound!==false, svol=SETTINGS.volume!=null?String(+SETTINGS.volume):'0.6';
-  const mus=SETTINGS.music!==false, mvol=SETTINGS.musicVol!=null?String(+SETTINGS.musicVol):'0.25';
+  const mus=SETTINGS.music!==false, mvol=SETTINGS.musicVol!=null?String(+SETTINGS.musicVol):'0.5';
   const keysOn=SETTINGS.keys!==false;
   const seg=(name,val,cur,label)=>`<button class="seg ${String(val)===String(cur)?'on':''}" data-action="set-${name}" data-v="${val}">${label}</button>`;
   const row=(label,hint,segs)=>`<div class="set-row"><div class="set-label">${label}${hint?`<span class="set-hint">${hint}</span>`:''}</div><div class="seg-group">${segs}</div></div>`;
@@ -365,7 +365,7 @@ function settingsHTML(fromMenu){
       ${volRow('Effects volume','how loud the cues play','vol',+svol)}
       ${row('Background music','a gentle ambient loop',
         seg('music','on',mus?'on':'off','On')+seg('music','off',mus?'on':'off','Off'))}
-      ${volRow('Music volume','how loud the music plays','musicvol',+mvol)}`,
+      ${volRow('Music volume','100% is a comfortable background level','musicvol',+mvol)}`,
     controls:`${row('Keyboard shortcuts','navigate menus and pause from the keyboard',
         seg('keys','on',keysOn?'on':'off','On')+seg('keys','off',keysOn?'on':'off','Off'))}
       <div class="key-list">

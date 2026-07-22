@@ -170,249 +170,62 @@ function sfx(name,opts){ try{ Sfx.cue(name,opts); }catch(e){} }
 try{ Sfx.ensure(); }catch(e){}
 
 /* ---------------------------------------------------------------------------
- * Music — an upbeat, generative medieval folk-dance loop in the spirit of the
- * Gwent theme from The Witcher 3: ~112 BPM in D minor / Dorian, driven by a
- * frame-drum groove, a "boom-chuck" bass-and-lute accompaniment, a hurdy-gurdy
- * open-fifth drone, and a lively vibrato fiddle. It runs as a three-section
- * form (A–B–C, 24 bars ≈ 52 s) with a dynamic drop and section-end fills, so it
- * doesn't feel repetitive too soon. Shares the Sfx AudioContext but mixes
- * through its own gain so music and effects have independent volumes. No audio
- * files — everything is synthesised live.
+ * Music — plays a bundled, properly-licensed medieval tavern-folk *recording*
+ * on a loop, so the game has a realistic acoustic soundtrack (lively strings,
+ * hand percussion and winds) rather than synthesised tones. The track is
+ * "Minstrel Guild" by Kevin MacLeod (incompetech.com), licensed CC BY 3.0 —
+ * see README credits. It streams through a single <audio> element, which works
+ * from a plain file:// open as well as a web server, respects the Music volume
+ * slider, and only begins once the player interacts (browser autoplay policy).
+ * Public API is unchanged: start / stop / setVolume / toggle.
  * ------------------------------------------------------------------------- */
 const Music = (function(){
-  let mg=null, timer=null, on=false, idx=0, _nb=null;
+  const SRC="assets/audio/minstrel-guild.mp3";   // http(s) fallback path
+  // Hard ceiling on the actual playback volume: the Settings slider runs 0–100%
+  // of THIS value, so even at 100% the music stays a comfortable background bed
+  // rather than blasting at full scale. Tuned low so a mid-slider (50%) setting
+  // lands at a gentle listening level, leaving fine control across the range.
+  const MUSIC_CEILING=0.1;
+  let el=null, on=false;
 
-  // Note table (Hz) for readability. D minor / Dorian palette.
-  const N={ A3:220.00,C4:261.63,Cs4:277.18,D4:293.66,E4:329.63,F4:349.23,
-            G4:392.00,A4:440.00,Bb4:466.16,B4:493.88,C5:523.25,Cs5:554.37,
-            D5:587.33,E5:659.25,F5:698.46,G5:783.99,A5:880.00 };
-
-  // Sustained open-fifth hurdy-gurdy drone (D2 + A2) under the whole tune.
-  const DRONE=[73.42,110.00];
-
-  // ---- Three-section form (A–B–C, 24 bars ≈ 52 s) so it doesn't loop too soon.
-  // Each bar carries a lute chord + a bass root (both in octave 2/4 registers).
-  // Section A — home: i – ♭VII – i – V(maj) (Dm–C–Dm–A), the infectious hook.
-  const CH_A=[
-    {l:[N.D4,N.F4,N.A4], b:73.42},   // Dm
-    {l:[N.C4,N.E4,N.G4], b:65.41},   // C
-    {l:[N.D4,N.F4,N.A4], b:73.42},   // Dm
-    {l:[N.A3,N.Cs4,N.E4],b:110.00},  // A (major V)
-    {l:[N.D4,N.F4,N.A4], b:73.42},   // Dm
-    {l:[N.C4,N.E4,N.G4], b:65.41},   // C
-    {l:[N.D4,N.F4,N.A4], b:73.42},   // Dm
-    {l:[N.A3,N.Cs4,N.E4],b:110.00},  // A (major V)
-  ];
-  // Section B — brighter lift toward the relative major (F), with a ♭VI (Bb).
-  const CH_B=[
-    {l:[N.C4,N.F4,N.A4], b:87.31},   // F
-    {l:[N.C4,N.E4,N.G4], b:65.41},   // C
-    {l:[N.D4,N.F4,N.A4], b:73.42},   // Dm
-    {l:[N.D4,N.F4,N.Bb4],b:116.54},  // Bb (♭VI)
-    {l:[N.C4,N.F4,N.A4], b:87.31},   // F
-    {l:[N.C4,N.E4,N.G4], b:65.41},   // C
-    {l:[N.A3,N.Cs4,N.E4],b:110.00},  // A (major V)
-    {l:[N.A3,N.Cs4,N.E4],b:110.00},  // A
-  ];
-  // Section C — a stripped "call" that builds back to a high peak and turnaround.
-  const CH_C=[
-    {l:[N.D4,N.F4,N.A4], b:73.42},   // Dm
-    {l:[N.D4,N.F4,N.A4], b:73.42},   // Dm
-    {l:[N.C4,N.F4,N.A4], b:87.31},   // F
-    {l:[N.C4,N.E4,N.G4], b:65.41},   // C
-    {l:[N.D4,N.F4,N.A4], b:73.42},   // Dm
-    {l:[N.D4,N.F4,N.Bb4],b:116.54},  // Bb
-    {l:[N.A3,N.Cs4,N.E4],b:110.00},  // A
-    {l:[N.A3,N.Cs4,N.E4],b:110.00},  // A
-  ];
-  const CH=CH_A.concat(CH_B,CH_C);
-
-  // Fiddle line — one array of 8 eighth-note slots per bar (0 = rest). Three
-  // distinct 8-bar melodies keep it fresh; A's bars 1 & 5 share a punchy motif
-  // so the ear still latches onto a recognisable hook.
-  const MEL=[
-    // A (home hook)
-    [N.A4,0,   N.D5,0,   N.A4,N.F4,N.A4,0   ],
-    [N.G4,0,   N.C5,0,   N.D5,N.C5,N.A4,0   ],
-    [N.D5,0,   N.F5,N.E5,N.D5,0,   N.A4,0   ],
-    [N.E5,0,   N.D5,0,   N.Cs5,0,  N.A4,0   ],
-    [N.A4,0,   N.D5,0,   N.A4,N.F4,N.A4,0   ],
-    [N.G4,0,   N.C5,0,   N.E5,N.D5,N.C5,0   ],
-    [N.F5,N.E5,N.D5,N.C5,N.D5,0,   N.E5,0   ],
-    [N.D5,0,   0,   0,   N.A4,0,   N.D5,0   ],
-    // B (lyrical, longer notes, brighter)
-    [N.A4,0,   0,   0,   N.C5,0,   N.D5,0   ],
-    [N.C5,0,   0,   0,   N.Bb4,0,  N.G4,0   ],
-    [N.A4,0,   N.D5,0,   N.F5,0,   N.E5,0   ],
-    [N.D5,0,   0,   0,   N.C5,0,   N.A4,0   ],
-    [N.A4,0,   0,   0,   N.C5,0,   N.D5,0   ],
-    [N.E5,0,   N.D5,0,   N.C5,0,   N.Bb4,0  ],
-    [N.A4,0,   N.Cs5,0,  N.E5,0,   N.Cs5,0  ],
-    [N.E5,0,   N.D5,0,   N.Cs5,0,  N.A4,0   ],
-    // C (call-and-build up to a high peak)
-    [N.A4,0,   N.A4,0,   N.A4,0,   N.C5,0   ],
-    [N.D5,0,   N.C5,0,   N.A4,0,   N.F4,0   ],
-    [N.C5,0,   N.C5,0,   N.D5,0,   N.C5,0   ],
-    [N.G4,0,   N.Bb4,0,  N.C5,0,   0,   0   ],
-    [N.D5,0,   N.E5,0,   N.F5,0,   N.E5,0   ],
-    [N.D5,0,   N.C5,0,   N.Bb4,0,  N.A4,0   ],
-    [N.Cs5,0,  N.E5,0,   N.A5,0,   N.E5,0   ], // peak (high A5)
-    [N.E5,0,   N.Cs5,0,  N.A4,0,   0,   0   ], // resolve, breathe before loop
-  ];
-  const BARS=CH.length;
-
-  // Frame-drum groove (per bar, 8 eighths): 2=low "dum", 1=high "tek", 0.5=ghost.
-  const DR=[2,0.5,1,0.5,2,0.5,1,2];
-  const DR_FILL=[2,1,2,1,2,1,1,1];   // busier turnaround at each section's end
-  // Drop the drums for section C's first four bars, then bring them back — a
-  // dynamic dip that resets the ear and makes the build land harder.
-  function drumsOn(b){ return !(b>=16 && b<=19); }
-
-  function mvol(){ const v=(typeof SETTINGS!=="undefined"&&SETTINGS.musicVol!=null)?+SETTINGS.musicVol:0.25; return Math.max(0,Math.min(1,v)); }
+  function mvol(){ const v=(typeof SETTINGS!=="undefined"&&SETTINGS.musicVol!=null)?+SETTINGS.musicVol:0.5; return Math.max(0,Math.min(1,v))*MUSIC_CEILING; }
   function wanted(){ return typeof SETTINGS!=="undefined" && SETTINGS.music!==false; }
-  function ctx(){ return Sfx.ensure(); }
-  function ensureGain(c){ if(mg) return mg; mg=c.createGain(); mg.gain.value=mvol(); mg.connect(c.destination); return mg; }
-  function nbuf(c){ if(_nb) return _nb; const len=(c.sampleRate*0.3)|0; _nb=c.createBuffer(1,len,c.sampleRate); const d=_nb.getChannelData(0); for(let i=0;i<len;i++) d[i]=Math.random()*2-1; return _nb; }
 
-  // Deterministically tear down a voice's sub-graph the instant its source ends,
-  // so the long-running generative loop never leaves orphaned nodes connected to
-  // the persistent music bus (belt-and-braces on top of GC).
-  function bye(src,nodes){ src.onended=()=>{ for(const n of nodes){ try{ n.disconnect(); }catch(e){} } try{ src.disconnect(); }catch(e){} }; }
-
-  // Plucked lute string — bright, fast attack, quick decay, filter closing as it
-  // rings so the note darkens like a real plucked string.
-  function pluck(c,freq,t0,dur,peak){
-    const o=c.createOscillator(), o2=c.createOscillator(), g=c.createGain(), f=c.createBiquadFilter();
-    o.type="sawtooth"; o.frequency.setValueAtTime(freq,t0);
-    o2.type="triangle"; o2.frequency.setValueAtTime(freq*2,t0);
-    f.type="lowpass"; f.frequency.setValueAtTime(2600,t0);
-    f.frequency.exponentialRampToValueAtTime(650,t0+dur*0.9);
-    g.gain.setValueAtTime(0.0001,t0);
-    g.gain.exponentialRampToValueAtTime(peak||0.06,t0+0.006);
-    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
-    o.connect(f); o2.connect(f); f.connect(g); g.connect(mg);
-    o.start(t0); o2.start(t0); o.stop(t0+dur+0.05); o2.stop(t0+dur+0.05);
-    bye(o,[o2,f,g]);
-  }
-  // Rolled lute chord — the offbeat "chuck" of the boom-chuck groove.
-  function strum(c,tones,t0,peak){ tones.forEach((fr,i)=> pluck(c,fr,t0+i*0.012,0.42,peak||0.055)); }
-
-  // Round bass note on the beat — the "boom".
-  function bass(c,freq,t0,peak){
-    const o=c.createOscillator(), g=c.createGain(), f=c.createBiquadFilter();
-    o.type="triangle"; o.frequency.setValueAtTime(freq,t0);
-    f.type="lowpass"; f.frequency.setValueAtTime(420,t0);
-    g.gain.setValueAtTime(0.0001,t0);
-    g.gain.exponentialRampToValueAtTime(peak||0.16,t0+0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001,t0+0.4);
-    o.connect(f); f.connect(g); g.connect(mg);
-    o.start(t0); o.stop(t0+0.45);
-    bye(o,[f,g]);
+  // Resolve the track source. Prefer the inline data URI (assets/audio/
+  // minstrel-guild.js), which plays even from a file:// page — where browsers
+  // refuse to load a separate <audio> file as a subresource ("Format error").
+  // Fall back to the on-disk mp3 when served over http(s).
+  function srcUrl(){
+    if(typeof window!=="undefined" && window.GILDED_MUSIC) return window.GILDED_MUSIC;
+    try{ return new URL(SRC, document.baseURI).href.replace(/^(file:\/\/\/[A-Za-z])%3[Aa]\//,"$1:/"); }
+    catch(e){ return SRC; }
   }
 
-  // Sustained hurdy-gurdy drone reed — gentle swell, dark and quiet.
-  function drone(c,freq,t0,dur,peak){
-    const o=c.createOscillator(), g=c.createGain(), f=c.createBiquadFilter();
-    o.type="sawtooth"; o.frequency.setValueAtTime(freq,t0);
-    f.type="lowpass"; f.frequency.setValueAtTime(460,t0);
-    g.gain.setValueAtTime(0.0001,t0);
-    g.gain.exponentialRampToValueAtTime(peak||0.035,t0+0.4);
-    g.gain.setValueAtTime(peak||0.035,t0+dur*0.8);
-    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
-    o.connect(f); f.connect(g); g.connect(mg);
-    o.start(t0); o.stop(t0+dur+0.05);
-    bye(o,[f,g]);
+  // Lazily create the streaming element so nothing loads until music is wanted.
+  function ensure(){
+    if(el) return el;
+    el=document.createElement("audio");
+    el.src=srcUrl();
+    el.loop=true;
+    el.preload="auto";
+    el.volume=mvol();
+    el.setAttribute("playsinline","");         // allow inline playback on mobile
+    el.style.display="none";
+    el.addEventListener("error",()=>{ try{ console.warn("[Gilded] music failed to load:",SRC, el.error&&el.error.message); }catch(e){} });
+    try{ (document.body||document.documentElement).appendChild(el); }catch(e){}  // in-DOM helps some browsers
+    return el;
   }
 
-  // Bowed fiddle lead — sawtooth with a light vibrato LFO and a bowed attack;
-  // this carries the catchy melodic hook and sits on top of the mix.
-  function fiddle(c,freq,t0,dur,peak){
-    if(!freq) return;
-    const o=c.createOscillator(), g=c.createGain(), f=c.createBiquadFilter();
-    const lfo=c.createOscillator(), lg=c.createGain();
-    o.type="sawtooth"; o.frequency.setValueAtTime(freq,t0);
-    lfo.type="sine"; lfo.frequency.setValueAtTime(5.5,t0); lg.gain.setValueAtTime(freq*0.008,t0);
-    lfo.connect(lg); lg.connect(o.frequency);
-    f.type="lowpass"; f.frequency.setValueAtTime(2700,t0);
-    g.gain.setValueAtTime(0.0001,t0);
-    g.gain.exponentialRampToValueAtTime(peak||0.15,t0+0.03);
-    g.gain.setValueAtTime(peak||0.15,t0+dur*0.7);
-    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
-    o.connect(f); f.connect(g); g.connect(mg);
-    o.start(t0); lfo.start(t0); o.stop(t0+dur+0.05); lfo.stop(t0+dur+0.05);
-    bye(o,[lfo,lg,f,g]);
-  }
-
-  // Frame drum — a pitched membrane body (fast downward glide) plus a noise slap.
-  function drum(c,t0,code){
-    if(!code) return;
-    if(code===2){                               // low "dum"
-      const o=c.createOscillator(), g=c.createGain();
-      o.type="sine"; o.frequency.setValueAtTime(170,t0); o.frequency.exponentialRampToValueAtTime(58,t0+0.12);
-      g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(0.3,t0+0.005); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.22);
-      o.connect(g); g.connect(mg); o.start(t0); o.stop(t0+0.26); bye(o,[g]);
-      const s=c.createBufferSource(); s.buffer=nbuf(c); const f=c.createBiquadFilter(); f.type="lowpass"; f.frequency.value=1200; const sg=c.createGain();
-      sg.gain.setValueAtTime(0.12,t0); sg.gain.exponentialRampToValueAtTime(0.0001,t0+0.05); s.connect(f); f.connect(sg); sg.connect(mg); s.start(t0); s.stop(t0+0.06); bye(s,[f,sg]);
-    } else if(code===1){                        // high "tek"
-      const o=c.createOscillator(), g=c.createGain();
-      o.type="sine"; o.frequency.setValueAtTime(340,t0); o.frequency.exponentialRampToValueAtTime(190,t0+0.05);
-      g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(0.14,t0+0.004); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.08);
-      o.connect(g); g.connect(mg); o.start(t0); o.stop(t0+0.1); bye(o,[g]);
-      const s=c.createBufferSource(); s.buffer=nbuf(c); const f=c.createBiquadFilter(); f.type="highpass"; f.frequency.value=2500; const sg=c.createGain();
-      sg.gain.setValueAtTime(0.1,t0); sg.gain.exponentialRampToValueAtTime(0.0001,t0+0.04); s.connect(f); f.connect(sg); sg.connect(mg); s.start(t0); s.stop(t0+0.05); bye(s,[f,sg]);
-    } else {                                    // ghost tap (0.5)
-      const s=c.createBufferSource(); s.buffer=nbuf(c); const f=c.createBiquadFilter(); f.type="bandpass"; f.frequency.value=1800; const sg=c.createGain();
-      sg.gain.setValueAtTime(0.05,t0); sg.gain.exponentialRampToValueAtTime(0.0001,t0+0.03); s.connect(f); f.connect(sg); sg.connect(mg); s.start(t0); s.stop(t0+0.04); bye(s,[f,sg]);
-    }
-  }
-
-  const EIGHTH=0.27, BAR_SEC=8*EIGHTH;   // eighth note; ~112 BPM
-  const LOOKAHEAD=0.30, TICK=120;        // queue bars up to 300ms ahead; poll every 120ms
-  let nextBarTime=0;
-
-  // Lay down one full bar starting at the given audio-clock time.
-  function scheduleBarAt(c,t){
-    const b=idx%BARS, ch=CH[b], mel=MEL[b];
-    DRONE.forEach(fr=> drone(c, fr, t, BAR_SEC*1.02, 0.035));   // hurdy-gurdy pedal
-    const kit=drumsOn(b), pat=(b%8===7)?DR_FILL:DR;            // fill each section end
-    for(let i=0;i<8;i++){
-      const tt=t+i*EIGHTH;
-      if(kit) drum(c, tt, pat[i]);               // frame-drum groove (drops in C)
-      if(i%2===0) bass(c, ch.b, tt);             // "boom" on the beat
-      else strum(c, ch.l, tt);                   // "chuck" on the offbeat
-      const m=mel[i]; if(m) fiddle(c, m, tt, EIGHTH*1.7, 0.15);   // fiddle line
-    }
-    idx++;
-  }
-
-  // Lookahead scheduler: a light poll that queues every bar whose start falls
-  // within the lookahead window on the *audio* clock. Unlike the old
-  // "schedule one bar 60ms before it plays" setTimeout, this is immune to the
-  // main-thread jank and background-tab timer throttling that made the music
-  // stutter and drift the longer the game ran.
-  function tick(){
-    if(!on) return;
-    const c=ctx(); if(!c){ on=false; return; }
-    if(c.state==="suspended"){ try{ c.resume(); }catch(e){} }
-    ensureGain(c);
-    // If we fell far behind (e.g. the tab was backgrounded and timers were
-    // throttled), resync instead of dumping a burst of overlapping bars.
-    if(nextBarTime < c.currentTime - 0.5) nextBarTime = c.currentTime + 0.06;
-    while(nextBarTime < c.currentTime + LOOKAHEAD){
-      scheduleBarAt(c, nextBarTime);
-      nextBarTime += BAR_SEC;
-    }
-    timer=setTimeout(tick, TICK);
-  }
   function start(){
-    if(on || !wanted()) return;
-    const c=ctx(); if(!c) return;
-    if(c.state==="suspended"){ try{ c.resume(); }catch(e){} }
-    ensureGain(c); mg.gain.setTargetAtTime(mvol(), c.currentTime, 0.1);
-    on=true; idx=0; nextBarTime=c.currentTime+0.10; tick();
+    if(!wanted()) return;
+    const a=ensure(); a.volume=mvol(); on=true;
+    // play() may reject until the first user gesture; armAudio() retries on every
+    // pointer/key event, so it starts as soon as the browser allows it.
+    const p=a.play();
+    if(p&&p.catch) p.catch(()=>{});
   }
-  function stop(){ on=false; if(timer){ clearTimeout(timer); timer=null; } if(mg && ctx()){ try{ mg.gain.setTargetAtTime(0.0001, ctx().currentTime, 0.2); }catch(e){} } }
-  function setVolume(){ if(mg && ctx()){ try{ mg.gain.setTargetAtTime(mvol(), ctx().currentTime, 0.05); }catch(e){} } }
+  function stop(){ on=false; if(el){ try{ el.pause(); }catch(e){} } }
+  function setVolume(){ if(el){ el.volume=mvol(); } }
   function toggle(){ if(wanted()) start(); else stop(); }
   return { start, stop, setVolume, toggle };
 })();
