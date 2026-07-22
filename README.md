@@ -84,7 +84,7 @@ gilded/
         ├── render.js       # View layer — rebuilds the board/HUD from state
         ├── ui.js           # Modals, menu, settings, save/load sessions
         ├── audio.js        # Recorded sound effects + looping music player (see Credits)
-        ├── music.js        # Music track embedded as a base64 data URI (plays from file://)
+        ├── music.js        # Three music tracks (menu pair + in-game loop) as base64 data URIs (play from file://)
         ├── sfx.js          # Recorded sound-effect samples as base64 data URIs
         ├── animations.js   # Optional visual effects + reserved-card tooltip
         └── events.js       # Delegated event handling, ledger drawer, boot
@@ -120,7 +120,12 @@ Any modern evergreen browser (Chrome, Edge, Firefox, Safari). The layout is resp
 
 ## Credits
 
-- **Music:** *"Lord of the Land"* by Kevin MacLeod ([incompetech.com](https://incompetech.com/)) — licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Source: [incompetech.com](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1400022).
+- **Music:** by Kevin MacLeod ([incompetech.com](https://incompetech.com/)) — all licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/):
+  - *"Lord of the Land"* — menu theme ([source](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1400022)).
+  - *"Village Consort"* — menu theme ([source](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100787)).
+  - *"Folk Round"* — in-game loop ([source](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100357)).
+
+  On the menu the two menu themes alternate and crossfade into one another; during a match *Folk Round* loops seamlessly.
 - **Sound effects:**
   - Foley & UI cues — recorded samples from [Kenney](https://kenney.nl/)'s *Casino Audio*, *Interface Sounds*, *RPG Audio* and *Impact Sounds* packs, released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
   - Brass cues — [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) recordings from [Freesound](https://freesound.org/): patron fanfare *"Mastodon trumpet"* by [vintprox](https://freesound.org/s/854137/); victory *"Clean Trumpet Fanfare"* by [joepayne](https://freesound.org/s/413201/); defeat *"Got nervous at the end"* / *"Just about"* by [joepayne](https://freesound.org/s/413208/).
@@ -132,4 +137,4 @@ Any modern evergreen browser (Chrome, Edge, Firefox, Safari). The layout is resp
 
 No license has been chosen yet. Until one is added, all rights are reserved by the author.
 
-The bundled music track is © Kevin MacLeod and is used under CC BY 3.0 (see **Credits**); that attribution must be preserved regardless of the project's own license.
+The bundled music tracks are © Kevin MacLeod and are used under CC BY 3.0 (see **Credits**); that attribution must be preserved regardless of the project's own license.

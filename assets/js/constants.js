@@ -148,5 +148,6 @@ function startGame(opts, silent){
     log(`<b>${players[starter].name}</b> ${players[starter].name==="You"?"go":"goes"} first.`);
   }
   render();
+  if(!silent && typeof Music!=="undefined") Music.setMode("game");
   if(!silent && !G.over && me().isAI) scheduleAI();
 }

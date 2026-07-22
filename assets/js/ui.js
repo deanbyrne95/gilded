@@ -71,7 +71,7 @@ function mainMenuHTML(){
     </div>
   </div>`;
 }
-function openMainMenu(){ landing=true; ngForce=false; document.body.classList.add("pre-game"); openModal(mainMenuHTML(), false, "mainmenu"); }
+function openMainMenu(){ landing=true; ngForce=false; document.body.classList.add("pre-game"); if(typeof Music!=="undefined") Music.setMode("menu"); openModal(mainMenuHTML(), false, "mainmenu"); }
 
 // Markup for the start-game menu, reflecting the current SETTINGS. Shows mode
 // cards (Vs AI / Vs Player / Online), the relevant sub-options, and — for AI —
@@ -130,6 +130,16 @@ function startFromMenu(){
 // Persisted user preferences (theme, win target, CVD mode, last game setup).
 const SETTINGS = (function(){ try{ return JSON.parse(localStorage.getItem('gilded_settings'))||{}; }catch(e){ return {}; } })();
 function saveSettings(){ try{ localStorage.setItem('gilded_settings', JSON.stringify(SETTINGS)); }catch(e){} }
+// Migration: the old Sound/Music on-off toggles are gone — audio is now three
+// sliders (Master / Effects / Music). A previously muted toggle becomes a 0 slider.
+(function migrateAudioSettings(){
+  let changed=false;
+  if(SETTINGS.sound===false){ SETTINGS.volume=0; changed=true; }
+  if(SETTINGS.music===false){ SETTINGS.musicVol=0; changed=true; }
+  if('sound' in SETTINGS){ delete SETTINGS.sound; changed=true; }
+  if('music' in SETTINGS){ delete SETTINGS.music; changed=true; }
+  if(changed) saveSettings();
+})();
 
 // Apply settings to the DOM: theme class, colour-vision palette, win target,
 // and the header theme-toggle label/state.
@@ -241,6 +251,7 @@ function loadSession(id){
   paused=false;
   UI={sel:{}, selectedCard:null, phase:"play", discardResolve:null, oppView:G.current||0};
   closeModal(); render(); syncHeaderActions();
+  if(typeof Music!=="undefined") Music.setMode("game");
   if(!G.over && me().isAI) scheduleAI();
 }
 
@@ -340,8 +351,9 @@ const SET_TABS=[['gameplay','Gameplay'],['visual','Visual'],['alerts','Alerts'],
 function settingsHTML(fromMenu){
   const maxVP=SETTINGS.maxVP||15, cvd=SETTINGS.cvd||'off';
   const tpos=SETTINGS.toastPos||'br', tms=SETTINGS.toastMs||3000, theme=SETTINGS.theme||'dark';
-  const snd=SETTINGS.sound!==false, svol=SETTINGS.volume!=null?String(+SETTINGS.volume):'0.6';
-  const mus=SETTINGS.music!==false, mvol=SETTINGS.musicVol!=null?String(+SETTINGS.musicVol):'0.5';
+  const svol=SETTINGS.volume!=null?String(+SETTINGS.volume):'0.6';
+  const mvol=SETTINGS.musicVol!=null?String(+SETTINGS.musicVol):'0.5';
+  const mastvol=SETTINGS.masterVol!=null?String(+SETTINGS.masterVol):'1';
   const keysOn=SETTINGS.keys!==false;
   const seg=(name,val,cur,label)=>`<button class="seg ${String(val)===String(cur)?'on':''}" data-action="set-${name}" data-v="${val}">${label}</button>`;
   const row=(label,hint,segs)=>`<div class="set-row"><div class="set-label">${label}${hint?`<span class="set-hint">${hint}</span>`:''}</div><div class="seg-group">${segs}</div></div>`;
@@ -360,12 +372,9 @@ function settingsHTML(fromMenu){
         seg('toastpos','tl',tpos,'Top left')+seg('toastpos','tr',tpos,'Top right')+seg('toastpos','bl',tpos,'Bottom left')+seg('toastpos','br',tpos,'Bottom right'))}
       ${row('Alert timeout','how long alerts stay',
         seg('toastms','2000',tms,'2s')+seg('toastms','3000',tms,'3s')+seg('toastms','5000',tms,'5s'))}`,
-    audio:`${row('Sound effects','synthesised cues for takes, buys &amp; wins',
-        seg('sound','on',snd?'on':'off','On')+seg('sound','off',snd?'on':'off','Off'))}
-      ${volRow('Effects volume','how loud the cues play','vol',+svol)}
-      ${row('Background music','a gentle ambient loop',
-        seg('music','on',mus?'on':'off','On')+seg('music','off',mus?'on':'off','Off'))}
-      ${volRow('Music volume','100% is a comfortable background level','musicvol',+mvol)}`,
+    audio:`${volRow('Master volume','overall loudness for the whole game','master',+mastvol)}
+      ${volRow('Sound effects','cues for takes, buys &amp; wins','vol',+svol)}
+      ${volRow('Music','background soundtrack (menu &amp; in-game)','musicvol',+mvol)}`,
     controls:`${row('Keyboard shortcuts','navigate menus and pause from the keyboard',
         seg('keys','on',keysOn?'on':'off','On')+seg('keys','off',keysOn?'on':'off','Off'))}
       <div class="key-list">
@@ -422,10 +431,9 @@ function setTab(v){ settingsTab=v; openSettings(); }
 function setMax(v){ SETTINGS.maxVP=+v; saveSettings(); applySettings(); if(G) renderBanner(); openSettings(); }
 function setCVD(v){ SETTINGS.cvd=v; saveSettings(); applySettings(); openSettings(); }
 function setTheme(v){ SETTINGS.theme=v; saveSettings(); applySettings(); openSettings(); }
-function setSound(v){ SETTINGS.sound=(v==='on'); saveSettings(); openSettings(); if(SETTINGS.sound){ Sfx.unlock(); sfx('take'); } }
+function setMaster(v, el){ SETTINGS.masterVol=Math.max(0,Math.min(1,(+v)/100)); saveSettings(); Sfx.unlock(); Sfx.setVolume(); Music.start(); Music.setVolume(); updateVolLabel(el); }
 function setVol(v, el){ SETTINGS.volume=Math.max(0,Math.min(1,(+v)/100)); saveSettings(); Sfx.unlock(); Sfx.setVolume(); updateVolLabel(el); }
-function setMusic(v){ SETTINGS.music=(v==='on'); saveSettings(); openSettings(); Sfx.unlock(); Music.toggle(); }
-function setMusicVol(v, el){ SETTINGS.musicVol=Math.max(0,Math.min(1,(+v)/100)); saveSettings(); Music.setVolume(); updateVolLabel(el); }
+function setMusicVol(v, el){ SETTINGS.musicVol=Math.max(0,Math.min(1,(+v)/100)); saveSettings(); Music.start(); Music.setVolume(); updateVolLabel(el); }
 // Live-update a volume slider's "%" read-out without re-rendering the modal
 // (re-rendering mid-drag would drop the pointer and interrupt dragging).
 function updateVolLabel(el){ if(!el) return; const pct=Math.round(+el.value); const out=el.parentNode&&el.parentNode.querySelector('.vol-val'); if(out) out.textContent=pct+'%'; el.setAttribute('aria-valuetext', pct+'%'); }

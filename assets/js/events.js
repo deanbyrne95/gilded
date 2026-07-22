@@ -62,8 +62,6 @@ document.addEventListener("click",(e)=>{
     case "set-max": setMax(t.dataset.v); break;
     case "set-cvd": setCVD(t.dataset.v); break;
     case "set-theme": setTheme(t.dataset.v); break;
-    case "set-sound": setSound(t.dataset.v); break;
-    case "set-music": setMusic(t.dataset.v); break;
     case "set-keys": setKeys(t.dataset.v); break;
     case "set-toastpos": setToastPos(t.dataset.v); break;
     case "set-toastms": setToastMs(t.dataset.v); break;
@@ -76,12 +74,14 @@ scrim.addEventListener("click",(e)=>{ if(e.target===scrim && scrim.dataset.dismi
 document.addEventListener("input",(e)=>{
   const t=e.target; if(!t || t.tagName!=="INPUT" || t.type!=="range") return;
   const a=t.dataset.action;
-  if(a==="set-vol") setVol(t.value, t);
+  if(a==="set-master") setMaster(t.value, t);
+  else if(a==="set-vol") setVol(t.value, t);
   else if(a==="set-musicvol") setMusicVol(t.value, t);
 });
 document.addEventListener("change",(e)=>{
   const t=e.target; if(!t || t.tagName!=="INPUT" || t.type!=="range") return;
-  if(t.dataset.action==="set-vol"){ Sfx.unlock(); sfx('gem'); }
+  const a=t.dataset.action;
+  if(a==="set-vol" || a==="set-master"){ Sfx.unlock(); sfx('gem'); }
 });
 window.addEventListener("resize", ()=>{ syncHudSpace(); layoutHeader(); if(G) layoutPlayers(); });
 
