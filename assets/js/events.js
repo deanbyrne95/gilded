@@ -102,11 +102,16 @@ document.addEventListener("keydown",(e)=>{
 
   if(e.key==="Escape"){
     if(open){
-      if(scrim.dataset.dismiss==="1"){                 // dismissible dialog → close (mirrors close-modal)
+      if(!landing && modalEl.classList.contains("settings") && settingsFromMenu){
+        e.preventDefault(); openMenu();                // in-game Settings (from menu) → back to the Menu
+      } else if(landing && modalEl.classList.contains("page")){
+        // Landing sub-page → walk back one tier by triggering the page's own
+        // Back button (New Game step 2 → step 1 → main menu; Load/Settings → menu).
+        const back = modalEl.querySelector(".foot .gbtn");
+        if(back){ e.preventDefault(); back.click(); }
+      } else if(scrim.dataset.dismiss==="1"){          // any other dismissible dialog → close (mirrors close-modal)
         e.preventDefault(); closeModal();
         if(pendingMainMenu){ pendingMainMenu=false; openMainMenu(); }
-      } else if(landing && !modalEl.classList.contains("mainmenu")){ // pre-game sub-modal → back to main menu
-        e.preventDefault(); openMainMenu();
       }
       // the non-dismissible main menu itself has no "back" — leave it be
     } else if(G && !G.over){                           // in a live game → pause via the menu

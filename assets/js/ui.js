@@ -74,6 +74,26 @@ function openLandingPage(inner){
 }
 
 // The full-screen landing menu: the game's front door before a game is chosen.
+// Inline line-icons for menu cards (dependency-free SVG, inherits the gold via
+// currentColor). `iconSvg` is the bare glyph; `mmIcon` wraps it for list rows.
+function iconSvg(name){
+  const paths = {
+    new:      '<path d="M12 5v14M5 12h14"/>',
+    load:     '<path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.2H19.5A1.5 1.5 0 0 1 21 9.7V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    settings: '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.6l1.5 2.7 3-.6.6 3 2.7 1.5-1.5 2.6 1.5 2.6-2.7 1.5-.6 3-3-.6L12 21.4l-1.5-2.7-3 .6-.6-3L4.2 14.8l1.5-2.6-1.5-2.6 2.7-1.5.6-3 3 .6z"/>',
+    resume:   '<path d="M8 5.5v13l10-6.5z" fill="currentColor" stroke="none"/>',
+    save:     '<path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M8 3v5h7M8 21v-7h8v7"/>',
+    exit:     '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>',
+    ai:       '<rect x="6" y="6" width="12" height="12" rx="2"/><circle cx="9.5" cy="10.5" r="1"/><circle cx="14.5" cy="10.5" r="1"/><path d="M9 14.5h6M9 2.5v3M15 2.5v3M9 18.5v3M15 18.5v3M2.5 9h3M2.5 15h3M18.5 9h3M18.5 15h3"/>',
+    players:  '<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M15.5 5.2a3 3 0 0 1 0 5.6"/><path d="M17 20a6 6 0 0 0-2.8-5.1"/>',
+    watch:    '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+    online:   '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.7-3.8-9s1.3-6.4 3.8-9z"/>'
+  };
+  const p = paths[name];
+  if(!p) return '';
+  return `<svg class="mi-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+}
+function mmIcon(name){ return `<span class="mm-ic">${iconSvg(name)}</span>`; }
 function mainMenuHTML(){
   return `<div class="mm">
     <div class="mm-hero">
@@ -82,9 +102,9 @@ function mainMenuHTML(){
       <p class="mm-tag">Build your Renaissance empire — outshine your rivals in prestige.</p>
     </div>
     <div class="mm-menu">
-      <button class="mm-item" data-action="open-newgame"><span class="mm-i-t">New Game</span><span class="mm-i-s">Vs AI, pass-and-play, or watch</span></button>
-      <button class="mm-item" data-action="load-game" data-from="main" ${hasSave()?'':'disabled'}><span class="mm-i-t">Load Game</span><span class="mm-i-s">${hasSave()?'Continue a saved game':'No saved games yet'}</span></button>
-      <button class="mm-item" data-action="open-settings"><span class="mm-i-t">Settings</span><span class="mm-i-s">${SET_TABS.map(t=>t[1]).join(', ')}</span></button>
+      <button class="mm-item" data-action="open-newgame">${mmIcon('new')}<span class="mm-tx"><span class="mm-i-t">New Game</span><span class="mm-i-s">Vs AI, pass-and-play, or watch</span></span></button>
+      <button class="mm-item" data-action="load-game" data-from="main" ${hasSave()?'':'disabled'}>${mmIcon('load')}<span class="mm-tx"><span class="mm-i-t">Load Game</span><span class="mm-i-s">${hasSave()?'Continue a saved game':'No saved games yet'}</span></span></button>
+      <button class="mm-item" data-action="open-settings">${mmIcon('settings')}<span class="mm-tx"><span class="mm-i-t">Settings</span><span class="mm-i-s">${SET_TABS.map(t=>t[1]).join(', ')}</span></span></button>
     </div>
   </div>`;
 }
@@ -111,14 +131,14 @@ function prestigeRow(){
 // Step 1 — choose the game mode. Picking a card commits immediately and moves to
 // its options (no confirm step); the only button here is Back.
 function newGameStep1HTML(){
-  const modeBtn=(m,label,sub,dis)=>`<button class="mode-card${dis?' disabled':''}" ${dis?'disabled aria-disabled="true"':`data-action="ng-mode" data-mode="${m}"`}><span class="mc-t">${label}</span><span class="mc-s">${sub}</span></button>`;
+  const modeBtn=(m,ic,label,sub,dis)=>`<button class="mode-card${dis?' disabled':''}" ${dis?'disabled aria-disabled="true"':`data-action="ng-mode" data-mode="${m}"`}><span class="mc-ic">${iconSvg(ic)}</span><span class="mc-t">${label}</span><span class="mc-s">${sub}</span></button>`;
   const back = ngForce ? '' : `<button class="gbtn ghost" data-action="${landing?'open-mainmenu':'close-modal'}">${landing?'Back':'Cancel'}</button>`;
   return `<div class="eyebrow">New game</div><h2>Choose a mode</h2>
   <div class="mode-cards">
-    ${modeBtn('ai','Vs AI','Play computer merchants')}
-    ${modeBtn('hotseat','Vs Player','Local pass-and-play')}
-    ${modeBtn('watch','Watch','Spectate AI merchants')}
-    ${modeBtn('online','Online','Coming soon',true)}
+    ${modeBtn('ai','ai','vs AI','Play computer merchants')}
+    ${modeBtn('hotseat','players','vs Player','Local pass-and-play')}
+    ${modeBtn('watch','watch','Watch','Spectate AI merchants')}
+    ${modeBtn('online','online','Online','Coming soon',true)}
   </div>
   ${back?`<div class="foot">${back}</div>`:''}`;
 }
@@ -132,7 +152,7 @@ function newGameStep2HTML(){
   const watchers = SETTINGS.watchers || 2;
   let title, sub;
   if(mode==="hotseat"){
-    title="Vs Player";
+    title="vs Player";
     const names=humanNamesFor(humans);
     sub=`<div class="set-row"><div class="set-label">Players<span class="set-hint">pass the device between turns</span></div><div class="seg-group">
         ${seg('ng-players',2,humans,'2')}${seg('ng-players',3,humans,'3')}${seg('ng-players',4,humans,'4')}</div></div>
@@ -147,7 +167,7 @@ function newGameStep2HTML(){
         ${seg('ng-ai-level','easy',lvl,'Easy')}${seg('ng-ai-level','normal',lvl,'Normal')}${seg('ng-ai-level','hard',lvl,'Hard')}</div></div>
       ${prestigeRow()}`;
   } else {
-    title="Vs AI";
+    title="vs AI";
     sub=`<div class="set-row"><div class="set-label">Rivals</div><div class="seg-group">
         ${seg('ng-ai-count',1,opp,'1')}${seg('ng-ai-count',2,opp,'2')}${seg('ng-ai-count',3,opp,'3')}</div></div>
       <div class="set-row"><div class="set-label">Difficulty<span class="set-hint">how sharply rivals play</span></div><div class="seg-group">
@@ -381,24 +401,27 @@ function sessionsHTML(from){
 function sessRerender(){ if(landing) openLandingPage(sessionsHTML(sessionsFrom)); else openModal(sessionsHTML(sessionsFrom), true); }
 function openSessions(from){ sessionsFrom=from||'header'; delConfirmId=null; sessRerender(); }
 
-// Markup for the compact menu (small screens / overflow), with an optional note.
+// The in-game menu (a.k.a. pause screen). Uses the same card styling as the
+// landing main menu for a uniform look: every action is an identical card with a
+// title and a one-line hint. "Resume" replaces a separate Close button, and
+// "Return to main menu" is styled like the rest (with a subtle caution accent).
 function menuHTML(note){
-  return `<div class="eyebrow">Menu</div><h2>Gilded</h2>
-  ${note?`<p style="color:var(--gilt-soft)">${note}</p>`:""}
-  <div class="menu-list">
-    <button class="menu-item" data-action="open-newgame">New game</button>
-    <button class="menu-item" data-action="save-game">Save game</button>
-    <button class="menu-item" data-action="load-game" data-from="menu" ${hasSave()?"":"disabled"}>Load game${hasSave()?"":" — none saved"}</button>
-    <button class="menu-item" data-action="settings-from-menu">Settings</button>
-    <button class="menu-item" data-action="open-tutorial">How to play</button>
-    ${(G && !landing)?`<button class="menu-item leave" data-action="return-mainmenu">Return to main menu</button>`:""}
-  </div>
-  <div class="foot"><button class="gbtn ghost" data-action="close-modal">Close</button></div>`;
+  const items = [
+    ['close-modal','Resume','Back to the table','resume',''],
+    ['save-game','Save game','Store this game to a slot','save',''],
+    ['settings-from-menu','Settings','Audio, visuals, how to play','settings',''],
+  ];
+  if(G && !landing) items.push(['return-mainmenu','Return to main menu','Autosaves, then leaves the game','exit','mm-item-leave']);
+  const list = items.map(([act,t,s,ic,cls])=>
+    `<button class="mm-item ${cls}" data-action="${act}">${mmIcon(ic)}<span class="mm-tx"><span class="mm-i-t">${t}</span><span class="mm-i-s">${s}</span></span></button>`).join("");
+  return `<h2>Menu</h2>
+  ${note?`<p class="menu-note">${note}</p>`:""}
+  <div class="mm-menu game-menu">${list}</div>`;
 }
 // Opening the in-game menu pauses the game (freezes the AI and dims the board);
 // closing any modal resumes it. There is no separate pause button — the menu is
 // the pause.
-function openMenu(note){ openModal(menuHTML(note), true); paused=true; syncPauseUI(); }
+function openMenu(note){ openModal(menuHTML(note), true, "gamemenu"); paused=true; syncPauseUI(); }
 
 // Leave the current game for the main menu. In-progress games are autosaved to
 // their slot first, so they can be resumed later via Load Game.
@@ -448,14 +471,14 @@ function settingsHTML(fromMenu){
   if(landing) foot=`<button class="gbtn" data-action="open-mainmenu">Back to menu</button>`;
   else { const back=fromMenu?`<button class="gbtn ghost" data-action="open-menu">Back</button>`:'';
     foot=`${back}<button class="gbtn" data-action="close-modal">${fromMenu?'Done':'Close'}</button>`; }
-  return `<div class="eyebrow">Settings</div><h2>Settings</h2>
+  return `<h2>Settings</h2>
   <div class="set-tabs" role="tablist">${tabs}</div>
   <div class="set-panel" role="tabpanel">${panels[tab]}</div>
   <p class="set-foot-note">Settings are saved on this device.</p>
   <div class="foot">${foot}</div>`;
 }
 let settingsFromMenu=false;
-function openSettings(fromMenu){ if(fromMenu!==undefined) settingsFromMenu=fromMenu; if(landing) openLandingPage(settingsHTML(settingsFromMenu)); else openModal(settingsHTML(settingsFromMenu), !landing); }
+function openSettings(fromMenu){ if(fromMenu!==undefined) settingsFromMenu=fromMenu; if(landing) openLandingPage(settingsHTML(settingsFromMenu)); else openModal(settingsHTML(settingsFromMenu), true, "settings"); }
 
 // Toggle light/dark theme and persist it.
 function toggleTheme(){
