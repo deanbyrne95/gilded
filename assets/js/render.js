@@ -16,13 +16,13 @@ function render(){
   const _scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
   renderNobles(); renderTiers(); renderBank(); renderTakeTray();
   renderBanner(); renderPlayers(); renderLog();
-  const gh=document.getElementById("gemHud"), hc=document.getElementById("hudControls");
+  const gh=document.getElementById("gemHud");
   const yourTurn = !me().isAI && !G.over;
   const watching = G.mode==="watch";
   const dock = window.matchMedia("(min-width:1200px)").matches;
   if(UI._lastCurrent !== G.current){ UI._lastCurrent = G.current; if(yourTurn) document.body.classList.remove("gems-hidden"); }
   if(gh) gh.classList.toggle("show", yourTurn || watching || dock);
-  if(hc) hc.classList.toggle("hidden", !yourTurn);
+  syncTrayVisibility();
   document.body.classList.toggle("watching", watching);
   document.body.classList.toggle("dock-bank", dock);
   // On wide screens the bank docks beside the development cards (inside the
@@ -32,6 +32,7 @@ function render(){
   if(gh){
     const board=document.querySelector(".board");
     const bank=document.getElementById("bank");
+    const hc=document.getElementById("hudControls");
     if(dock && board){
       if(gh.parentElement!==board) board.appendChild(gh);
       if(hc && hc.parentElement!==board) board.appendChild(hc);
@@ -123,10 +124,11 @@ function renderBank(){
     const n=G.bank[k];
     const selN=UI.sel[k]||0;
     const dis = k==="gold" || (!humanControls()) || n<1;
-    return `<div class="token ${n<1?"empty":""}" data-color="${k}">
+    return `<div class="token ${n<1?"empty":""} ${selN?"sel":""}" data-color="${k}">
       <div class="gem g-${k} ${dis?"disabled":""}" data-action="bank" data-color="${k}"></div>
       <div class="cnt"><b>${n}</b>${selN?`<i class="selc"> · +${selN}</i>`:""}</div>
       <div class="lbl">${NAME[k]}</div>
+      ${selN?`<span class="sel-badge">+${selN}</span>`:""}
     </div>`;
   }).join("");
 }
@@ -135,6 +137,7 @@ function renderBank(){
 // cap, buy panel for a selected reserved card, or the take/clear buttons.
 function renderTakeTray(){
   const el=document.getElementById("takeTray"); if(!el) return;
+  syncTrayVisibility();
   if(!me().isAI && UI.phase==="discard"){
     const p=me();
     const chips=ALL.filter(k=>p.tokens[k]).map(k=>`<div class="gem g-${k}" data-action="discard" data-color="${k}" title="discard"></div>`).join("");
@@ -161,6 +164,22 @@ function renderTakeTray(){
   const canTake=(cols.length===1&&sel[cols[0]]===2)||(cols.length===3&&cols.every(k=>sel[k]===1));
   el.innerHTML=`<button class="gbtn" data-action="confirm-take" ${canTake?"":"disabled"}>Take</button>
     <button class="gbtn ghost" data-action="clear-take" ${has?"":"disabled"}>Clear</button>`;
+}
+
+// Toggle the take/clear controls cell. In the docked (wide) layout the controls
+// sit beside the bank and should surface only when there's something to act on:
+// a live gem selection, a reserved-card buy panel, or the discard prompt — so the
+// column collapses to nothing when idle. Other layouts keep the your-turn rule.
+// Called from renderTakeTray() so every selection change (which only does partial
+// renders) updates visibility, not just full render() passes.
+function syncTrayVisibility(){
+  const hc=document.getElementById("hudControls"); if(!hc) return;
+  const yourTurn = !me().isAI && !G.over;
+  const dock = window.matchMedia("(min-width:1200px)").matches;
+  const trayHasContent = !me().isAI && (UI.phase==="discard"
+    || (UI.selectedCard && UI.selectedCard.reserved!=null)
+    || selCount()>0);
+  hc.classList.toggle("hidden", dock ? !(yourTurn && trayHasContent) : !yourTurn);
 }
 
 // Render the goal banner: prestige target plus leader / final-round / game-over status.
