@@ -173,14 +173,14 @@ try{ Sfx.ensure(); }catch(e){}
  * Music — plays a bundled, properly-licensed medieval tavern-folk *recording*
  * on a loop, so the game has a realistic acoustic soundtrack (lively strings,
  * hand percussion and winds) rather than synthesised tones. The track is
- * "Minstrel Guild" by Kevin MacLeod (incompetech.com), licensed CC BY 3.0 —
+ * "Lord of the Land" by Kevin MacLeod (incompetech.com), licensed CC BY 3.0 —
  * see README credits. It streams through a single <audio> element, which works
  * from a plain file:// open as well as a web server, respects the Music volume
  * slider, and only begins once the player interacts (browser autoplay policy).
  * Public API is unchanged: start / stop / setVolume / toggle.
  * ------------------------------------------------------------------------- */
 const Music = (function(){
-  const SRC="assets/audio/minstrel-guild.mp3";   // http(s) fallback path
+  const SRC="assets/audio/lord-of-the-land.mp3";   // http(s) fallback path
   // Hard ceiling on the actual playback volume: the Settings slider runs 0–100%
   // of THIS value, so even at 100% the music stays a comfortable background bed
   // rather than blasting at full scale. Tuned low so a mid-slider (50%) setting
@@ -192,7 +192,7 @@ const Music = (function(){
   function wanted(){ return typeof SETTINGS!=="undefined" && SETTINGS.music!==false; }
 
   // Resolve the track source. Prefer the inline data URI (assets/audio/
-  // minstrel-guild.js), which plays even from a file:// page — where browsers
+  // lord-of-the-land.js), which plays even from a file:// page — where browsers
   // refuse to load a separate <audio> file as a subresource ("Format error").
   // Fall back to the on-disk mp3 when served over http(s).
   function srcUrl(){

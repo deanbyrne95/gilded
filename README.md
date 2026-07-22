@@ -74,8 +74,8 @@ gilded/
 └── assets/
     ├── site.webmanifest    # PWA manifest
     ├── audio/                # Background music (see Credits)
-    │   ├── minstrel-guild.js  # Track embedded as a data URI (plays from file://)
-    │   └── minstrel-guild.mp3 # Same track as a file (http fallback)
+    │   ├── lord-of-the-land.js  # Track embedded as a data URI (plays from file://)
+    │   └── lord-of-the-land.mp3 # Same track as a file (http fallback)
     ├── css/
     │   └── styles.css        # All styling (theme, layout, responsive, animations)
     ├── images/               # Icons and favicons (png/svg)
@@ -121,7 +121,7 @@ Any modern evergreen browser (Chrome, Edge, Firefox, Safari). The layout is resp
 
 ## Credits
 
-- **Music:** *"Minstrel Guild"* by Kevin MacLeod ([incompetech.com](https://incompetech.com/)) — licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Minstrel_Guild_(ISRC_USUAN1200098).mp3).
+- **Music:** *"Lord of the Land"* by Kevin MacLeod ([incompetech.com](https://incompetech.com/)) — licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Source: [incompetech.com](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1400022).
 - **Sound effects** are synthesised live in the browser via the Web Audio API (no asset files).
 
 ---
