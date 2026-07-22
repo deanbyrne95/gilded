@@ -73,6 +73,9 @@ gilded/
 ├── index.html            # Markup + favicon; links the stylesheet and modules
 └── assets/
     ├── site.webmanifest    # PWA manifest
+    ├── audio/                # Background music (see Credits)
+    │   ├── minstrel-guild.js  # Track embedded as a data URI (plays from file://)
+    │   └── minstrel-guild.mp3 # Same track as a file (http fallback)
     ├── css/
     │   └── styles.css        # All styling (theme, layout, responsive, animations)
     ├── images/               # Icons and favicons (png/svg)
@@ -83,7 +86,7 @@ gilded/
         ├── ai.js           # Computer-rival policy and heuristics
         ├── render.js       # View layer — rebuilds the board/HUD from state
         ├── ui.js           # Modals, menu, settings, save/load sessions
-        ├── audio.js        # Synthesised sound effects + generative music
+        ├── audio.js        # Synthesised sound effects + looping music track
         ├── animations.js   # Optional visual effects + reserved-card tooltip
         └── events.js       # Delegated event handling, ledger drawer, boot
 ```
@@ -116,6 +119,15 @@ Any modern evergreen browser (Chrome, Edge, Firefox, Safari). The layout is resp
 
 ---
 
+## Credits
+
+- **Music:** *"Minstrel Guild"* by Kevin MacLeod ([incompetech.com](https://incompetech.com/)) — licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Minstrel_Guild_(ISRC_USUAN1200098).mp3).
+- **Sound effects** are synthesised live in the browser via the Web Audio API (no asset files).
+
+---
+
 ## License
 
 No license has been chosen yet. Until one is added, all rights are reserved by the author.
+
+The bundled music track is © Kevin MacLeod and is used under CC BY 3.0 (see **Credits**); that attribution must be preserved regardless of the project's own license.
