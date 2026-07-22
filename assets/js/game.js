@@ -149,6 +149,6 @@ function endGame(){
   // A finished game shouldn't linger in saved games — drop its slot (it was
   // autosaved while in progress) so only resumable games remain.
   try{ if(currentSessionId) deleteSession(currentSessionId); }catch(e){}
-  sfx("win");
+  sfx(best.name==="You" ? "win" : "lose");
   showWinner(best);
 }

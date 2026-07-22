@@ -69,6 +69,7 @@ function onCardClick(loc){
   if(!humanControls()) return;
   UI.selectedCard = sameLoc(UI.selectedCard,loc)?null:loc;
   UI.sel={};
+  sfx("cardTap");
   if(UI.selectedCard && UI.selectedCard.reserved!=null) document.body.classList.remove("gems-hidden");
   render();
 }

@@ -1,11 +1,12 @@
 "use strict";
 
 /* ============================================================================
- * audio.js — lightweight sound effects, synthesised live with the Web Audio API
- * (no asset files). Cues are short tone sequences with a soft envelope. The
- * AudioContext is created eagerly at load so it is ready the instant the user
- * first interacts — browsers still block *sound* until that first gesture, but
- * this way even the very first click plays (no dropped-first-sound latency).
+ * audio.js — sound effects played from bundled, recorded CC0 samples (Kenney
+ * audio packs) via the Web Audio API, plus the background-music player. Samples
+ * are decoded once into AudioBuffers; gems keep a per-colour "voice" by pitch-
+ * shifting a glass sample. The AudioContext is created eagerly at load so it is
+ * ready the instant the user first interacts — browsers still block *sound*
+ * until that first gesture, but this way even the very first click plays.
  * Respects the Sound-effects / Volume settings.
  * ==========================================================================*/
 
@@ -25,6 +26,7 @@ const Sfx = (function(){
       master = ctx.createGain();
       master.gain.value = vol();
       master.connect(ctx.destination);
+      decodeAll();
     }catch(e){ ctx=null; master=null; }
     return ctx;
   }
@@ -40,123 +42,100 @@ const Sfx = (function(){
   // Re-apply the current volume to the live master gain.
   function setVolume(){ if(ctx && master){ try{ master.gain.setTargetAtTime(vol(), ctx.currentTime, 0.015); }catch(e){ master.gain.value=vol(); } } }
 
-  // One oscillator with a quick attack and exponential decay.
-  function tone(freq,t0,dur,type,peak,attack){
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.type=type||"sine"; o.frequency.setValueAtTime(freq,t0);
-    g.gain.setValueAtTime(0.0001,t0);
-    g.gain.exponentialRampToValueAtTime(peak||0.28,t0+(attack||0.012));
-    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
-    o.connect(g); g.connect(master);
-    o.start(t0); o.stop(t0+dur+0.03);
+  // ---- Recorded-sample playback -------------------------------------------
+  // Real one-shot samples (Kenney CC0 packs) are bundled as base64 data URIs in
+  // window.GILDED_SFX (assets/js/sfx.js) and decoded once into AudioBuffers,
+  // so cues are actual recordings rather than synthesised tones.
+  const SAMPLES=Object.create(null);
+  let decoding=false;
+
+  function b64ToBuf(uri){
+    const b64=String(uri).split(",")[1]||"";
+    const bin=atob(b64), n=bin.length, bytes=new Uint8Array(n);
+    for(let i=0;i<n;i++) bytes[i]=bin.charCodeAt(i);
+    return bytes.buffer;
+  }
+  // Decode every bundled sample into an AudioBuffer (idempotent). decodeAudioData
+  // works while the context is suspended, so this can run before any gesture.
+  function decodeAll(){
+    if(decoding || !ctx) return; decoding=true;
+    const src=(typeof window!=="undefined" && window.GILDED_SFX)||{};
+    for(const name in src){
+      let ab; try{ ab=b64ToBuf(src[name]); }catch(e){ continue; }
+      const store=(b)=>{ if(b) SAMPLES[name]=b; };
+      try{
+        const p=ctx.decodeAudioData(ab, store, ()=>{});
+        if(p && p.then) p.then(store, ()=>{});
+      }catch(e){}
+    }
   }
 
-  // A glassy "tink" — a fast-attack fundamental plus inharmonic partials, so it
-  // rings like a small gem/crystal rather than a plain beep.
-  function ting(t0,freq,peak,dur){
-    const D=dur||0.4, p=peak||0.22;
-    tone(freq,     t0, D,      "sine", p,      0.003);
-    tone(freq*2.01,t0, D*0.7,  "sine", p*0.45, 0.003);
-    tone(freq*3.4, t0, D*0.4,  "sine", p*0.2,  0.003);
+  // Play a decoded sample: pitch via `rate`, level via `gain`, starting at `t0`.
+  function playBuf(name,t0,o){
+    o=o||{}; const buf=SAMPLES[name]; if(!buf) return;
+    const s=ctx.createBufferSource(); s.buffer=buf;
+    s.playbackRate.value=o.rate||1;
+    const g=ctx.createGain(); g.gain.value=(o.gain!=null?o.gain:1);
+    s.connect(g); g.connect(master);
+    s.start(t0!=null?t0:ctx.currentTime+0.001);
+    s.onended=()=>{ try{ s.disconnect(); g.disconnect(); }catch(e){} };
+    return s;
   }
 
-  // Per-colour gem pitches (a bright, consonant pentatonic so any combination of
-  // gems still sounds pleasing). Darker stones ring lower; Diamond is brightest,
-  // Gold brightest of all. Used so each gem has its own recognisable voice.
-  const GEM_HZ={ black:1046.50, red:1174.66, green:1396.91, blue:1567.98, white:1760.00, gold:2093.00 };
-  function gemFreq(c){ return GEM_HZ[c] || 1567.98; }
+  // Per-colour gem pitch: one glass sample, gently shifted so each stone keeps
+  // its own voice (darker lower, Gold brightest). A modest spread — wide pitch-
+  // shifting a single sample sounds artificial, so we keep it subtle.
+  const GEM_RATE={ black:0.90, red:0.96, green:1.00, blue:1.06, white:1.12, gold:1.19 };
+  function gemRate(c){ return GEM_RATE[c] || 1.0; }
+  // A tiny random detune (±1.5%) so repeated clinks feel organic, not identical.
+  function detune(){ return 0.985+Math.random()*0.03; }
+  // The two "lose" fanfares alternate on each defeat so it isn't the same flub twice.
+  let loseAlt=0;
 
-  // A single, more authentic gemstone "clink": a very short hard-contact noise
-  // transient (stone tapping stone) followed by a crystalline body built from
-  // *inharmonic* partials with a touch of random detune, so it rings like a cut
-  // gem rather than a pure tone. Decays fast and glassy.
-  function gemTink(t0,freq,peak,dur){
-    const D=dur||0.42, p=peak||0.22, d=1+(Math.random()*0.012-0.006);
-    noise(t0,0.016,"highpass",4200,0.7,p*0.55);        // contact transient
-    tone(freq*d,      t0, D,      "sine", p,      0.001);
-    tone(freq*2.76*d, t0, D*0.55, "sine", p*0.36, 0.001);
-    tone(freq*5.40*d, t0, D*0.28, "sine", p*0.15, 0.001);
-  }
-  // A soft, low settle — gems coming to rest in a hand or leather pouch.
-  function pouch(t0,peak){ noise(t0,0.16,"lowpass",300,1,peak||0.13); }
-
-  // Reusable white-noise buffer (for card flicks and the settle thud).
-  let noiseBuf=null;
-  function noiseBuffer(){
-    if(noiseBuf) return noiseBuf;
-    const len=Math.floor(ctx.sampleRate*0.5);
-    noiseBuf=ctx.createBuffer(1,len,ctx.sampleRate);
-    const data=noiseBuf.getChannelData(0);
-    for(let i=0;i<len;i++) data[i]=Math.random()*2-1;
-    return noiseBuf;
-  }
-  // A filtered noise burst; returns the filter so callers can sweep it.
-  function noise(t0,dur,ftype,freq,q,peak){
-    const src=ctx.createBufferSource(); src.buffer=noiseBuffer();
-    const f=ctx.createBiquadFilter(); f.type=ftype||"bandpass";
-    f.frequency.setValueAtTime(freq||2000,t0); if(q!=null) f.Q.value=q;
-    const g=ctx.createGain();
-    g.gain.setValueAtTime(0.0001,t0);
-    g.gain.exponentialRampToValueAtTime(peak||0.3,t0+0.005);
-    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
-    src.connect(f); f.connect(g); g.connect(master);
-    src.start(t0); src.stop(t0+dur+0.03);
-    return f;
-  }
-
-  function play(fn){
-    if(!enabled()) return;
-    const c=ensure(); if(!c) return;
-    if(c.state==="suspended"){ try{ c.resume(); }catch(e){} }
-    try{ fn(c.currentTime+0.001); }catch(e){}
-  }
-
-  // Named cues, sound-designed to evoke the action rather than beep generically.
-  // Some accept an options object `o` (e.g. the gem colour, or a take plan).
+  // Named cues, built from recorded samples. Some accept an options object `o`
+  // (the gem colour, or a take plan of {colour:count}).
   const CUES={
-    // a single gem lifted from the bank — one crystalline clink at that gem's pitch
-    pick:(t,o)=>{ gemTink(t, gemFreq(o&&o.color), 0.24, 0.42); },
+    // a single gem lifted from the bank — one glass clink at that gem's pitch
+    pick:(t,o)=>{ playBuf("glass", t, {rate:gemRate(o&&o.color)*detune(), gain:0.85}); },
     // a gem promoted to a double take — a quick paired clink of the same stone
-    pickDouble:(t,o)=>{ const f=gemFreq(o&&o.color); gemTink(t,f,0.20,0.34); gemTink(t+0.075,f,0.18,0.44); },
-    // a gem put back — a softer, slightly muted clink a little lower
-    deselect:(t,o)=>{ gemTink(t, gemFreq(o&&o.color)*0.75, 0.15, 0.28); },
-    // gems taken on a turn — scoop each chosen stone as a staggered clink at its
-    // own pitch (so count *and* colours are audible), then a soft pouch settle.
+    pickDouble:(t,o)=>{ const r=gemRate(o&&o.color); playBuf("glass",t,{rate:r*detune(),gain:0.8}); playBuf("glass",t+0.085,{rate:r*detune(),gain:0.72}); },
+    // a gem put back — a softer, slightly lower clink
+    deselect:(t,o)=>{ playBuf("glass", t, {rate:gemRate(o&&o.color)*0.9*detune(), gain:0.5}); },
+    // gems taken on a turn — a scoop, then each chosen stone as a staggered clink
+    // at its own pitch (so count *and* colours are audible), then a pouch settle.
     take:(t,o)=>{
       const seq=[];
       if(o&&typeof o==="object"){ for(const k in o){ const n=o[k]|0; for(let i=0;i<n;i++) seq.push(k); } }
       if(!seq.length){ seq.push("white","blue"); }              // fallback (e.g. previews)
-      seq.forEach((k,i)=> gemTink(t+i*0.062+Math.random()*0.014, gemFreq(k)*(0.99+Math.random()*0.02), 0.21, 0.38));
-      pouch(t+seq.length*0.062+0.02, 0.12);
+      playBuf("scoop", t, {gain:0.5});
+      seq.forEach((k,i)=> playBuf("glass", t+0.05+i*0.08, {rate:gemRate(k)*detune(), gain:0.78}));
+      playBuf("settle", t+0.06+seq.length*0.08, {gain:0.6});
     },
-    // a card bought — a handful of gems tumbling down onto a pile, then a settle
-    buy:(t)=>{
-      pouch(t+0.02,0.20);                                       // soft settle thud
-      const notes=["gold","white","blue","green","red","white","black"];
-      for(let i=0;i<notes.length;i++)
-        gemTink(t+0.01+i*0.045+Math.random()*0.012, gemFreq(notes[i])*(0.98+Math.random()*0.04), 0.13, 0.24);
-    },
-    // a card reserved — a paper flick (bandpass noise sweeping down) then a tap
-    reserve:(t)=>{
-      const f=noise(t,0.20,"bandpass",2800,0.6,0.34);
-      f.frequency.setValueAtTime(3200,t);
-      f.frequency.exponentialRampToValueAtTime(700,t+0.18);
-      tone(180,t+0.14,0.12,"sine",0.18,0.004);                 // card lands
-    },
-    // a patron visits — a bright two-note bell
-    noble:(t)=>{ ting(t,1046,0.26,0.6); ting(t+0.12,1568,0.22,0.7); },
-    // victory — a rising fanfare with a sparkle tail
-    win:(t)=>{
-      [523,659,784,1046].forEach((f,i)=> tone(f,t+i*0.14,0.30,"triangle",0.3,0.01));
-      ting(t+0.5,1568,0.20,0.8); ting(t+0.62,2093,0.17,0.9);
-    },
+    // a card selected/deselected on the board — a light paper flick
+    cardTap:(t)=>{ playBuf("cardSlide", t, {rate:1.14, gain:0.4}); },
+    // a card bought — the card slapped down while gems are paid out
+    buy:(t)=>{ playBuf("cardPlace", t, {gain:0.85}); playBuf("coins", t+0.06, {gain:0.5}); },
+    // a card reserved — slid out of the row, then tapped into the reserve
+    reserve:(t)=>{ playBuf("cardSlide", t, {gain:0.8}); playBuf("cardPlace", t+0.16, {rate:1.05, gain:0.55}); },
+    // a patron visits — a short, regal trumpet flourish
+    noble:(t)=>{ playBuf("noble", t, {gain:0.85}); },
+    // you win the match — a triumphant trumpet fanfare
+    win:(t)=>{ playBuf("win", t, {gain:0.9}); },
+    // you lose the match — a deflating trumpet, alternating between two takes
+    lose:(t)=>{ playBuf((loseAlt++ % 2) ? "loseB" : "loseA", t, {gain:0.85}); },
     // single gem clink (volume preview)
-    gem:(t)=>{ gemTink(t,gemFreq("white"),0.22,0.42); },
+    gem:(t)=>{ playBuf("glass", t, {rate:gemRate("white"), gain:0.85}); },
     // soft, subtle UI tick for menu/header buttons
-    click:(t)=>{ tone(1050,t,0.030,"triangle",0.09,0.001); noise(t,0.022,"highpass",2600,0.4,0.06); },
-    error:(t)=>{ tone(160,t,0.20,"sawtooth",0.18,0.01); tone(150,t+0.05,0.18,"sawtooth",0.14,0.01); },
+    click:(t)=>{ playBuf("click", t, {gain:0.5}); },
+    // an invalid action
+    error:(t)=>{ playBuf("error", t, {gain:0.6}); },
   };
-  function cue(name,opts){ const fn=CUES[name]; if(fn) play((t)=>fn(t,opts)); }
+  function cue(name,opts){
+    if(!enabled()) return;
+    const c=ensure(); if(!c) return;
+    if(c.state==="suspended"){ try{ c.resume(); }catch(e){} }
+    const fn=CUES[name]; if(fn){ try{ fn(c.currentTime+0.001, opts); }catch(e){} }
+  }
 
   return { cue, unlock, setVolume, ensure };
 })();
@@ -180,7 +159,6 @@ try{ Sfx.ensure(); }catch(e){}
  * Public API is unchanged: start / stop / setVolume / toggle.
  * ------------------------------------------------------------------------- */
 const Music = (function(){
-  const SRC="assets/audio/lord-of-the-land.mp3";   // http(s) fallback path
   // Hard ceiling on the actual playback volume: the Settings slider runs 0–100%
   // of THIS value, so even at 100% the music stays a comfortable background bed
   // rather than blasting at full scale. Tuned low so a mid-slider (50%) setting
@@ -191,15 +169,10 @@ const Music = (function(){
   function mvol(){ const v=(typeof SETTINGS!=="undefined"&&SETTINGS.musicVol!=null)?+SETTINGS.musicVol:0.5; return Math.max(0,Math.min(1,v))*MUSIC_CEILING; }
   function wanted(){ return typeof SETTINGS!=="undefined" && SETTINGS.music!==false; }
 
-  // Resolve the track source. Prefer the inline data URI (assets/audio/
-  // lord-of-the-land.js), which plays even from a file:// page — where browsers
-  // refuse to load a separate <audio> file as a subresource ("Format error").
-  // Fall back to the on-disk mp3 when served over http(s).
-  function srcUrl(){
-    if(typeof window!=="undefined" && window.GILDED_MUSIC) return window.GILDED_MUSIC;
-    try{ return new URL(SRC, document.baseURI).href.replace(/^(file:\/\/\/[A-Za-z])%3[Aa]\//,"$1:/"); }
-    catch(e){ return SRC; }
-  }
+  // The track is bundled as an inline base64 data URI (assets/js/music.js ->
+  // window.GILDED_MUSIC), which plays even from a file:// page, where browsers
+  // refuse to load a separate <audio> file as a subresource.
+  function srcUrl(){ return (typeof window!=="undefined" && window.GILDED_MUSIC) || ""; }
 
   // Lazily create the streaming element so nothing loads until music is wanted.
   function ensure(){
@@ -211,7 +184,7 @@ const Music = (function(){
     el.volume=mvol();
     el.setAttribute("playsinline","");         // allow inline playback on mobile
     el.style.display="none";
-    el.addEventListener("error",()=>{ try{ console.warn("[Gilded] music failed to load:",SRC, el.error&&el.error.message); }catch(e){} });
+    el.addEventListener("error",()=>{ try{ console.warn("[Gilded] music failed to load:", el.error&&el.error.message); }catch(e){} });
     try{ (document.body||document.documentElement).appendChild(el); }catch(e){}  // in-DOM helps some browsers
     return el;
   }

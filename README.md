@@ -73,9 +73,6 @@ gilded/
 ├── index.html            # Markup + favicon; links the stylesheet and modules
 └── assets/
     ├── site.webmanifest    # PWA manifest
-    ├── audio/                # Background music (see Credits)
-    │   ├── lord-of-the-land.js  # Track embedded as a data URI (plays from file://)
-    │   └── lord-of-the-land.mp3 # Same track as a file (http fallback)
     ├── css/
     │   └── styles.css        # All styling (theme, layout, responsive, animations)
     ├── images/               # Icons and favicons (png/svg)
@@ -86,7 +83,9 @@ gilded/
         ├── ai.js           # Computer-rival policy and heuristics
         ├── render.js       # View layer — rebuilds the board/HUD from state
         ├── ui.js           # Modals, menu, settings, save/load sessions
-        ├── audio.js        # Synthesised sound effects + looping music track
+        ├── audio.js        # Recorded sound effects + looping music player (see Credits)
+        ├── music.js        # Music track embedded as a base64 data URI (plays from file://)
+        ├── sfx.js          # Recorded sound-effect samples as base64 data URIs
         ├── animations.js   # Optional visual effects + reserved-card tooltip
         └── events.js       # Delegated event handling, ledger drawer, boot
 ```
@@ -122,7 +121,10 @@ Any modern evergreen browser (Chrome, Edge, Firefox, Safari). The layout is resp
 ## Credits
 
 - **Music:** *"Lord of the Land"* by Kevin MacLeod ([incompetech.com](https://incompetech.com/)) — licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Source: [incompetech.com](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1400022).
-- **Sound effects** are synthesised live in the browser via the Web Audio API (no asset files).
+- **Sound effects:**
+  - Foley & UI cues — recorded samples from [Kenney](https://kenney.nl/)'s *Casino Audio*, *Interface Sounds*, *RPG Audio* and *Impact Sounds* packs, released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+  - Brass cues — [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) recordings from [Freesound](https://freesound.org/): patron fanfare *"Mastodon trumpet"* by [vintprox](https://freesound.org/s/854137/); victory *"Clean Trumpet Fanfare"* by [joepayne](https://freesound.org/s/413201/); defeat *"Got nervous at the end"* / *"Just about"* by [joepayne](https://freesound.org/s/413208/).
+  - All public domain (no attribution required, but credited here with thanks). Bundled as base64 data URIs and played via the Web Audio API.
 
 ---
 
