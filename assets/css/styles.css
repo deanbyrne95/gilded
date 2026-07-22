@@ -184,60 +184,78 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
 .gbtn:disabled{opacity:.4; cursor:not-allowed}
 
 /* On wide screens the bank docks beside the development cards in every mode —
-   like the gem supply sitting next to the tableau on a real table — listed one
-   gem per row with its name and count. In playable modes it stays interactive
-   (click a gem to take it) and the take controls sit below the list; in Watch
-   mode the supply is display-only. render() adds body.dock-bank + relocates
-   #gemHud into the board when the viewport is wide enough. */
+   like the gem supply sitting next to the tableau on a real table. The board
+   becomes a two-column grid: Patrons spans the top; the development cards sit
+   in the left column with the bank top-aligned beside them in the right column;
+   and the take/clear controls occupy their own cell directly below the bank
+   (outside #gemHud) so they never distort the gem column or the card grid.
+   render() adds body.dock-bank and relocates #gemHud + #hudControls into the
+   board when the viewport is wide enough. */
 @media (min-width:1200px){
   body.dock-bank .board{
     display:grid; grid-template-columns:660px 190px;
     column-gap:24px; justify-content:start; align-items:start}
-  body.dock-bank .board > :not(#gemHud){grid-column:1; min-width:0}
+  body.dock-bank .board > .board-patrons{grid-column:1 / -1; grid-row:1}
+  body.dock-bank .board > .board-cards{grid-column:1; grid-row:2; min-width:0}
+  /* bank column: content-height, top-aligned so its "THE BANK" label lines up
+     with the "DEVELOPMENT CARDS" label beside it. */
   body.dock-bank .board > #gemHud{
-    grid-column:2; grid-row:3 / span 2; align-self:start;
+    grid-column:2; grid-row:2; align-self:start;
     position:static; top:auto; left:auto; right:auto; bottom:auto;
-    transform:none; width:100%; max-width:none; margin:0; padding:0; gap:0;
+    transform:none; opacity:1; pointer-events:auto;
+    display:flex; flex-direction:column;
+    width:100%; max-width:none; margin:0; padding:0; gap:0;
     background:none; border:none; border-radius:0; box-shadow:none; overflow:visible; transition:none}
   body.dock-bank .board > #gemHud.show{transform:none}
   /* header reads like the "PATRONS" / "DEVELOPMENT CARDS" section labels */
   body.dock-bank .board > #gemHud .gem-tab{
-    position:static; transform:none; order:1; width:auto; justify-content:flex-start;
+    position:static; transform:none; width:auto; justify-content:flex-start;
     background:none; border:none; border-radius:0; box-shadow:none; padding:0;
     color:var(--ink-dim); font-family:"Jost"; font-size:11px; letter-spacing:3px;
     text-transform:uppercase; margin:2px 0 10px; cursor:pointer}
   body.dock-bank .board > #gemHud .gem-tab:hover{color:var(--gilt-soft)}
   body.dock-bank .board > #gemHud .gem-tab .chev{display:none}
-  /* the supply uses the same gilt panel surface as the patron cards */
+  /* gems sit in a single spaced column that stretches (via syncBankHeight) to
+     the height of the development-card stack, distributing evenly down it. The
+     count reads as small muted text inside the gem (à la ".deck .dleft"), dark
+     on light gems / light on dark gems for contrast. Empty piles fade to a
+     ghost. No slot borders, no name labels. */
   body.dock-bank .board > #gemHud .bank{
-    order:2; flex-direction:column; flex-wrap:nowrap; gap:0; margin:0; overflow:visible;
-    background:linear-gradient(160deg,#40354f,#2a2135); border:1px solid var(--gilt);
-    border-radius:12px; box-shadow:var(--shadow); padding:2px 12px}
+    display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+    gap:16px; flex:none; margin:0; padding:6px 2px 2px; background:none; border:none; box-shadow:none; overflow:visible}
   body.dock-bank .board > #gemHud .token{
-    flex-direction:row; align-items:center; gap:12px; width:100%; padding:9px 2px; border-radius:0}
-  body.dock-bank .board > #gemHud .token + .token{border-top:1px solid rgba(255,255,255,.08)}
-  body.dock-bank .board > #gemHud .token .gem{width:30px; height:30px}
-  body.dock-bank .board > #gemHud .token .lbl{
-    display:block; font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
-    color:var(--ink-dim); text-align:left}
+    position:relative; width:auto; padding:0; gap:0; border:none; background:none;
+    display:flex; align-items:center; justify-content:center}
+  body.dock-bank .board > #gemHud .token .gem{width:56px; height:56px; cursor:pointer}
+  body.dock-bank .board > #gemHud .token.empty .gem{opacity:.26}
+  body.dock-bank .board > #gemHud .token .lbl,
+  body.dock-bank .board > #gemHud .token .selc{display:none}
   body.dock-bank .board > #gemHud .token .cnt{
-    order:2; margin-left:auto; font-family:"Cormorant Garamond",serif;
-    font-size:22px; line-height:1; color:var(--gilt-soft)}
-  body.dock-bank .board > #gemHud .token .cnt b{color:var(--gilt-soft); font-weight:600}
-  /* take controls (playable modes) sit as their own tray below the gem list */
-  body.dock-bank .board > #gemHud .hud-controls{order:3; margin-top:8px}
-  body.dock-bank .board > #gemHud .take-tray{flex-direction:column; align-items:stretch;
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    font-family:"Jost"; font-size:13px; letter-spacing:.5px; font-weight:700; line-height:1;
+    color:#f4efe6; text-shadow:0 1px 2px rgba(0,0,0,.9), 0 0 3px rgba(0,0,0,.75); pointer-events:none}
+  body.dock-bank .board > #gemHud .token[data-color="white"] .cnt,
+  body.dock-bank .board > #gemHud .token[data-color="gold"] .cnt{
+    color:#241a12; text-shadow:0 1px 1px rgba(255,255,255,.45)}
+  body.dock-bank .board > #gemHud .token .cnt b{color:inherit; font-weight:700}
+  /* take/clear controls: their own board cell directly below the bank, fully
+     outside #gemHud so they can't stretch or shift the gem column. */
+  body.dock-bank .board > #hudControls{
+    grid-column:2; grid-row:3; align-self:start; width:100%; margin-top:10px; display:flex}
+  body.dock-bank .board > #hudControls.hidden{display:none}
+  body.dock-bank .board > #hudControls .take-tray{flex-direction:column; align-items:stretch; width:100%;
     background:var(--felt-2); border:1px solid var(--line); border-radius:12px; padding:10px}
-  body.dock-bank .board > #gemHud .take-tray .gbtn{flex:0 0 auto; width:100%; min-width:0}
+  body.dock-bank .board > #hudControls .take-tray .gbtn{flex:0 0 auto; width:100%; min-width:0}
   body.dock-bank.gems-hidden .board > #gemHud .bank,
-  body.dock-bank.gems-hidden .board > #gemHud .hud-controls{display:none}
+  body.dock-bank.gems-hidden .board > #hudControls{display:none}
 }
 /* Docked bank is a persistent supply display, so every pile reads at full
    strength even while it carries the off-turn/unavailable "disabled" flag; the
    not-allowed cursor still signals what can't be taken. Watch mode never has
    take controls, at any width. */
 body.dock-bank #gemHud .token .gem.disabled{opacity:1}
-body.watching #gemHud .hud-controls{display:none}
+body.watching #gemHud .hud-controls,
+body.watching #hudControls{display:none}
 
 .section-label{font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--ink-dim); margin:2px 0 10px}
 

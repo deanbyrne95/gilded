@@ -26,14 +26,23 @@ function render(){
   document.body.classList.toggle("watching", watching);
   document.body.classList.toggle("dock-bank", dock);
   // On wide screens the bank docks beside the development cards (inside the
-  // board) in every mode; otherwise it floats at body level as before.
+  // board) in every mode; otherwise it floats at body level as before. The
+  // take/clear controls ride along as their own board cell below the bank, so
+  // they sit outside #gemHud and never distort the gem column or the card grid.
   if(gh){
     const board=document.querySelector(".board");
-    if(dock && board){ if(gh.parentElement!==board) board.appendChild(gh); }
-    else if(gh.parentElement && gh.parentElement!==document.body){ document.body.appendChild(gh); }
+    const bank=document.getElementById("bank");
+    if(dock && board){
+      if(gh.parentElement!==board) board.appendChild(gh);
+      if(hc && hc.parentElement!==board) board.appendChild(hc);
+    } else {
+      if(gh.parentElement && gh.parentElement!==document.body) document.body.appendChild(gh);
+      if(hc && hc.parentElement!==gh && bank) gh.insertBefore(hc, bank);
+    }
   }
   layoutPlayers();
   syncHudSpace();
+  syncBankHeight();
   syncPauseUI();
   // Remember which cards are on the board so newly dealt ones can animate in.
   const ids=new Set();
@@ -114,9 +123,9 @@ function renderBank(){
     const n=G.bank[k];
     const selN=UI.sel[k]||0;
     const dis = k==="gold" || (!humanControls()) || n<1;
-    return `<div class="token">
+    return `<div class="token ${n<1?"empty":""}" data-color="${k}">
       <div class="gem g-${k} ${dis?"disabled":""}" data-action="bank" data-color="${k}"></div>
-      <div class="cnt"><b>${n}</b>${selN?` · +${selN}`:""}</div>
+      <div class="cnt"><b>${n}</b>${selN?`<i class="selc"> · +${selN}</i>`:""}</div>
       <div class="lbl">${NAME[k]}</div>
     </div>`;
   }).join("");
@@ -182,6 +191,18 @@ function syncHudSpace(){
     const bar=document.querySelector(".topbar");
     if(bar){ const r=bar.getBoundingClientRect(); const y=(window.pageYOffset||0);
       document.documentElement.style.setProperty("--hdr-h", Math.round(r.top+y+r.height)+"px"); }
+  });
+}
+
+// When the bank is docked beside the board, stretch the gem column to the same
+// height as the development-card stack (tiers 1-3) so the gems distribute evenly
+// down that span, with the take/clear controls sitting below.
+function syncBankHeight(){
+  const bank=document.getElementById("bank"), tiers=document.getElementById("tiers");
+  if(!bank||!tiers) return;
+  requestAnimationFrame(()=>{
+    bank.style.height = document.body.classList.contains("dock-bank")
+      ? tiers.offsetHeight + "px" : "";
   });
 }
 
