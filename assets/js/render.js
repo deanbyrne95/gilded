@@ -225,42 +225,56 @@ function syncBankHeight(){
   });
 }
 
-// Render every player chip: colour holdings (bonus + tokens + live selection),
-// gold, patron count, prestige, and the reserved-card strip (own cards face-up,
+// Render every player chip: name / prestige / patron count, a card-shaped chip
+// per colour showing developments owned, a per-colour gem row with a running
+// total against the 10-gem cap, and a three-slot reserve rack (empty slots show
+// as dashed outlines; filled slots take the card's colour, own cards clickable,
 // rivals' blind reserves hidden). Marks the starter and the active player.
 function renderPlayers(){
   const el=document.getElementById("players"); if(!el) return;
   hideRtip();
   const seat = localSeat();
   const chips=G.players.map((p,i)=>{
-    const hold=KEYS.map(k=>{
-      const b=p.bonus[k], t=p.tokens[k];
-      const sel=(i===seat && humanControls() && UI.sel[k]) ? UI.sel[k] : 0;
-      const cls = sel ? "tk tk-add" : (t?"tk":"tk tk0");
-      return `<span class="cg"><span class="bon g-${k}">${b?`<b>${b}</b>`:""}</span><span class="${cls}">${t+sel}</span></span>`;
-    }).join("");
-    const gg=p.tokens.gold;
-    const gold=`<span class="cg"><span class="gem g-gold"></span><span class="tk${gg?"":" tk0"}">${gg}</span></span>`;
-    const patronIco=`<svg class="pc-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 7.5l4.2 3.4L12 4l4.8 6.9L21 7.5 19.3 19H4.7L3 7.5z"/></svg>`;
     const mine = i===seat;
+    const selNow = (mine && humanControls()) ? UI.sel : {};
+    // Development cards owned, one card-shaped chip per colour showing how many
+    // of that colour the player has bought (their bonus in that colour).
+    const cardsRow=KEYS.map(k=>{
+      const b=p.bonus[k];
+      return `<span class="pc-card g-${k}${b?"":" z"}" title="${b} ${NAME[k]} development${b===1?"":"s"}">${b}</span>`;
+    }).join("");
+    // Gems held, one token per colour (+ gold) with its count and a running total
+    // against the 10-gem cap; the local player's pending selection is previewed.
+    const gemsRow=ALL.map(k=>{
+      const t=p.tokens[k], s=selNow[k]||0, v=t+s;
+      const cls = s ? "pc-gem sel" : (v?"pc-gem":"pc-gem z");
+      return `<span class="${cls}" title="${v} ${NAME[k]}"><span class="gem g-${k}"></span><i>${v}</i></span>`;
+    }).join("");
+    const gemTotal = totalTokens(p) + (mine && humanControls() ? selCount() : 0);
+    const gemsBlock = `<div class="pc-gems">${gemsRow}<span class="pc-gtot${gemTotal>=10?" full":""}" title="Total gems (max 10)">${gemTotal}<small>/10</small></span></div>`;
+    const patronIco=`<svg class="pc-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 7.5l4.2 3.4L12 4l4.8 6.9L21 7.5 19.3 19H4.7L3 7.5z"/></svg>`;
     const role = mine ? "you" : "opp";
-    let resStrip="";
-    if(p.reserved.length){
-      const selIdx = mine && UI.selectedCard && UI.selectedCard.reserved!=null ? UI.selectedCard.reserved : -1;
-      const items = p.reserved.map((c,idx)=>{
-        if(!mine && c.blind) return `<span class="rcard back" title="Hidden — reserved from the deck"></span>`;
-        const buyable = mine && affordPlan(p,c).ok;
-        const cls = `rcard g-${c.color}`+(idx===selIdx?" sel":"")+(buyable?" buyable":"");
-        const attr = mine ? ` data-action="card" data-reserved="${idx}"` : "";
-        const costEnc = KEYS.filter(k=>c.cost[k]).map(k=>k+":"+c.cost[k]).join(",");
-        const aria = `Reserved ${NAME[c.color]}${c.points?`, ${c.points} prestige`:""}, tier ${ROMAN[c.tier]}${buyable?", ready to buy":""}`;
-        return `<span class="${cls}"${attr} data-color="${c.color}" data-tier="${c.tier}" data-points="${c.points||0}" data-cost="${costEnc}" data-ready="${buyable?1:0}" aria-label="${aria}">${c.points||""}</span>`;
-      }).join("");
-      resStrip = `<div class="pc-res${mine?" mine":""}" title="Reserved cards">${items}</div>`;
+    // Reserve: always show all three slots so the cap is legible. Empty slots are
+    // a dashed outline (like empty tier slots); filled slots take the card's colour.
+    const selIdx = mine && UI.selectedCard && UI.selectedCard.reserved!=null ? UI.selectedCard.reserved : -1;
+    let resSlots="";
+    for(let idx=0; idx<3; idx++){
+      const c=p.reserved[idx];
+      if(!c){ resSlots+=`<span class="rslot empty" aria-hidden="true"></span>`; continue; }
+      if(!mine && c.blind){ resSlots+=`<span class="rslot rcard back" title="Hidden — reserved from the deck"></span>`; continue; }
+      const buyable = mine && affordPlan(p,c).ok;
+      const cls = `rslot rcard g-${c.color}`+(idx===selIdx?" sel":"")+(buyable?" buyable":"");
+      const attr = mine ? ` data-action="card" data-reserved="${idx}"` : "";
+      const costEnc = KEYS.filter(k=>c.cost[k]).map(k=>k+":"+c.cost[k]).join(",");
+      const aria = `Reserved ${NAME[c.color]}${c.points?`, ${c.points} prestige`:""}, tier ${ROMAN[c.tier]}${buyable?", ready to buy":""}`;
+      resSlots+=`<span class="${cls}"${attr} data-color="${c.color}" data-tier="${c.tier}" data-points="${c.points||0}" data-cost="${costEnc}" data-ready="${buyable?1:0}" aria-label="${aria}">${c.points||""}</span>`;
     }
+    const resBlock = `<div class="pc-res${mine?" mine":""}" title="Reserved cards (max 3)">${resSlots}</div>`;
     return `<div class="pchip ${role} ${i===G.current&&!G.over?"active":""}" data-pi="${i}">
       <div class="pc-top"><span class="pc-name">${p.name}</span>${(i===G.starter&&!G.over)?`<span class="pc-first" title="Started the game">1st</span>`:""}${(i===G.current&&!G.over&&p.isAI)?`<span class="pc-think" aria-label="thinking"><i></i><i></i><i></i></span>`:""}<span class="pc-vp${p._vpGain?" bump":""}"><span class="pc-pat" title="Patrons">${patronIco}${p.nobles.length}</span>${p.points}<small> VP</small></span></div>
-      <div class="pc-hold">${hold}${gold}</div>${resStrip}
+      <div class="pc-cards">${cardsRow}</div>
+      ${gemsBlock}
+      ${resBlock}
     </div>`;
   }).join("");
   const nav=`<button class="pchip-nav" data-action="cycle-opp" hidden aria-label="Show next player"><span class="nav-chev" aria-hidden="true">&rsaquo;</span><span class="nav-count"></span></button>`;

@@ -98,7 +98,7 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
 .pchip-nav .nav-chev{font-size:20px; line-height:1}
 .pchip-nav .nav-count{font-family:"Jost"; font-size:10px; letter-spacing:.5px; color:var(--ink-dim); font-variant-numeric:tabular-nums}
 .hud-players [hidden]{display:none}
-.pchip{flex:0 0 auto; min-width:130px; border-radius:11px; padding:6px 10px;
+.pchip{flex:0 0 auto; min-width:154px; border-radius:11px; padding:6px 10px;
   background:var(--felt-2); border:1px solid var(--line)}
 .pchip.active{border-color:var(--gilt); animation:breathe 2.6s ease-in-out infinite}
 .pchip .pc-top{display:flex; align-items:baseline; gap:8px}
@@ -121,21 +121,34 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
 .pchip .pc-vp small{font-family:"Jost"; font-size:9px; letter-spacing:1px; color:var(--ink-dim)}
 .pchip .pc-pat{font-family:"Jost"; font-weight:500; font-size:12px; color:var(--ink-dim); margin-right:9px}
 .pchip .pc-pat .pc-ico{vertical-align:-0.14em; margin-right:2px}
-/* combined holdings: card count sits inside the colour, gem count beside it */
-.pchip .pc-hold{display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; margin-top:5px; font-size:11px; color:var(--ink-dim)}
-.pchip .cg{display:inline-flex; align-items:center; gap:3px}
-.pchip .cg .bon{width:17px; height:17px; border-radius:5px; border:1px solid rgba(0,0,0,.4);
-  display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;
-  line-height:1; color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.55)}
-.pchip .cg .bon.g-white, .pchip .cg .bon.g-gold{color:#241d2b; text-shadow:0 1px 0 rgba(255,255,255,.4)}
-.pchip .cg .gem{width:15px; height:15px; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
-.pchip .cg .tk{color:var(--ink); font-variant-numeric:tabular-nums}
-.pchip .cg .tk.tk0{color:var(--ink-dim); opacity:.45}
-.pchip .cg .tk-add{color:#7fd39a; font-weight:700}
+/* developments owned: a small card-shaped chip per colour, count centred */
+.pchip .pc-cards{display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin-top:6px}
+.pchip .pc-card{width:18px; height:24px; flex:0 0 auto; border-radius:4px;
+  border:1px solid rgba(0,0,0,.4); box-shadow:0 1px 2px rgba(0,0,0,.3);
+  display:inline-flex; align-items:center; justify-content:center;
+  font-family:"Jost"; font-size:11px; font-weight:700; line-height:1;
+  color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.55); font-variant-numeric:tabular-nums}
+.pchip .pc-card.g-white, .pchip .pc-card.g-gold{color:#241d2b; text-shadow:0 1px 0 rgba(255,255,255,.4)}
+.pchip .pc-card.z{opacity:.28; box-shadow:none}
+/* gems held: gem shape + count per colour, with a running /10 total */
+.pchip .pc-gems{display:flex; flex-wrap:wrap; align-items:center; gap:3px 8px; margin-top:6px; font-size:11px}
+.pchip .pc-gem{display:inline-flex; align-items:center; gap:3px; color:var(--ink); font-variant-numeric:tabular-nums}
+.pchip .pc-gem .gem{width:16px; height:16px; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+.pchip .pc-gem i{font-style:normal; font-weight:600}
+.pchip .pc-gem.z{opacity:.4}
+.pchip .pc-gem.z i{color:var(--ink-dim)}
+.pchip .pc-gem.sel i{color:#7fd39a; font-weight:700}
+.pchip .pc-gtot{margin-left:auto; font-family:"Jost"; font-weight:700; font-size:12px;
+  color:var(--gilt-soft); font-variant-numeric:tabular-nums; white-space:nowrap}
+.pchip .pc-gtot small{font-size:9px; color:var(--ink-dim); letter-spacing:.3px; font-weight:500}
+.pchip .pc-gtot.full{color:#e6b95a}
 .pchip .pc-ico{width:13px; height:13px; opacity:.9}
-/* opponents' reserved cards: face-up ones are public, deck-holds show as a back */
-.pchip .pc-res{display:flex; gap:4px; margin-top:6px}
-.pchip .rcard{width:18px; height:25px; flex:0 0 auto; border-radius:3px; border:1px solid rgba(0,0,0,.45);
+/* reserve rack: always three slots — empty ones dashed like empty tier slots,
+   filled ones take the card colour (own cards clickable, blind rivals as backs) */
+.pchip .pc-res{display:flex; gap:5px; margin-top:8px}
+.pchip .rslot{width:20px; height:28px; flex:0 0 auto; border-radius:4px; box-sizing:border-box}
+.pchip .rslot.empty{border:1px dashed var(--line); background:rgba(255,255,255,.02)}
+.pchip .rcard{border:1px solid rgba(0,0,0,.45);
   display:inline-flex; align-items:flex-start; justify-content:flex-end; padding:1px 2px 0 0; overflow:hidden;
   font-size:10px; font-weight:700; line-height:1; color:#fff;
   text-shadow:0 1px 1px rgba(0,0,0,.6); box-shadow:0 1px 2px rgba(0,0,0,.3)}
@@ -782,6 +795,6 @@ body.light .modal{background:linear-gradient(170deg,#fbf6ea,#f1e9d7)}
 body.light .ledger-drawer{background:linear-gradient(180deg,#fbf6ea,#eee5d3)}
 body.light .gem-hud{background:linear-gradient(0deg,#e7dabc,#f1e8d4)}
 body.light .gem{filter:drop-shadow(0 0 1px rgba(58,42,10,.55)) drop-shadow(0 2px 4px rgba(58,42,10,.26))}
-body.light .pchip .cg .gem{filter:drop-shadow(0 0 .6px rgba(58,42,10,.5)) drop-shadow(0 1px 1px rgba(58,42,10,.3))}
+body.light .pchip .pc-gem .gem{filter:drop-shadow(0 0 .6px rgba(58,42,10,.5)) drop-shadow(0 1px 1px rgba(58,42,10,.3))}
 body.light .ledger-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7d5c21}
 body.light .ledger-tab:hover, body.light .gem-tab:hover{color:#4a3a22}
