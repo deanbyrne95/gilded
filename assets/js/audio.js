@@ -6,10 +6,11 @@
  * are decoded once into AudioBuffers; gems keep a per-colour "voice" by pitch-
  * shifting a glass sample. The AudioContext is created eagerly at load so it is
  * ready the instant the user first interacts — browsers still block *sound*
- * until that first gesture, but this way even the very first click plays. On iOS
- * a looping silent <audio> element is also started on that gesture so Web Audio
- * plays through the hardware mute (ringer) switch instead of being silenced.
- * Respects the Sound-effects / Volume settings.
+ * until that first gesture, but this way even the very first click plays. To play
+ * through the hardware mute (ringer) switch on iOS instead of being silenced, the
+ * page's audio session is declared as "playback" (Safari 16.4+); older Safari
+ * falls back to rerouting the graph through an <audio> element / a looping silent
+ * <audio> element. Respects the Sound-effects / Volume settings.
  * ==========================================================================*/
 
 const Sfx = (function(){
@@ -25,11 +26,29 @@ const Sfx = (function(){
   function vol(){ const v=(typeof SETTINGS!=="undefined" && SETTINGS.volume!=null)?+SETTINGS.volume:0.6; return Math.max(0,Math.min(1,v))*SFX_CEILING*masterFactor(); }
   function enabled(){ return vol()>0; }   // nothing to play once the effects/master sliders bottom out
 
+  // The definitive iOS mute-switch bypass (Safari 16.4+): declare the page's
+  // audio session as "playback", exactly like a music or video app. Once set,
+  // ALL of the page's audio — Web Audio included — plays through the hardware mute
+  // (ringer) switch instead of being silenced, with no rerouting needed. Just a
+  // property assignment, so it is safe to call eagerly (before any gesture) and to
+  // re-assert on each unlock; harmless no-op where the API is absent (older Safari,
+  // other browsers), which then rely on the <audio>-element fallbacks below.
+  function preferPlaybackSession(){
+    try{
+      const s = (typeof navigator!=="undefined") && navigator.audioSession;
+      if(s && "type" in s){ s.type="playback"; return true; }
+    }catch(e){}
+    return false;
+  }
+
   function ensure(){
     if(ctx) return ctx;
     try{
       const AC = window.AudioContext || window.webkitAudioContext;
       if(!AC) return null;
+      // Claim the playback session before the context exists, so the context is
+      // created under it and is audible in silent mode from its very first sound.
+      preferPlaybackSession();
       ctx = new AC();
       master = ctx.createGain();
       master.gain.value = vol();
@@ -115,6 +134,9 @@ const Sfx = (function(){
   // (falling back to the silent-<audio> session trick if that isn't supported).
   function unlock(){
     const c=ensure(); if(!c) return;
+    // Re-assert the playback session on the gesture: some Safari builds only honour
+    // the assignment once there is a live, user-activated context to attach it to.
+    preferPlaybackSession();
     if(c.state==="suspended"){
       try{ const p=c.resume(); if(p&&p.then) p.then(afterRunning, ()=>{}); }catch(e){}
     }
@@ -131,6 +153,11 @@ const Sfx = (function(){
   // the graph-through-element routing isn't available, use the silent-element trick.
   function afterRunning(){
     if(!iosNeedsUnmute()) return;
+    // With a real playback audio session, Web Audio already ignores the mute
+    // switch — no need to reroute the graph off the speakers at all.
+    if(preferPlaybackSession()) return;
+    // Older Safari without navigator.audioSession: fall back to piping the graph
+    // through an <audio> element, then to the looping-silent-element session trick.
     if(ctx && ctx.state==="running"){
       if(!routeThroughElement()) keepSessionActive();
     }else{
