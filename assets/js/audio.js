@@ -76,6 +76,10 @@ const Sfx = (function(){
     const c=ensure(); if(!c) return;
     if(c.state==="suspended"){ try{ c.resume(); }catch(e){} }
     try{ const b=c.createBufferSource(); b.buffer=c.createBuffer(1,1,c.sampleRate); b.connect(c.destination); b.start(0); }catch(e){}
+    // Re-kick decoding now the context is active: any decode that stalled or failed
+    // while the context was suspended (iOS) is retried here so samples become
+    // playable. `force` re-attempts even samples whose earlier decode never settled.
+    decodeAll(true);
     keepSessionActive();
   }
 
@@ -87,7 +91,7 @@ const Sfx = (function(){
   // window.GILDED_SFX (assets/js/sfx.js) and decoded once into AudioBuffers,
   // so cues are actual recordings rather than synthesised tones.
   const SAMPLES=Object.create(null);
-  let decoding=false;
+  const decodingNames=Object.create(null);   // samples whose decode is in flight
 
   function b64ToBuf(uri){
     const b64=String(uri).split(",")[1]||"";
@@ -95,24 +99,37 @@ const Sfx = (function(){
     for(let i=0;i<n;i++) bytes[i]=bin.charCodeAt(i);
     return bytes.buffer;
   }
-  // Decode every bundled sample into an AudioBuffer (idempotent). decodeAudioData
-  // works while the context is suspended, so this can run before any gesture.
-  function decodeAll(){
-    if(decoding || !ctx) return; decoding=true;
+  // Decode every not-yet-decoded sample into an AudioBuffer. Safe to call more than
+  // once: samples already decoded are always skipped. This matters on iOS, where
+  // decodeAudioData kicked off before the first gesture can stall OR fail — so we
+  // call this AGAIN from unlock() (with force) once the context is running, which
+  // actually completes decoding. Without the retry, SAMPLES stays empty on iOS and
+  // every cue silently no-ops. `force` re-attempts samples whose earlier decode is
+  // still outstanding (a stalled iOS decode would otherwise block the retry).
+  function decodeAll(force){
+    if(!ctx) return;
     const src=(typeof window!=="undefined" && window.GILDED_SFX)||{};
     for(const name in src){
+      if(SAMPLES[name]) continue;
+      if(decodingNames[name] && !force) continue;
       let ab; try{ ab=b64ToBuf(src[name]); }catch(e){ continue; }
-      const store=(b)=>{ if(b) SAMPLES[name]=b; };
+      decodingNames[name]=true;
+      const store=(b)=>{ delete decodingNames[name]; if(b) SAMPLES[name]=b; };
+      const fail=()=>{ delete decodingNames[name]; };
       try{
-        const p=ctx.decodeAudioData(ab, store, ()=>{});
-        if(p && p.then) p.then(store, ()=>{});
-      }catch(e){}
+        const p=ctx.decodeAudioData(ab, store, fail);
+        if(p && p.then) p.then(store, fail);
+      }catch(e){ delete decodingNames[name]; }
     }
   }
 
   // Play a decoded sample: pitch via `rate`, level via `gain`, starting at `t0`.
   function playBuf(name,t0,o){
-    o=o||{}; const buf=SAMPLES[name]; if(!buf) return;
+    o=o||{}; const buf=SAMPLES[name];
+    // Not decoded yet (e.g. decoding still in flight): kick decoding if it hasn't
+    // started and skip this one cue rather than throwing. The forced retry in
+    // unlock() (run on every gesture) is what breaks a genuinely stalled iOS decode.
+    if(!buf){ decodeAll(); return; }
     const s=ctx.createBufferSource(); s.buffer=buf;
     s.playbackRate.value=o.rate||1;
     const g=ctx.createGain(); g.gain.value=(o.gain!=null?o.gain:1);
