@@ -99,8 +99,8 @@ const Tutor = (function(){
 
   function end(goMenu){
     active=false; steps=[]; idx=0;
-    const l=layer(); if(l) l.hidden=true;
-    document.body.classList.remove("tutoring");
+    const l=layer(); if(l){ l.hidden=true; l.classList.remove("solid"); }
+    document.body.classList.remove("tutoring","tutor-hl");
     if(G) G.tutorial=false;
     if(goMenu && typeof openMainMenu==="function") openMainMenu();
   }
@@ -170,6 +170,49 @@ const Tutor = (function(){
       sh.style.width=q.width+"px"; sh.style.height=q.height+"px"; });
   }
 
+  // True if `el` is rendered by a position:fixed ancestor — i.e. it stays put as
+  // the page scrolls (the bottom HUD and the bank live there). Scrolling can't
+  // bring such a target "into view", so we skip auto-scroll for them.
+  function isFixed(el){
+    for(let n=el; n && n!==document.body && n!==document.documentElement; n=n.parentElement){
+      if(window.getComputedStyle(n).position==="fixed") return true;
+    }
+    return false;
+  }
+  // The highest top-edge among the fixed bottom panels that are actually on
+  // screen (the player HUD, and the bank when shown). Highlighted targets are kept
+  // above this line so they aren't hidden behind the HUD.
+  function bottomCoverTop(){
+    let y=window.innerHeight;
+    ["hud","gemHud"].forEach(id=>{
+      const el=document.getElementById(id); if(!el) return;
+      const st=window.getComputedStyle(el);
+      if(st.display==="none" || st.visibility==="hidden" || parseFloat(st.opacity)===0) return;
+      const r=el.getBoundingClientRect();
+      if(r.height>0 && r.top<y) y=r.top;
+    });
+    return y;
+  }
+  // Mobile shields block the player from scrolling during a step, so the tutorial
+  // scrolls the window itself to bring an off-screen target into the clear band
+  // between the top of the screen and the fixed HUD. Rate-limited so the frames of
+  // one smooth scroll don't stack into a fight.
+  let scrollLockUntil=0;
+  function keepInView(top, bottom){
+    const now=(typeof performance!=="undefined" ? performance.now() : Date.now());
+    if(now<scrollLockUntil) return;
+    const margin=14, safeTop=margin, safeBottom=bottomCoverTop()-margin;
+    if(safeBottom<=safeTop) return;
+    let delta=0;
+    if(bottom-top >= safeBottom-safeTop) delta=top-safeTop;   // taller than the band: pin its top
+    else if(top<safeTop)        delta=top-safeTop;            // above the fold: scroll up
+    else if(bottom>safeBottom)  delta=bottom-safeBottom;      // behind the HUD: scroll down
+    if(Math.abs(delta)<3) return;
+    scrollLockUntil=now+650;                                  // let the smooth scroll settle
+    try{ window.scrollBy({top:delta, left:0, behavior:"smooth"}); }
+    catch(e){ try{ window.scrollBy(0, delta); }catch(_){} }
+  }
+
   // Place the spotlight over the current target (if any) and the coaching card
   // clear of it, and shape the click-shields to the same hole. Called after every
   // render, resize and scroll while active.
@@ -188,6 +231,13 @@ const Tutor = (function(){
         right=Math.max(right,r.right); bottom=Math.max(bottom,r.bottom); });
       const pad=8;
       if(l) l.classList.remove("solid");
+      // Lift the floating HUDs in front of the spotlight/dim so the highlight sits
+      // behind them (the ring tucks under the player HUD, not over it).
+      document.body.classList.add("tutor-hl");
+      // Bring the target into the clear band above the HUD (skip fixed targets like
+      // the HUD/bank, which scrolling can't move). Do this BEFORE placing the ring
+      // so the scroll's own reposition draws it at the settled position.
+      if(els[0] && !isFixed(els[0])) keepInView(top, bottom);
       s.style.display="block";
       s.style.top=(top-pad)+"px";
       s.style.left=(left-pad)+"px";
@@ -202,9 +252,11 @@ const Tutor = (function(){
       else { c.classList.add("at-top"); }
     } else {
       // No target: dim the whole screen via the layer, block all board clicks,
-      // and centre the card (only its buttons are interactive).
+      // and centre the card (only its buttons are interactive). Drop the HUDs back
+      // under the full-screen dim.
       s.style.display="none";
       if(l) l.classList.add("solid");
+      document.body.classList.remove("tutor-hl");
       setShields(0,0,0,0);
       c.classList.remove("at-top","at-bottom");
     }
