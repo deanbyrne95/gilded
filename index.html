@@ -84,8 +84,10 @@
   <div class="tutor-shield" data-edge="bottom"></div>
   <div class="tutor-shield" data-edge="left"></div>
   <div id="tutorSpot" aria-hidden="true"></div>
-  <div id="tutorCard" role="dialog" aria-label="Tutorial"></div>
 </div>
+<!-- Coaching card lives OUTSIDE #tutorLayer so it can stack above the floating
+     HUD while the spotlight/dim stays behind it. Shown only while tutoring. -->
+<div id="tutorCard" role="dialog" aria-label="Tutorial"></div>
 
 <!-- Tutorial / dialogs -->
 <div class="scrim" id="scrim">

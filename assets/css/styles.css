@@ -938,10 +938,19 @@ body.cvd-trit{ --blue:#3b3bdb; --green:#2a9d3a; --red:#d6334c; --gold:#cfae2b; }
   box-shadow:0 0 0 9999px rgba(6,4,10,.64), 0 0 22px 4px rgba(212,175,85,.4);
   transition:top .28s cubic-bezier(.2,.8,.2,1), left .28s cubic-bezier(.2,.8,.2,1),
              width .28s cubic-bezier(.2,.8,.2,1), height .28s cubic-bezier(.2,.8,.2,1)}
+/* During a highlight (target) step the floating HUDs are lifted ABOVE the
+   spotlight/dim so the player's HUD and the bank stay crisp and in front, with
+   the gold ring tucked behind them; on target-less steps they drop back under the
+   full-screen dim. The class is toggled by the tutorial as steps change. */
+body.tutor-hl .hud{z-index:92}
+body.tutor-hl .gem-hud{z-index:91}
+/* The coaching card is a top-level element (see index.html) so it can float above
+   even the lifted HUDs. Hidden until the tutorial is running. */
 #tutorCard{position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
-  width:min(440px,92vw); pointer-events:auto; color:var(--ink); z-index:2;
+  width:min(440px,92vw); pointer-events:auto; color:var(--ink); z-index:100; display:none;
   background:linear-gradient(170deg,#2b2338,#211a2b); border:1px solid var(--gilt);
   border-radius:14px; padding:16px 18px; box-shadow:0 16px 44px rgba(0,0,0,.6)}
+body.tutoring #tutorCard{display:block}
 #tutorCard.at-bottom{top:auto; bottom:clamp(14px,4vh,30px); transform:translateX(-50%)}
 #tutorCard.at-top{top:clamp(14px,4vh,30px); bottom:auto; transform:translateX(-50%)}
 .tutor-progress{font-family:"Jost"; font-size:10px; letter-spacing:2px; text-transform:uppercase;
