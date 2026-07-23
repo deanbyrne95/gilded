@@ -501,6 +501,10 @@ body.light .log .log-round{background:#fbf6ea}
 .modal h3{font-size:20px; color:var(--ink); margin:18px 0 4px}
 .modal p{font-size:14.5px; line-height:1.6; color:var(--ink-dim); margin:6px 0}
 .modal .inline-gem{display:inline-block; width:13px;height:13px;border-radius:3px; vertical-align:-1px; border:1px solid rgba(0,0,0,.4)}
+/* gold renders as a round coin with an inner ring, matching the board token,
+   instead of the square colour swatch used for the other gems */
+.modal .inline-gem.g-gold{position:relative; border-radius:50%}
+.modal .inline-gem.g-gold::after{content:""; position:absolute; inset:22%; border-radius:50%; border:1.5px solid rgba(90,66,20,.6)}
 .modal ul{margin:6px 0; padding-left:18px}
 .modal li{font-size:14.5px; line-height:1.6; color:var(--ink-dim); margin:3px 0}
 .modal .foot{display:flex; gap:10px; justify-content:flex-end; margin-top:22px}
