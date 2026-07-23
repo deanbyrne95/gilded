@@ -120,8 +120,8 @@ function cardHTML(c,loc){
   }
   const dataloc = loc.reserved!=null?`data-reserved="${loc.reserved}"`:`data-tier="${loc.tier}" data-idx="${loc.idx}"`;
   const isNew = !PREV_CARD_IDS.has(c.id);
-  return `<div class="card ${sel?"sel":""} ${afford?"afford":""} ${isNew?"card-enter":""}" data-action="card" data-cid="${c.id}" ${dataloc}>
-    <div class="card-band g-${c.color}">${c.points?`<span class="card-pts">${c.points}</span>`:""}</div>
+  return `<div class="card g-${c.color} ${sel?"sel":""} ${afford?"afford":""} ${isNew?"card-enter":""}" data-action="card" data-cid="${c.id}" ${dataloc}>
+    <div class="card-band">${c.points?`<span class="card-pts">${c.points}</span>`:""}</div>
     <div class="card-body"><div class="cost">${cost}</div></div>${menu}
   </div>`;
 }

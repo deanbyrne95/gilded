@@ -39,10 +39,10 @@ function htIcon(name){
 function tutorialBodyHTML(){
   // The Bank: every token type as its real faceted gem + name.
   const gemRow = ALL.map(k=>`<span class="htp-tok"><span class="gem g-${k}"></span><small>${NAME[k]}</small></span>`).join("");
-  // A sample development card, exactly as it renders on the board: prestige in the
-  // coloured band, its purchase cost as gem dots below.
-  const sampleCard = `<div class="card htp-demo-card">
-    <div class="card-band g-blue"><span class="card-pts">2</span></div>
+  // A sample development card, exactly as it renders on the board: the whole card
+  // is tinted its gem colour, prestige in the top band, purchase cost as gem dots.
+  const sampleCard = `<div class="card g-blue htp-demo-card">
+    <div class="card-band"><span class="card-pts">2</span></div>
     <div class="card-body"><div class="cost">${dot('red',3)}${dot('black',2)}</div></div>
   </div>`;
   // A sample patron tile, exactly as it renders on the board.

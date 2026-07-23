@@ -405,17 +405,26 @@ body.watching #hudControls{display:none}
   0%,100%{box-shadow:0 0 0 2px rgba(111,174,126,.8), 0 0 14px 2px rgba(84,199,120,.4), var(--shadow)}
   50%{box-shadow:0 0 0 2px rgba(126,201,141,1), 0 0 24px 5px rgba(84,199,120,.72), var(--shadow)}
 }
+/* Full-card gem colour — the whole development card is tinted its gem colour
+   (a light-to-dark gradient of that gem for depth) rather than only a top band. */
+.card.g-white{background:linear-gradient(165deg,#f2ede0,#d4cdba)}
+.card.g-blue{background:linear-gradient(165deg,#4a86e0,#2b5aa8)}
+.card.g-green{background:linear-gradient(165deg,#2fb173,#1c7749)}
+.card.g-red{background:linear-gradient(165deg,#e04c66,#a82b42)}
+.card.g-black{background:linear-gradient(165deg,#4a4557,#272334)}
+/* The band no longer carries the colour — it just anchors the prestige number in
+   the top-right. A soft dark scrim keeps the number legible on light gems. */
 .card-band{flex:0 0 38%; position:relative; display:flex; justify-content:flex-end;
   align-items:flex-start; padding:7px 8px; border-radius:11px 11px 0 0;
-  box-shadow:inset 0 -10px 14px rgba(0,0,0,.16); border-bottom:1px solid rgba(255,255,255,.12)}
+  background:linear-gradient(180deg,rgba(0,0,0,.14),rgba(0,0,0,0))}
 .card-pts{font-family:"Cormorant Garamond",serif; font-weight:700; line-height:1;
   font-size:clamp(15px,26cqi,26px); color:var(--gilt-soft);
   font-variant-numeric:lining-nums tabular-nums; font-feature-settings:"lnum" 1,"tnum" 1;
   background:rgba(20,15,26,.82); border-radius:8px; padding:2px 6px;
   min-width:1.5em; display:inline-flex; align-items:center; justify-content:center; text-align:center}
-.card-body{flex:1 1 auto; display:flex; flex-direction:column; justify-content:center;
+.card-body{flex:1 1 auto; display:flex; flex-direction:column; justify-content:flex-end;
   gap:clamp(3px,4cqi,6px); padding:clamp(6px,7cqi,10px)}
-.card .cost{display:grid; grid-template-columns:repeat(2,max-content); gap:clamp(3px,4cqi,6px); align-content:flex-start; justify-content:flex-start}
+.card .cost{display:flex; flex-direction:column; gap:clamp(3px,3cqi,5px); align-items:flex-start; justify-content:flex-end; flex-wrap:nowrap}
 .card .menu{position:absolute; inset:auto 6px 6px 6px; display:flex; gap:6px}
 .mbtn{flex:1; border:none; border-radius:7px; padding:6px 0; font-size:12px; letter-spacing:.5px; color:#1a1420}
 .mbtn.buy{background:linear-gradient(180deg,#7fd39a,#4fae72)}
@@ -730,9 +739,14 @@ html,body{overflow-x:hidden}
 .modal{padding:clamp(18px,5vw,28px)}
 .modal h2{font-size:clamp(24px,6vw,30px)}
 
-/* card internals scale with the card; cost blocks carry the count inside */
-.card .cost .dot{width:clamp(17px,24cqi,22px); height:clamp(17px,24cqi,22px)}
-.card .cost .dv{font-size:clamp(9px,15cqi,13px)}
+/* card internals — the cost stacks in a SINGLE column of compact dots sized to
+   match the patron rack dot, so even a 4-cost card fits the body without
+   crowding. Each dot keeps its count inside; the ring keeps it legible against
+   the same-colour card. */
+.card .cost{gap:clamp(2px,3cqi,4px)}
+.card .cost .dot{width:clamp(12px,16cqi,15px); height:clamp(12px,16cqi,15px); border-radius:4px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.35), 0 1px 2px rgba(0,0,0,.35)}
+.card .cost .dv{font-size:clamp(8px,12cqi,11px)}
 
 /* small screens: same layout, just tighter spacing and type */
 @media (max-width:640px){
@@ -946,9 +960,6 @@ body.light{
 }
 body.light .gbtn{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#4a3a22}
 body.light .gbtn:hover{color:#2c2216; border-color:var(--gilt-soft)}
-body.light .card{background:linear-gradient(165deg,#fbf6ea,#efe5d2)}
-body.light .card-band.g-white{background:#ded7c4}
-body.light .card-band{border-bottom-color:rgba(0,0,0,.14)}
 body.light .card-pts{color:#e9c96a; background:rgba(28,20,34,.9)}
 body.light .deck.t1{background:linear-gradient(160deg,#66b28c,#509f78)}
 body.light .deck.t2{background:linear-gradient(160deg,#bc9b4e,#a6873f)}
