@@ -69,18 +69,73 @@ const Sfx = (function(){
     }catch(e){}
   }
 
+  // The definitive iOS mute-switch bypass: route the WHOLE Web Audio graph out
+  // through an <audio> element instead of straight to the speakers. Web Audio
+  // played to ctx.destination obeys the ringer switch, but an HTMLMediaElement's
+  // playback ignores it — so by piping the master bus into a MediaStream and
+  // playing that stream from an <audio> element, every cue and the music become
+  // audible in silent mode. Reroutes the SFX master and (via Music.rerouteTo) the
+  // music bus onto the stream, so nothing is left on the muted speaker path.
+  // Returns true when the routing is active; false if the browser can't do it
+  // (older Safari), so unlock() can fall back to the silent-element trick.
+  let streamDest=null, sinkEl=null;
+  function routeThroughElement(){
+    if(!iosNeedsUnmute() || !ctx || !master) return false;
+    try{
+      if(!streamDest){
+        if(!ctx.createMediaStreamDestination) return false;
+        const dest=ctx.createMediaStreamDestination();
+        const el=new Audio();
+        el.setAttribute("playsinline","");
+        el.setAttribute("webkit-playsinline","");
+        try{ el.srcObject=dest.stream; }
+        catch(e){ try{ el.src=URL.createObjectURL(dest.stream); }catch(e2){ return false; } }
+        // Move the SFX master and the music bus off the speakers and onto the stream.
+        try{ master.disconnect(); }catch(e){}
+        master.connect(dest);
+        if(typeof Music!=="undefined" && Music.rerouteTo) Music.rerouteTo(dest);
+        // Keep it playing across interruptions (a call, backgrounding, etc.).
+        el.addEventListener("pause", ()=>{ const pr=el.play(); if(pr&&pr.catch) pr.catch(()=>{}); });
+        streamDest=dest; sinkEl=el;
+      }
+      if(sinkEl && sinkEl.paused){ const pr=sinkEl.play(); if(pr&&pr.catch) pr.catch(()=>{}); }
+      return true;
+    }catch(e){
+      // Anything went wrong — restore the direct speaker path so audio still works
+      // (just subject to the mute switch) and let the caller use the fallback.
+      try{ if(master){ master.disconnect(); master.connect(ctx.destination); } }catch(_){}
+      streamDest=null; sinkEl=null;
+      return false;
+    }
+  }
+
   // Kick the context alive on a user gesture (no-op once running). Also plays a
   // one-sample silent buffer, which is what actually unlocks audio on iOS, and
-  // starts the silent <audio> element that lets Web Audio ignore the mute switch.
+  // routes output through an <audio> element so Web Audio ignores the mute switch
+  // (falling back to the silent-<audio> session trick if that isn't supported).
   function unlock(){
     const c=ensure(); if(!c) return;
-    if(c.state==="suspended"){ try{ c.resume(); }catch(e){} }
+    if(c.state==="suspended"){
+      try{ const p=c.resume(); if(p&&p.then) p.then(afterRunning, ()=>{}); }catch(e){}
+    }
     try{ const b=c.createBufferSource(); b.buffer=c.createBuffer(1,1,c.sampleRate); b.connect(c.destination); b.start(0); }catch(e){}
     // Re-kick decoding now the context is active: any decode that stalled or failed
     // while the context was suspended (iOS) is retried here so samples become
     // playable. `force` re-attempts even samples whose earlier decode never settled.
     decodeAll(true);
-    keepSessionActive();
+    afterRunning();
+  }
+  // Set up the iOS mute-switch bypass, but only once the context is actually
+  // running (i.e. a real gesture resumed it) — rerouting the master off the
+  // speakers before then could leave the page silent until the next gesture. When
+  // the graph-through-element routing isn't available, use the silent-element trick.
+  function afterRunning(){
+    if(!iosNeedsUnmute()) return;
+    if(ctx && ctx.state==="running"){
+      if(!routeThroughElement()) keepSessionActive();
+    }else{
+      keepSessionActive();
+    }
   }
 
   // Re-apply the current volume to the live master gain.
@@ -279,11 +334,20 @@ const Music = (function(){
 
   // Borrow the effects engine's AudioContext and hang a dedicated gain node off
   // it for the Music volume (kept separate from the SFX master so the two
-  // sliders are independent).
+  // sliders are independent). `sinkNode` is normally null (out -> speakers); on
+  // iOS the Sfx engine reroutes us onto its <audio>-element MediaStream via
+  // rerouteTo() so music also plays through the mute switch.
+  let sinkNode=null;
   function ensureCtx(){
     if(!ctx) ctx = (typeof Sfx!=="undefined" && Sfx.context && Sfx.context()) || null;
-    if(ctx && !out){ out=ctx.createGain(); out.gain.value=targetOut(); out.connect(ctx.destination); }
+    if(ctx && !out){ out=ctx.createGain(); out.gain.value=targetOut(); out.connect(sinkNode||ctx.destination); }
     return ctx;
+  }
+  // Send the music bus to `node` instead of the speakers (used for the iOS
+  // mute-switch bypass). Remembered so a not-yet-created `out` also uses it.
+  function rerouteTo(node){
+    sinkNode=node||null;
+    if(out){ try{ out.disconnect(); }catch(e){} try{ out.connect(sinkNode||ctx.destination); }catch(e){} }
   }
 
   // Decode a single track (idempotent, cached). decodeAudioData works while the
@@ -410,5 +474,5 @@ const Music = (function(){
     beginCurrent(when, true, MODE_FADE);
   }
 
-  return { start, stop, setVolume, toggle, setMode };
+  return { start, stop, setVolume, toggle, setMode, rerouteTo };
 })();
