@@ -131,7 +131,7 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
   0%{transform:scale(1)} 22%{transform:scale(1.42); color:#8fe0a6}
   55%{transform:scale(1.08)} 100%{transform:scale(1); color:var(--gilt-soft)}
 }
-.pchip .pc-vp small{font-family:"Jost"; font-size:9px; letter-spacing:1px; color:var(--ink-dim)}
+.pchip .pc-vp small{font-family:"Jost"; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--ink-dim)}
 /* developments owned: a small card-shaped chip per colour, count centred */
 .pchip .pc-cards{display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin-top:4px}
 .pchip .pc-card{width:16px; height:21px; flex:0 0 auto; border-radius:4px;
@@ -756,6 +756,8 @@ html,body{overflow-x:hidden}
   .splash-card{transition:none; transform:none}
   .card.afford{animation:none}
   .pchip .rcard.buyable{animation:none}
+  #tutorSpot{transition:none}
+  .tutor-dot{animation:none; opacity:.8}
 }
 /* footer */
 .footer{display:flex; justify-content:center; gap:12px; margin-top:26px; padding-top:18px; border-top:1px solid var(--line)}
@@ -877,6 +879,42 @@ body.cvd-trit{ --blue:#3b3bdb; --green:#2a9d3a; --red:#d6334c; --gold:#cfae2b; }
 /* cost / patron requirement blocks: the count sits inside the colour square */
 .dot .dv{font-family:"Jost"; font-weight:700; line-height:1; color:#fff;
   text-shadow:0 0 2px #000,0 0 2px #000; font-size:clamp(9px,2.6vw,12px)}
+
+/* ---------- interactive tutorial overlay ---------- */
+/* The layer is purely visual: pointer-events:none lets every click reach the
+   real board, so the tutorial highlights and waits rather than trapping input.
+   The spotlight is a positioned box whose huge box-shadow dims everything else,
+   leaving a clear "hole" over the current target; the coaching card is the only
+   interactive part. */
+#tutorLayer{position:fixed; inset:0; z-index:90; pointer-events:none}
+#tutorLayer[hidden]{display:none}
+#tutorLayer.solid{background:rgba(6,4,10,.64)}
+#tutorSpot{position:fixed; border-radius:12px; pointer-events:none; border:2px solid var(--gilt-soft);
+  box-shadow:0 0 0 9999px rgba(6,4,10,.64), 0 0 22px 4px rgba(212,175,85,.4);
+  transition:top .28s cubic-bezier(.2,.8,.2,1), left .28s cubic-bezier(.2,.8,.2,1),
+             width .28s cubic-bezier(.2,.8,.2,1), height .28s cubic-bezier(.2,.8,.2,1)}
+#tutorCard{position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:min(440px,92vw); pointer-events:auto; color:var(--ink);
+  background:linear-gradient(170deg,#2b2338,#211a2b); border:1px solid var(--gilt);
+  border-radius:14px; padding:16px 18px; box-shadow:0 16px 44px rgba(0,0,0,.6)}
+#tutorCard.at-bottom{top:auto; bottom:clamp(14px,4vh,30px); transform:translateX(-50%)}
+#tutorCard.at-top{top:clamp(14px,4vh,30px); bottom:auto; transform:translateX(-50%)}
+.tutor-progress{font-family:"Jost"; font-size:10px; letter-spacing:2px; text-transform:uppercase;
+  color:var(--ink-dim); margin-bottom:6px}
+.tutor-text h3{margin:0 0 5px; font-size:18px; color:var(--gilt-soft)}
+.tutor-text p{margin:0; font-size:13.5px; line-height:1.55; color:var(--ink-dim)}
+.tutor-text b{color:var(--ink)}
+.tutor-foot{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px}
+.tutor-skip{background:none; border:none; color:var(--ink-dim); font-size:12px; cursor:pointer;
+  text-decoration:underline; text-underline-offset:2px; padding:4px 0; font-family:"Jost"}
+.tutor-skip:hover{color:var(--ink)}
+.tutor-next{padding:8px 18px}
+.tutor-wait{display:inline-flex; align-items:center; gap:8px; font-family:"Jost"; font-size:12.5px;
+  color:var(--gilt-soft)}
+.tutor-dot{width:8px; height:8px; border-radius:50%; background:var(--gilt-soft);
+  animation:tutorPulse 1s ease-in-out infinite}
+@keyframes tutorPulse{0%,100%{opacity:.3; transform:scale(.75)} 50%{opacity:1; transform:scale(1)}}
+body.light #tutorCard{background:linear-gradient(170deg,#fbf6ea,#f1e9d7)}
 
 /* light theme */
 body.light{

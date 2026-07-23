@@ -75,6 +75,12 @@
 <!-- Quick theme toggle: small fixed button shown on the main menu -->
 <button class="theme-btn theme-float" id="themeFloat" data-action="toggle-theme" aria-label="Toggle light or dark theme" aria-pressed="false" title="Toggle light / dark theme"></button>
 
+<!-- Interactive tutorial overlay: spotlight + coaching card (hidden until run) -->
+<div id="tutorLayer" hidden>
+  <div id="tutorSpot" aria-hidden="true"></div>
+  <div id="tutorCard" role="dialog" aria-label="Tutorial"></div>
+</div>
+
 <!-- Tutorial / dialogs -->
 <div class="scrim" id="scrim">
   <div class="modal" id="modal"></div>
@@ -86,6 +92,7 @@
 <script src="assets/js/ai.js"></script>
 <script src="assets/js/render.js"></script>
 <script src="assets/js/ui.js"></script>
+<script src="assets/js/tutorial.js"></script>
 <script src="assets/js/music.js"></script>
 <script src="assets/js/sfx.js"></script>
 <script src="assets/js/audio.js"></script>

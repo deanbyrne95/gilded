@@ -20,6 +20,9 @@ document.addEventListener("click",(e)=>{
   switch(a){
     case "open-tutorial": openTutorial(); break;
     case "tutorial-from-menu": openTutorial('menu'); break;
+    case "start-tutorial": startTutorial(); break;
+    case "tutor-next": Tutor.next(); break;
+    case "tutor-skip": Tutor.end(true); break;
     case "open-newgame": openNewGame(); break;
     case "open-mainmenu": openMainMenu(); break;
     case "return-mainmenu": returnToMainMenu(); break;
@@ -89,7 +92,10 @@ let _rszRAF=0;
 window.addEventListener("resize", ()=>{
   syncHudSpace(); layoutHeader(); if(G) layoutPlayers();
   if(G && !_rszRAF) _rszRAF=requestAnimationFrame(()=>{ _rszRAF=0; render(); });
+  if(typeof tutorReposition==="function") tutorReposition();
 });
+// Keep the tutorial spotlight glued to its target while the page scrolls.
+window.addEventListener("scroll", ()=>{ if(typeof tutorReposition==="function") tutorReposition(); }, true);
 
 /* ---------- keyboard navigation ---------- */
 

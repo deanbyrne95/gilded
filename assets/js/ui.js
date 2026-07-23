@@ -158,7 +158,8 @@ function iconSvg(name){
     players:  '<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M15.5 5.2a3 3 0 0 1 0 5.6"/><path d="M17 20a6 6 0 0 0-2.8-5.1"/>',
     watch:    '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
     online:   '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.7-3.8-9s1.3-6.4 3.8-9z"/>',
-    help:     '<circle cx="12" cy="12" r="9"/><path d="M9.4 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.4 2.2-2.4 3.9"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/>'
+    help:     '<circle cx="12" cy="12" r="9"/><path d="M9.4 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.4 2.2-2.4 3.9"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/>',
+    learn:    '<path d="M12 4 22 9 12 14 2 9z"/><path d="M22 9v4.5"/><path d="M6 11.4v3.6c0 1.1 2.7 2.4 6 2.4s6-1.3 6-2.4v-3.6"/>'
   };
   const p = paths[name];
   if(!p) return '';
@@ -175,6 +176,7 @@ function mainMenuHTML(){
     <div class="mm-menu">
       <button class="mm-item" data-action="open-newgame">${mmIcon('new')}<span class="mm-tx"><span class="mm-i-t">New Game</span><span class="mm-i-s">Vs AI, pass-and-play, or watch</span></span></button>
       <button class="mm-item" data-action="load-game" data-from="main" ${hasSave()?'':'disabled'}>${mmIcon('load')}<span class="mm-tx"><span class="mm-i-t">Load Game</span><span class="mm-i-s">${hasSave()?'Continue a saved game':'No saved games yet'}</span></span></button>
+      <button class="mm-item" data-action="start-tutorial">${mmIcon('learn')}<span class="mm-tx"><span class="mm-i-t">Play Tutorial</span><span class="mm-i-s">Learn by playing a guided round</span></span></button>
       <button class="mm-item" data-action="open-settings">${mmIcon('settings')}<span class="mm-tx"><span class="mm-i-t">Settings</span><span class="mm-i-s">${SET_TABS.map(t=>t[1]).join(', ')}</span></span></button>
       <button class="mm-item" data-action="open-tutorial">${mmIcon('help')}<span class="mm-tx"><span class="mm-i-t">How to Play</span><span class="mm-i-s">Bank, cards, patrons &amp; winning</span></span></button>
     </div>
@@ -447,7 +449,7 @@ function sessionsHTML(from){
       let inner;
       if(m.over) inner = `<span class="sc lead">${nm==='—'?'Finished':nm+' won'}</span>`;
       else if(!m.leaderVP) inner = `<span class="sess-lead">No points yet</span>`;
-      else inner = `<span class="sc lead">${nm} ${verb} · ${m.leaderVP} VP</span>`;
+      else inner = `<span class="sc lead">${nm} ${verb} · ${m.leaderVP} prestige</span>`;
       board = `<div class="sess-scores">${inner}</div>`;
     }
     const acts = (delConfirmId===s.id)

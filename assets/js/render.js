@@ -51,6 +51,7 @@ function render(){
   G.players[localSeat()].reserved.forEach(c=>ids.add(c.id));
   PREV_CARD_IDS=ids;
   restoreScroll(_scrollY);
+  if(typeof tutorReposition==="function") tutorReposition();
 }
 
 // Restore window scroll to `y` after a rebuild (immediately and on the next
@@ -290,7 +291,7 @@ function renderPlayers(){
     const patronsBlock=`<div class="pc-patrons" title="Patrons (${p.nobles.length}/${patronSlots})">${patronsHTML}</div>`;
     const holdingsRow=`<div class="pc-holds">${resBlock}${patronsBlock}</div>`;
     return `<div class="pchip ${role} ${i===G.current&&!G.over?"active":""}" data-pi="${i}">
-      <div class="pc-top"><span class="pc-name">${p.name}</span>${(i===G.starter&&!G.over)?`<span class="pc-first" title="Started the game">1st</span>`:""}${(i===G.current&&!G.over&&p.isAI)?`<span class="pc-think" aria-label="thinking"><i></i><i></i><i></i></span>`:""}<span class="pc-vp${p._vpGain?" bump":""}">${p.points}<small> VP</small></span></div>
+      <div class="pc-top"><span class="pc-name">${p.name}</span>${(i===G.starter&&!G.over)?`<span class="pc-first" title="Started the game">1st</span>`:""}${(i===G.current&&!G.over&&p.isAI)?`<span class="pc-think" aria-label="thinking"><i></i><i></i><i></i></span>`:""}<span class="pc-vp${p._vpGain?" bump":""}" title="Prestige">${p.points}<small> prestige</small></span></div>
       <div class="pc-cards">${cardsRow}</div>
       ${gemsBlock}
       ${holdingsRow}

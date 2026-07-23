@@ -100,7 +100,7 @@ function finishTurn(p, actionText){
   const q=qualifyingNobles(p);
   const proceed=()=>{
     // Token cap is enforced before this point (AI auto-discards; humans via UI).
-    if(p.points>=WIN && !G.finalRound){ G.finalRound=true; announce("Final Round","Everyone gets one last turn."); }
+    if(p.points>=WIN && !G.finalRound && !G.tutorial){ G.finalRound=true; announce("Final Round","Everyone gets one last turn."); }
     advance();
   };
   if(q.length===0){ proceed(); return; }
@@ -127,7 +127,7 @@ function advance(){
   // The game ends once the round in which someone hit WIN returns to the starter.
   if(G.finalRound && roundDone){ endGame(); return; }
   render();
-  if(roundDone) autoSave();
+  if(roundDone && !G.tutorial) autoSave();
   if(!G.over && me().isAI){ scheduleAI(); }
 }
 

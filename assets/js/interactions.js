@@ -33,6 +33,7 @@ function onTakeGem(color){
 
   if(hadCard){ render(); return; }
   renderBank(); renderTakeTray(); renderPlayers();
+  if(typeof tutorReposition==="function") tutorReposition();
 }
 
 // Remove one from a selected colour (used by the take-tray minus control).
@@ -58,6 +59,7 @@ function confirmTake(){
   const desc=colors.map(k=>`${UI.sel[k]}× ${NAME[k]}`).join(", ");
   UI.sel={};
   postAction(p, `<b>You</b> take ${desc}.`);
+  tutorNotify("take");
 }
 
 // Discard the whole gem selection without acting.
@@ -87,6 +89,7 @@ function doBuy(){
   UI.selectedCard=null;
   const paid=costText(plan.pay);
   postAction(p, `<b>You</b> buy ${article(NAME[card.color])} ${NAME[card.color]} card${card.points?` (<b>+${card.points}</b>)`:""} for ${paid||"free"}.`);
+  tutorNotify("buy");
 }
 
 // Reserve the selected board card (taking a gold if available), then log it.
@@ -100,6 +103,7 @@ function doReserve(){
   flyReserve(cardEl, G.current);
   UI.selectedCard=null;
   postAction(p, `<b>You</b> reserve ${article(NAME[card.color])} ${NAME[card.color]} card (tier ${ROMAN[card.tier]})${gotGold?" and take a <b>Gold</b>":""}.`);
+  tutorNotify("reserve");
 }
 
 // Blindly reserve the top card of a tier's deck (taking a gold if available).
@@ -114,6 +118,7 @@ function onDeckReserve(tier){
   flyReserve(deckEl, G.current);
   UI.selectedCard=null;
   postAction(p, `<b>You</b> reserve the top card of tier ${ROMAN[tier]} (${article(NAME[card.color])} ${NAME[card.color]} card)${gotGold?" and take a <b>Gold</b>":""}.`);
+  tutorNotify("reserve");
 }
 
 // After a human action, enter the discard phase if over the 10-token cap

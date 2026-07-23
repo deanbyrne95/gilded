@@ -118,6 +118,9 @@ function startGame(opts, silent){
     level = opts.level || SETTINGS.aiLevel || "normal";
     for(let i=0;i<count;i++){ const ai=newPlayer(AI_NAMES[i], true); ai.level=level; players.push(ai); }
     SETTINGS.watchers=count; SETTINGS.aiLevel=level;
+  } else if(mode==="tutorial"){
+    // Solo, coached run. No rivals — the tutorial engine drives the lesson.
+    players.push(newPlayer("You", false));
   } else {
     const opponents = Math.min(3, Math.max(1, opts.opponents || SETTINGS.opponents || 1));
     level = opts.level || SETTINGS.aiLevel || "normal";
@@ -125,7 +128,9 @@ function startGame(opts, silent){
     for(let i=0;i<opponents;i++){ const ai=newPlayer(AI_NAMES[i], true); ai.level=level; players.push(ai); }
     SETTINGS.opponents=opponents; SETTINGS.aiLevel=level;
   }
-  SETTINGS.mode=mode; saveSettings();
+  // Don't persist the tutorial as the player's last-chosen mode.
+  if(mode!=="tutorial") SETTINGS.mode=mode;
+  saveSettings();
 
   // Prestige target: New Game passes an explicit win value; otherwise fall back
   // to the saved preference (default 15).
@@ -146,11 +151,25 @@ function startGame(opts, silent){
   currentSessionId=null;
   paused=false; haltAI();
 
+  // Tutorial: a solo, hand-set opening so the coached lessons land quickly — a
+  // small starting stash and a cheap, immediately-affordable tier-I card in the
+  // first board slot for the "buy" lesson. `G.tutorial` gates the coaching hooks
+  // and suppresses autosave / final-round so the practice run stays disposable.
+  if(mode==="tutorial"){
+    G.tutorial=true;
+    const you=players[0];
+    you.tokens.white=2; you.tokens.blue=1;
+    const featured={id:++ID, tier:1, color:"blue", points:1, cost:{white:2, blue:1}};
+    G.board[1][0]=featured;
+    G._tutCardId=featured.id;
+  }
+
   if(!silent){
-    if(mode==="hotseat") log(`<b>A new game begins.</b> ${total} players, pass-and-play.`);
+    if(mode==="tutorial") log(`<b>Welcome to the tutorial.</b> Follow the prompts to learn the game.`);
+    else if(mode==="hotseat") log(`<b>A new game begins.</b> ${total} players, pass-and-play.`);
     else if(mode==="watch") log(`<b>A new game begins.</b> ${total} AI merchants · ${LEVEL_LABEL[level]} rivals. Sit back and watch.`);
     else log(`<b>A new game begins.</b> ${total} merchants · ${LEVEL_LABEL[level]} rivals.`);
-    log(`<b>${players[starter].name}</b> ${players[starter].name==="You"?"go":"goes"} first.`);
+    if(mode!=="tutorial") log(`<b>${players[starter].name}</b> ${players[starter].name==="You"?"go":"goes"} first.`);
   }
   render();
   if(!silent && typeof Music!=="undefined") Music.setMode("game");
