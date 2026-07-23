@@ -185,18 +185,41 @@ startGame(SETTINGS.mode==="hotseat"
   ? {mode:"hotseat", humans:SETTINGS.humans||2}
   : {mode:"ai", opponents:SETTINGS.opponents||1, level:SETTINGS.aiLevel||"normal"}, true);
 syncHeaderActions();
-// Audio can't legally make sound before a user gesture, but the context is
-// created eagerly (audio.js) so the *first* gesture — any pointer/touch/key
-// press, including the opening menu click — resumes it and starts the music
-// with no dropped first sound. We also try once here in case the browser
-// already granted (sticky) activation from the navigation that loaded the page.
+// Start audio automatically — no tap required — the instant the browser permits.
+// The context is created eagerly (audio.js); arming resumes it and starts music.
+// Browsers block sound before ANY user activation (Chrome's media-engagement gate,
+// Safari/iOS's gesture rule), so on a first-ever visit one interaction may still be
+// needed; but where autoplay is already allowed — a returning visitor with media
+// engagement, an installed PWA, or sticky activation carried from the navigation
+// that opened the page — this begins on its own.
 function armAudio(){ try{ Sfx.unlock(); Music.start(); }catch(e){} }
 armAudio();
+// Nudge repeatedly for a short window after load: some browsers grant autoplay a
+// beat after the page settles, and this catches that without waiting for a tap.
+// Each retry is a no-op once the context is running (Music.start guards on state),
+// and polling stops as soon as it starts or the window elapses.
+(function autostart(){
+  let tries=0;
+  const t=setInterval(()=>{
+    armAudio();
+    const c=(typeof Sfx!=="undefined" && Sfx.context && Sfx.context())||null;
+    if(++tries>=20 || (c && c.state==="running")) clearInterval(t);
+  }, 300);
+})();
+// Also start the moment the context transitions to "running" by ANY path, so
+// music follows through without depending on the gesture listeners below firing.
+try{
+  const actx=(typeof Sfx!=="undefined" && Sfx.context && Sfx.context())||null;
+  if(actx && actx.addEventListener) actx.addEventListener("statechange", ()=>{ if(actx.state==="running") armAudio(); });
+}catch(e){}
+// Fallback for browsers that do require a gesture: the very first pointer/touch/
+// key press (including the opening menu click) starts audio with no dropped sound.
 ["pointerdown","touchstart","keydown","click"].forEach(ev=>
   window.addEventListener(ev, armAudio, true));
 // iOS suspends the audio context (and pauses the silent keep-alive element) when
 // the page is backgrounded or interrupted by a call; re-arm when it returns to
-// the foreground so sound resumes without needing an extra tap.
+// the foreground — via focus/pageshow too — so sound resumes without an extra tap.
+["focus","pageshow"].forEach(ev=> window.addEventListener(ev, armAudio, true));
 document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) armAudio(); });
 if(!seenTutorial()){ markTutorialSeen(); pendingMainMenu=true; openTutorial(); }
 else openMainMenu();
