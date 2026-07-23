@@ -226,11 +226,11 @@ function syncBankHeight(){
   });
 }
 
-// Render every player chip: name / prestige / patron count, a card-shaped chip
-// per colour showing developments owned, a per-colour gem row with a running
-// total against the 10-gem cap, and a three-slot reserve rack (empty slots show
-// as dashed outlines; filled slots take the card's colour, own cards clickable,
-// rivals' blind reserves hidden). Marks the starter and the active player.
+// Render every player chip: name / prestige, a card-shaped chip per colour
+// showing developments owned, a per-colour gem row with a running total against
+// the 10-gem cap, and a holdings row of a three-slot reserve rack plus an
+// always-shown patron rack (dashed slots that gilt-fill as patrons are earned,
+// each identifying its requirement). Marks the starter and the active player.
 function renderPlayers(){
   const el=document.getElementById("players"); if(!el) return;
   hideRtip();
@@ -253,7 +253,6 @@ function renderPlayers(){
     }).join("");
     const gemTotal = totalTokens(p) + (mine && humanControls() ? selCount() : 0);
     const gemsBlock = `<div class="pc-gems">${gemsRow}<span class="pc-gtot${gemTotal>=10?" full":""}" title="Total gems (max 10)">${gemTotal}<small>/10</small></span></div>`;
-    const patronIco=`<svg class="pc-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 7.5l4.2 3.4L12 4l4.8 6.9L21 7.5 19.3 19H4.7L3 7.5z"/></svg>`;
     const role = mine ? "you" : "opp";
     // Reserve: always show all three slots so the cap is legible. Empty slots are
     // a dashed outline (like empty tier slots); filled slots take the card's colour.
@@ -271,15 +270,33 @@ function renderPlayers(){
       resSlots+=`<span class="${cls}"${attr} data-color="${c.color}" data-tier="${c.tier}" data-points="${c.points||0}" data-cost="${costEnc}" data-ready="${buyable?1:0}" aria-label="${aria}">${c.points||""}</span>`;
     }
     const resBlock = `<div class="pc-res${mine?" mine":""}" title="Reserved cards (max 3)">${resSlots}</div>`;
+    // Patrons: always shown (like the reserve rack) in a fixed rack sized to the
+    // number of patrons available this match (players + 1 — e.g. 4 for a 3-player
+    // game), which is the most any single player could ever hold. Empty slots are
+    // dashed with a faint crown; claimed slots become a landscape tile with a crown
+    // + the required-colour dots that identify the patron (full requirement in the
+    // tooltip). The rack size is constant all game, so the chip never grows.
+    const crownIco=`<svg class="pc-crown" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 7.5l4.2 3.4L12 4l4.8 6.9L21 7.5 19.3 19H4.7L3 7.5z"/></svg>`;
+    const patronSlots=G.players.length+1;
+    let patronsHTML="";
+    for(let s=0; s<patronSlots; s++){
+      const n=p.nobles[s];
+      if(!n){ patronsHTML+=`<span class="pc-patron empty" title="Patron slot">${crownIco}</span>`; continue; }
+      const entries=Object.entries(n.req);
+      const dots=entries.map(([ci,req])=>`<span class="pdot" style="background:var(--${KEYS[ci]})"><i>${req}</i></span>`).join("");
+      const reqTxt=entries.map(([ci,req])=>`${req} ${NAME[KEYS[ci]]}`).join(", ");
+      patronsHTML+=`<span class="pc-patron" title="Patron (+${n.points} prestige) — needs ${reqTxt}">${crownIco}<span class="pc-patron-req">${dots}</span></span>`;
+    }
+    const patronsBlock=`<div class="pc-patrons" title="Patrons (${p.nobles.length}/${patronSlots})">${patronsHTML}</div>`;
+    const holdingsRow=`<div class="pc-holds">${resBlock}${patronsBlock}</div>`;
     return `<div class="pchip ${role} ${i===G.current&&!G.over?"active":""}" data-pi="${i}">
-      <div class="pc-top"><span class="pc-name">${p.name}</span>${(i===G.starter&&!G.over)?`<span class="pc-first" title="Started the game">1st</span>`:""}${(i===G.current&&!G.over&&p.isAI)?`<span class="pc-think" aria-label="thinking"><i></i><i></i><i></i></span>`:""}<span class="pc-vp${p._vpGain?" bump":""}"><span class="pc-pat" title="Patrons">${patronIco}${p.nobles.length}</span>${p.points}<small> VP</small></span></div>
+      <div class="pc-top"><span class="pc-name">${p.name}</span>${(i===G.starter&&!G.over)?`<span class="pc-first" title="Started the game">1st</span>`:""}${(i===G.current&&!G.over&&p.isAI)?`<span class="pc-think" aria-label="thinking"><i></i><i></i><i></i></span>`:""}<span class="pc-vp${p._vpGain?" bump":""}">${p.points}<small> VP</small></span></div>
       <div class="pc-cards">${cardsRow}</div>
       ${gemsBlock}
-      ${resBlock}
+      ${holdingsRow}
     </div>`;
   }).join("");
-  const nav=`<button class="pchip-nav" data-action="cycle-opp" hidden aria-label="Show next player"><span class="nav-chev" aria-hidden="true">&rsaquo;</span><span class="nav-count"></span></button>`;
-  el.innerHTML=chips+nav;
+  el.innerHTML=chips;
   // Fire prestige-gain flourishes on the freshly rendered chips, then clear the
   // one-shot flags set when points changed (buyCard / awardNoble).
   G.players.forEach((p,i)=>{ if(p._buyFloat){ prestigeFloat(i,p._buyFloat); p._buyFloat=0; } p._vpGain=0; });
@@ -287,28 +304,46 @@ function renderPlayers(){
   layoutPlayers();
 }
 
-// Fit player chips to the row: show them all when they fit; when too tight, page
-// through one full-width chip at a time (including "You") behind the cycle button.
+// Fit player chips to the row: show them all when they fit; otherwise page through
+// them a screenful at a time, showing as many chips as fit at their natural width
+// (never a single stretched chip). The nav button advances to the next page.
 function layoutPlayers(){
   const el=document.getElementById("players"); if(!el) return;
-  const nav=el.querySelector(".pchip-nav");
+  const nav=document.getElementById("pchipNav");
   const chips=[...el.querySelectorAll(".pchip")];
   el.classList.remove("paged","single");
   if(nav) nav.hidden=true;
   chips.forEach(c=>c.hidden=false);
-  if(chips.length<=1) return;
-  if(el.scrollWidth <= el.clientWidth + 1) return;       // everything fits: show all
   const n=chips.length;
-  const view=((UI.oppView||0)%n+n)%n; UI.oppView=view;
-  el.classList.add("paged","single");
-  chips.forEach((c,idx)=>{ c.hidden = idx!==view; });
-  if(nav){ nav.hidden=false; const c=nav.querySelector(".nav-count"); if(c) c.textContent=`${view+1}/${n}`; }
+  if(n<=1) return;
+  if(el.scrollWidth <= el.clientWidth + 1){ UI._perPage=n; return; }   // everything fits: show all
+
+  // Too wide: page. Show the fixed nav button (it sits pinned at the right of the
+  // HUD, outside the scrolling chip area), which shrinks #players; then measure
+  // how many chips fit per page (using the widest chip so no page overflows) and
+  // show the page that contains the current view index.
+  el.classList.add("paged");
+  const gap=8;
+  if(nav) nav.hidden=false;
+  const avail = el.clientWidth;
+  const maxW = Math.max(...chips.map(c=>c.offsetWidth));
+  const per = Math.max(1, Math.floor((avail + gap) / (maxW + gap)));
+  UI._perPage = per;
+  const pages = Math.ceil(n/per);
+  const idx = ((UI.oppView||0)%n+n)%n;
+  const page = Math.floor(idx/per);
+  const start = page*per;
+  chips.forEach((c,i)=>{ c.hidden = i<start || i>=start+per; });
+  if(nav){ const c=nav.querySelector(".nav-count"); if(c) c.textContent=`${page+1}/${pages}`; }
 }
 
-// Advance the paged player view to the next chip.
+// Advance the paged player view to the next page of chips.
 function cycleOpp(){
   const n=G.players.length; if(n<=1) return;
-  UI.oppView=(((UI.oppView||0)+1)%n+n)%n;
+  const per=UI._perPage||1;
+  const pages=Math.ceil(n/per);
+  const page=Math.floor((((UI.oppView||0)%n+n)%n)/per);
+  UI.oppView=((page+1)%pages)*per;
   layoutPlayers();
 }
 

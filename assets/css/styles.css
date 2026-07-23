@@ -90,19 +90,19 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
 .hud-players::-webkit-scrollbar{height:5px}
 .hud-players::-webkit-scrollbar-thumb{background:var(--line); border-radius:99px}
 .hud-players.paged{overflow-x:hidden}
-.hud-players.single .pchip{flex:1 1 auto; min-width:0}
 .pchip-nav{flex:0 0 auto; align-self:stretch; min-width:38px; border-radius:11px; cursor:pointer;
   background:var(--felt-2); border:1px solid var(--line); color:var(--gilt-soft);
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:2px 6px}
+.pchip-nav[hidden]{display:none}
 .pchip-nav:hover{border-color:var(--gilt)}
 .pchip-nav .nav-chev{font-size:20px; line-height:1}
 .pchip-nav .nav-count{font-family:"Jost"; font-size:10px; letter-spacing:.5px; color:var(--ink-dim); font-variant-numeric:tabular-nums}
 .hud-players [hidden]{display:none}
-.pchip{flex:0 0 auto; min-width:154px; border-radius:11px; padding:6px 10px;
+.pchip{flex:0 0 auto; min-width:144px; border-radius:11px; padding:5px 9px;
   background:var(--felt-2); border:1px solid var(--line)}
 .pchip.active{border-color:var(--gilt); animation:breathe 2.6s ease-in-out infinite}
 .pchip .pc-top{display:flex; align-items:baseline; gap:8px}
-.pchip .pc-name{font-family:"Cormorant Garamond",serif; font-size:16px}
+.pchip .pc-name{font-family:"Cormorant Garamond",serif; font-size:15px}
 .pchip .pc-think{display:inline-flex; align-items:center; gap:3px; align-self:center}
 .pchip .pc-first{align-self:center; font-family:"Jost"; font-size:9px; font-weight:600; letter-spacing:.5px;
   text-transform:uppercase; color:var(--gilt-soft); border:1px solid var(--gilt); border-radius:6px;
@@ -112,28 +112,26 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
 .pchip .pc-think i:nth-child(2){animation-delay:.18s}
 .pchip .pc-think i:nth-child(3){animation-delay:.36s}
 @keyframes thinkPulse{0%,80%,100%{opacity:.28; transform:translateY(0)} 40%{opacity:1; transform:translateY(-2px)}}
-.pchip .pc-vp{margin-left:auto; font-family:"Cormorant Garamond",serif; font-size:18px; color:var(--gilt-soft)}
+.pchip .pc-vp{margin-left:auto; font-family:"Cormorant Garamond",serif; font-size:16px; color:var(--gilt-soft)}
 .pchip .pc-vp.bump{animation:vpBump .8s cubic-bezier(.3,.7,.2,1)}
 @keyframes vpBump{
   0%{transform:scale(1)} 22%{transform:scale(1.42); color:#8fe0a6}
   55%{transform:scale(1.08)} 100%{transform:scale(1); color:var(--gilt-soft)}
 }
 .pchip .pc-vp small{font-family:"Jost"; font-size:9px; letter-spacing:1px; color:var(--ink-dim)}
-.pchip .pc-pat{font-family:"Jost"; font-weight:500; font-size:12px; color:var(--ink-dim); margin-right:9px}
-.pchip .pc-pat .pc-ico{vertical-align:-0.14em; margin-right:2px}
 /* developments owned: a small card-shaped chip per colour, count centred */
-.pchip .pc-cards{display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin-top:6px}
-.pchip .pc-card{width:18px; height:24px; flex:0 0 auto; border-radius:4px;
+.pchip .pc-cards{display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin-top:4px}
+.pchip .pc-card{width:16px; height:21px; flex:0 0 auto; border-radius:4px;
   border:1px solid rgba(0,0,0,.4); box-shadow:0 1px 2px rgba(0,0,0,.3);
   display:inline-flex; align-items:center; justify-content:center;
-  font-family:"Jost"; font-size:11px; font-weight:700; line-height:1;
+  font-family:"Jost"; font-size:10px; font-weight:700; line-height:1;
   color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.55); font-variant-numeric:tabular-nums}
 .pchip .pc-card.g-white, .pchip .pc-card.g-gold{color:#241d2b; text-shadow:0 1px 0 rgba(255,255,255,.4)}
 .pchip .pc-card.z{opacity:.28; box-shadow:none}
 /* gems held: gem shape + count per colour, with a running /10 total */
-.pchip .pc-gems{display:flex; flex-wrap:wrap; align-items:center; gap:3px 8px; margin-top:6px; font-size:11px}
-.pchip .pc-gem{display:inline-flex; align-items:center; gap:3px; color:var(--ink); font-variant-numeric:tabular-nums}
-.pchip .pc-gem .gem{width:16px; height:16px; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+.pchip .pc-gems{display:flex; flex-wrap:wrap; align-items:center; gap:3px 7px; margin-top:4px; font-size:11px}
+.pchip .pc-gem{display:inline-flex; align-items:center; gap:2px; color:var(--ink); font-variant-numeric:tabular-nums}
+.pchip .pc-gem .gem{width:14px; height:14px; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
 .pchip .pc-gem i{font-style:normal; font-weight:600}
 .pchip .pc-gem.z{opacity:.4}
 .pchip .pc-gem.z i{color:var(--ink-dim)}
@@ -143,10 +141,9 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
 .pchip .pc-gtot small{font-size:9px; color:var(--ink-dim); letter-spacing:.3px; font-weight:500}
 .pchip .pc-gtot.full{color:#e6b95a}
 .pchip .pc-ico{width:13px; height:13px; opacity:.9}
-/* reserve rack: always three slots — empty ones dashed like empty tier slots,
-   filled ones take the card colour (own cards clickable, blind rivals as backs) */
-.pchip .pc-res{display:flex; gap:5px; margin-top:8px}
-.pchip .rslot{width:20px; height:28px; flex:0 0 auto; border-radius:4px; box-sizing:border-box}
+/* reserve + patrons share one row (see .pc-holds); the rack itself keeps 3 slots */
+.pchip .pc-res{display:flex; gap:5px}
+.pchip .rslot{width:17px; height:23px; flex:0 0 auto; border-radius:4px; box-sizing:border-box}
 .pchip .rslot.empty{border:1px dashed var(--line); background:rgba(255,255,255,.02)}
 .pchip .rcard{border:1px solid rgba(0,0,0,.45);
   display:inline-flex; align-items:flex-start; justify-content:flex-end; padding:1px 2px 0 0; overflow:hidden;
@@ -168,6 +165,29 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
   0%,100%{box-shadow:0 0 0 2px rgba(111,174,126,.8), 0 0 8px 1px rgba(84,199,120,.4)}
   50%{box-shadow:0 0 0 2px rgba(126,201,141,1), 0 0 14px 3px rgba(84,199,120,.72)}
 }
+/* Reserve rack and patrons share a row directly beneath the gems, sitting on one
+   line when there's room. If the chip is width-constrained (the HUD's paged
+   single-chip mode on narrow screens), the row WRAPS — the patron group drops
+   below the reserve rather than overflowing the chip — so it never clips. */
+.pchip .pc-holds{display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin-top:5px}
+/* patrons: always shown (like the reserve rack) in a fixed rack sized to the
+   patrons available this match (players + 1), the most any player could hold, so
+   the chip footprint stays constant all game — dashed with a faint crown when
+   unearned, gilt-filled with a crown + requirement dots when claimed. The crown
+   makes it read clearly as a patron; dots are sized for legibility. A left divider
+   separates the group from the reserve rack. */
+.pchip .pc-patrons{display:flex; flex-direction:row; flex-wrap:wrap; align-items:center; gap:5px; padding-left:8px; border-left:1px solid var(--line)}
+.pchip .pc-patron{display:flex; flex-direction:row; align-items:center; justify-content:center; gap:3px;
+  width:62px; height:20px; flex:0 0 auto; box-sizing:border-box; padding:0 4px;
+  border:1px solid var(--gilt); border-radius:5px; background:rgba(199,162,76,.12)}
+.pchip .pc-patron.empty{border:1px dashed var(--line); background:rgba(255,255,255,.02)}
+.pchip .pc-patron .pc-crown{width:11px; height:11px; flex:none; color:var(--gilt-soft)}
+.pchip .pc-patron.empty .pc-crown{color:var(--line); opacity:.7}
+.pchip .pc-patron-req{display:inline-flex; align-items:center; gap:2px}
+.pchip .pc-patron .pdot{width:11px; height:11px; border-radius:3px; border:1px solid rgba(0,0,0,.4);
+  display:inline-flex; align-items:center; justify-content:center; color:#fff;
+  font-size:8px; font-weight:700; line-height:1; text-shadow:0 0 2px #000,0 0 2px #000}
+.pchip .pc-patron .pdot i{font-style:normal}
 /* rich hover tooltip for reserved cards */
 .rtip{position:fixed; z-index:80; pointer-events:none; min-width:118px; max-width:180px;
   background:linear-gradient(180deg,#241d2b,#1a1422); border:1px solid var(--gilt);
@@ -645,24 +665,15 @@ html,body{overflow-x:hidden}
   .pl .mini{gap:5px; margin-top:6px}
   .pl .resv{margin-top:6px; font-size:11px}
   .section-label{letter-spacing:2px}
-  /* HUD on phones: gems + buttons stay inline on one row, players scroll on their own row below */
-  .hud{gap:6px 10px; padding:6px 10px calc(6px + env(safe-area-inset-bottom, 0px)); flex-wrap:wrap; max-height:48vh}
-  .hud-players{flex:1 1 100%; margin-top:2px}
+  /* HUD on phones: the scrolling players row shares one line with the fixed nav
+     button (which sits pinned to the right), so #players flexes instead of taking
+     the whole row and pushing the nav to a second line. */
+  .hud{gap:6px 10px; padding:6px 10px calc(6px + env(safe-area-inset-bottom, 0px)); flex-wrap:nowrap; max-height:48vh}
+  .hud-players{flex:1 1 0; min-width:0; margin-top:0}
   .gem-hud .token .gem{width:clamp(22px,6.6vw,30px); height:clamp(22px,6.6vw,30px)}
-  /* Player chips: compact the four holding rows so each chip is shorter, while
-     still showing every colour (including zero counts) so a player can always
-     read exactly how many cards and gems they hold. */
-  .pchip{min-width:112px; padding:5px 9px}
-  .pchip .pc-name{font-size:15px}
-  .pchip .pc-vp{font-size:16px}
-  .pchip .pc-cards{gap:4px; margin-top:4px}
-  .pchip .pc-card{width:16px; height:21px; font-size:10px}
-  .pchip .pc-gems{gap:2px 6px; margin-top:4px}
-  .pchip .pc-gem{gap:2px}
-  .pchip .pc-gem .gem{width:14px; height:14px}
-  .pchip .pc-gtot{font-size:11px}
-  .pchip .pc-res{gap:4px; margin-top:5px}
-  .pchip .rslot{width:17px; height:23px}
+  /* Player chips share the compact base sizing now; on phones just allow a
+     narrower chip so more fit before the pager kicks in. */
+  .pchip{min-width:112px}
 }
 
 @media (prefers-reduced-motion: reduce){
