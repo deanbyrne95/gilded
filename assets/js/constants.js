@@ -158,7 +158,10 @@ function startGame(opts, silent){
   if(mode==="tutorial"){
     G.tutorial=true;
     const you=players[0];
+    // Grant a small starting stash — and take it out of the bank so gem totals
+    // stay consistent (every gem a player holds has left the bank).
     you.tokens.white=2; you.tokens.blue=1;
+    G.bank.white-=2; G.bank.blue-=1;
     const featured={id:++ID, tier:1, color:"blue", points:1, cost:{white:2, blue:1}};
     G.board[1][0]=featured;
     G._tutCardId=featured.id;
