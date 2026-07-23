@@ -336,7 +336,11 @@ function sessionName(g){
 function saveSessions(list){ try{ localStorage.setItem('gilded_sessions', JSON.stringify(list)); }catch(e){} }
 const MAX_SESSIONS=3;
 
-// Load saved sessions, one-time migrating any legacy single `gilded_save`.
+// Load saved sessions, one-time migrating any legacy single `gilded_save`. Also
+// defensively drops any invalid saves that shouldn't exist — tutorial runs or
+// solo games (a real game always has 2+ players) — and rewrites the cleaned list,
+// so a stray tutorial save (e.g. from before tutorial saving was blocked) can
+// never be listed or loaded.
 function loadSessions(){
   let list=[];
   try{ list=JSON.parse(localStorage.getItem('gilded_sessions'))||[]; }catch(e){ list=[]; }
@@ -350,7 +354,10 @@ function loadSessions(){
       saveSessions(list);
     }
   }catch(e){}
-  return list;
+  const isValid=(s)=>{ const g=s&&s.data&&s.data.G; return !!g && !g.tutorial && Array.isArray(g.players) && g.players.length>=2; };
+  const cleaned=list.filter(isValid);
+  if(cleaned.length!==list.length){ try{ saveSessions(cleaned); }catch(e){} }
+  return cleaned;
 }
 function hasSave(){ return loadSessions().length>0; }
 
@@ -358,6 +365,9 @@ function hasSave(){ return loadSessions().length>0; }
 // the oldest when over the cap. Finished games are never stored — any existing
 // slot is dropped instead. Returns true if a session was evicted.
 function persistSession(){
+  // Tutorial games are a disposable practice run — never write them to a save
+  // slot, no matter which path asks (autosave, manual save, or leaving to menu).
+  if(G && G.tutorial) return false;
   if(G && G.over){ if(currentSessionId) deleteSession(currentSessionId); return false; }
   let list=loadSessions();
   const entry={ id: currentSessionId || ('s'+Date.now()), name: sessionName(G), savedAt: Date.now(), meta: sessionMeta(G), data:{ G:G, WIN:WIN } };
@@ -382,6 +392,7 @@ function persistSession(){
 // the in-menu item closes it too.
 function saveGame(){
   closeModal();
+  if(G && G.tutorial){ flash("The tutorial can't be saved — it's just for practice."); return; }
   if(G && G.over){ flash("This game is finished — nothing to save."); return; }
   try{ const evicted=persistSession(); flash(evicted ? "Game saved — the oldest session was replaced." : "Game saved on this device."); }
   catch(e){ flash("Couldn't save (storage unavailable here)."); }
@@ -393,6 +404,8 @@ function autoSave(){ if(!G) return; try{ persistSession(); }catch(e){} }
 // Load a saved session into the live game and resume it.
 function loadSession(id){
   const s=loadSessions().find(x=>x.id===id); if(!s||!s.data||!s.data.G) return;
+  const g=s.data.G;
+  if(g.tutorial || !Array.isArray(g.players) || g.players.length<2){ flash("That save can't be loaded."); return; }
   G=s.data.G; if(s.data.WIN) WIN=s.data.WIN;
   currentSessionId=id; ngForce=false; pendingMainMenu=false; landing=false;
   document.body.classList.remove("pre-game");
@@ -497,11 +510,21 @@ function menuHTML(note){
 // Opening the in-game menu pauses the game (freezes the AI and dims the board);
 // closing any modal resumes it. There is no separate pause button — the menu is
 // the pause.
-function openMenu(note){ openModal(menuHTML(note), true, "gamemenu"); paused=true; syncPauseUI(); }
+function openMenu(note){
+  // No pause menu during the tutorial — exit is via the coaching card's Skip.
+  if(G && G.tutorial) return;
+  openModal(menuHTML(note), true, "gamemenu"); paused=true; syncPauseUI();
+}
 
 // Leave the current game for the main menu. In-progress games are autosaved to
-// their slot first, so they can be resumed later via Load Game.
-function returnToMainMenu(){ autoSave(); openMainMenu(); }
+// their slot first, so they can be resumed later via Load Game. A tutorial run is
+// disposable: end it cleanly (dismiss the coaching overlay, clear the flag) and
+// don't save.
+function returnToMainMenu(){
+  if(G && G.tutorial){ if(typeof Tutor!=="undefined") Tutor.end(false); }
+  else autoSave();
+  openMainMenu();
+}
 
 // Settings — organised into tabs (Visual / Audio / Alerts / Controls).
 // `settingsTab` is preserved across re-renders so changing a control keeps you on
@@ -574,6 +597,7 @@ function syncHeaderActions(){
 function syncPauseUI(){
   const active = !!G && !G.over;
   const on = !!paused && active;
+  const tut = !!(G && G.tutorial);
   const btn=document.getElementById('menuBtn');
   if(btn){ btn.classList.toggle('on', on);
     // Icon-only round button (matches the theme toggle): hamburger normally, a
@@ -581,7 +605,10 @@ function syncPauseUI(){
     btn.innerHTML = on ? '<span aria-hidden="true">&#10073;&#10073;</span>' : '<span aria-hidden="true">&#9776;</span>';
     btn.setAttribute('aria-label', on ? 'Paused — open menu' : 'Menu');
     btn.setAttribute('title', on ? 'Paused' : 'Menu');
-    btn.setAttribute('aria-pressed', on?'true':'false'); }
+    btn.setAttribute('aria-pressed', on?'true':'false');
+    // The tutorial has no pause menu — leaving is via the coaching card's
+    // "Skip tutorial". Hide the header Menu button while it runs.
+    btn.hidden = tut; }
   document.body.classList.toggle('paused', on);
 }
 

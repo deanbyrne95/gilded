@@ -130,6 +130,8 @@ document.addEventListener("keydown",(e)=>{
         if(pendingMainMenu){ pendingMainMenu=false; openMainMenu(); }
       }
       // the non-dismissible main menu itself has no "back" — leave it be
+    } else if(G && G.tutorial){                        // tutorial → Esc skips it (no pause menu)
+      e.preventDefault(); if(typeof Tutor!=="undefined") Tutor.end(true);
     } else if(G && !G.over){                           // in a live game → pause via the menu
       e.preventDefault(); openMenu();
     }

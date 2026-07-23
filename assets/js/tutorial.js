@@ -72,7 +72,7 @@ const Tutor = (function(){
       },
       {
         text:`<h3>Reserve a card</h3><p>Can't afford a card yet? <b>Reserve</b> it to claim it later and take a wild <b>gold</b> token. Tap any card and choose <b>Hold</b>, or tap a deck's <b>Hold</b>. Try reserving one now.</p>`,
-        target:()=>document.querySelector('.tier-row .deck[data-tier="1"]') || document.getElementById("tiers"),
+        target:()=>document.getElementById("tiers"),
         await:"reserve",
         skipIf:()=> me().reserved.length>0,   // already reserved? lesson learned
       },
