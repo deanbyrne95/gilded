@@ -631,9 +631,20 @@ html,body{overflow-x:hidden}
   .hud{gap:6px 10px; padding:6px 10px calc(6px + env(safe-area-inset-bottom, 0px)); flex-wrap:wrap; max-height:48vh}
   .hud-players{flex:1 1 100%; margin-top:2px}
   .gem-hud .token .gem{width:clamp(22px,6.6vw,30px); height:clamp(22px,6.6vw,30px)}
-  .pchip{min-width:116px; padding:5px 9px}
+  /* Player chips: compact the four holding rows so each chip is shorter, while
+     still showing every colour (including zero counts) so a player can always
+     read exactly how many cards and gems they hold. */
+  .pchip{min-width:112px; padding:5px 9px}
   .pchip .pc-name{font-size:15px}
   .pchip .pc-vp{font-size:16px}
+  .pchip .pc-cards{gap:4px; margin-top:4px}
+  .pchip .pc-card{width:16px; height:21px; font-size:10px}
+  .pchip .pc-gems{gap:2px 6px; margin-top:4px}
+  .pchip .pc-gem{gap:2px}
+  .pchip .pc-gem .gem{width:14px; height:14px}
+  .pchip .pc-gtot{font-size:11px}
+  .pchip .pc-res{gap:4px; margin-top:5px}
+  .pchip .rslot{width:17px; height:23px}
 }
 
 @media (prefers-reduced-motion: reduce){
