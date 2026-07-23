@@ -53,7 +53,7 @@ function confirmTake(){
   const isTriple = colors.length===3 && colors.every(k=>UI.sel[k]===1);
   if(!isDouble && !isTriple) return flash("Take 3 different gems, or 2 of the same colour.");
   const p=me(); const plan={}; colors.forEach(k=>plan[k]=UI.sel[k]);
-  animateTake(plan,0);
+  animateTake(plan, G.current);
   takeGems(p,plan);
   const desc=colors.map(k=>`${UI.sel[k]}× ${NAME[k]}`).join(", ");
   UI.sel={};
@@ -83,7 +83,7 @@ function doBuy(){
   if(!plan.ok) return flash("You can't afford that yet.");
   const cardEl=elCardById(card.id);
   buyCard(p,card,loc.reserved!=null?{reserved:loc.reserved}:{tier:card.tier});
-  flyCard(cardEl, 0);
+  flyCard(cardEl, G.current);
   UI.selectedCard=null;
   const paid=costText(plan.pay);
   postAction(p, `<b>You</b> buy ${article(NAME[card.color])} ${NAME[card.color]} card${card.points?` (<b>+${card.points}</b>)`:""} for ${paid||"free"}.`);
