@@ -159,7 +159,15 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
 .pchip.you .pc-res .rcard{cursor:pointer; transition:transform .12s ease, box-shadow .12s ease}
 .pchip.you .pc-res .rcard:hover{transform:translateY(-2px); box-shadow:0 3px 8px rgba(0,0,0,.45)}
 .pchip .rcard.sel{outline:2px solid var(--gilt-soft); outline-offset:1px}
-.pchip.you .pc-res .rcard.buyable{border-color:#6fae7e}
+/* ready-to-buy reserved card: same green ring + pulsing glow as a ready-to-buy
+   development card (.card.afford), scaled down to the small reserved-card size. */
+.pchip.you .pc-res .rcard.buyable{border-color:#79c98d;
+  box-shadow:0 0 0 2px rgba(111,174,126,.9), 0 0 10px 2px rgba(84,199,120,.5);
+  animation:readyGlowSm 2.4s ease-in-out infinite}
+@keyframes readyGlowSm{
+  0%,100%{box-shadow:0 0 0 2px rgba(111,174,126,.8), 0 0 8px 1px rgba(84,199,120,.4)}
+  50%{box-shadow:0 0 0 2px rgba(126,201,141,1), 0 0 14px 3px rgba(84,199,120,.72)}
+}
 /* rich hover tooltip for reserved cards */
 .rtip{position:fixed; z-index:80; pointer-events:none; min-width:118px; max-width:180px;
   background:linear-gradient(180deg,#241d2b,#1a1422); border:1px solid var(--gilt);
@@ -196,22 +204,33 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
 .gem-hud .take-tray .take-chips .gem{width:20px; height:20px}
 .gbtn:disabled{opacity:.4; cursor:not-allowed}
 
-/* On wide screens the bank docks beside the development cards in every mode —
-   like the gem supply sitting next to the tableau on a real table. The board
+/* From tablet widths up the bank docks beside the development cards in every mode
+   — like the gem supply sitting next to the tableau on a real table. The board
    becomes a three-column grid: Patrons spans the top; the development cards sit
    in the left column with the content-width bank top-aligned beside them; and
    the take/clear controls occupy a third cell to the right of the bank (outside
    #gemHud) so they never distort the gem column or the card grid. That third
    cell is only revealed (render() toggles .hidden) when there's a live selection,
-   buy, or discard prompt to act on, so it collapses to nothing when idle.
-   render() adds body.dock-bank and relocates #gemHud + #hudControls into the
+   buy, or discard prompt to act on, so it collapses to nothing when idle. The
+   cards column is minmax(0,660px) so it shrinks on narrower tablets instead of
+   overflowing. Only below this (phones) does the bank fall back to the floating
+   HUD. render() adds body.dock-bank and relocates #gemHud + #hudControls into the
    board when the viewport is wide enough. */
-@media (min-width:1200px){
+@media (min-width:820px){
   body.dock-bank .board{
-    display:grid; grid-template-columns:660px auto auto;
+    display:grid; grid-template-columns:minmax(0,660px) auto auto;
     column-gap:24px; justify-content:start; align-items:start}
   body.dock-bank .board > .board-patrons{grid-column:1 / -1; grid-row:1}
   body.dock-bank .board > .board-cards{grid-column:1; grid-row:2; min-width:0}
+  /* Pin the development-card sizing once docked: the fluid vw-based gaps (which
+     keep growing with the whole viewport even though this column is a fixed
+     660px) are frozen at their 24px maximum, and decks/cards to 112px. This
+     stops the cards drifting on every wide-screen resize — they now only reflow
+     when the layout actually crosses the 820px breakpoint. */
+  body.dock-bank .board .tier-row{gap:24px}
+  body.dock-bank .board .cards{gap:24px}
+  body.dock-bank .board .deck,
+  body.dock-bank .board .card{width:112px}
   /* bank column: content-width and content-height, top-aligned so its "THE BANK"
      label lines up with the "DEVELOPMENT CARDS" label beside it. */
   body.dock-bank .board > #gemHud{
@@ -222,13 +241,14 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
     width:auto; max-width:none; margin:0; padding:0; gap:0;
     background:none; border:none; border-radius:0; box-shadow:none; overflow:visible; transition:none}
   body.dock-bank .board > #gemHud.show{transform:none}
-  /* header reads like the "PATRONS" / "DEVELOPMENT CARDS" section labels */
+  /* header is a plain section label like "PATRONS" / "DEVELOPMENT CARDS" — the
+     docked bank is a permanent supply display, so it is NOT collapsible: the tab
+     is inert (no pointer, no toggle) rather than a hide/show control. */
   body.dock-bank .board > #gemHud .gem-tab{
     position:static; transform:none; width:auto; justify-content:flex-start;
     background:none; border:none; border-radius:0; box-shadow:none; padding:0;
     color:var(--ink-dim); font-family:"Jost"; font-size:11px; letter-spacing:3px;
-    text-transform:uppercase; margin:2px 0 10px; cursor:pointer}
-  body.dock-bank .board > #gemHud .gem-tab:hover{color:var(--gilt-soft)}
+    text-transform:uppercase; margin:2px 0 10px; cursor:default; pointer-events:none}
   body.dock-bank .board > #gemHud .gem-tab .chev{display:none}
   /* gems sit in a single spaced column that stretches (via syncBankHeight) to
      the height of the development-card stack, distributing evenly down it. The
@@ -289,8 +309,6 @@ body.light .gem-tab{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7
     width:auto; min-width:120px;
     background:var(--felt-2); border:1px solid var(--line); border-radius:12px; padding:10px}
   body.dock-bank .board > #hudControls .take-tray .gbtn{flex:0 0 auto; width:100%; min-width:0}
-  body.dock-bank.gems-hidden .board > #gemHud .bank,
-  body.dock-bank.gems-hidden .board > #hudControls{display:none}
 }
 /* Docked bank is a persistent supply display, so every pile reads at full
    strength even while it carries the off-turn/unavailable "disabled" flag; the
@@ -659,6 +677,7 @@ html,body{overflow-x:hidden}
   .splash{transition:opacity .01s}
   .splash-card{transition:none; transform:none}
   .card.afford{animation:none}
+  .pchip .rcard.buyable{animation:none}
 }
 /* footer */
 .footer{display:flex; justify-content:center; gap:12px; margin-top:26px; padding-top:18px; border-top:1px solid var(--line)}

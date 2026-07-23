@@ -19,7 +19,7 @@ function render(){
   const gh=document.getElementById("gemHud");
   const yourTurn = !me().isAI && !G.over;
   const watching = G.mode==="watch";
-  const dock = window.matchMedia("(min-width:1200px)").matches;
+  const dock = window.matchMedia("(min-width:820px)").matches;
   if(UI._lastCurrent !== G.current){ UI._lastCurrent = G.current; if(yourTurn) document.body.classList.remove("gems-hidden"); }
   if(gh) gh.classList.toggle("show", yourTurn || watching || dock);
   syncTrayVisibility();
@@ -123,10 +123,11 @@ function renderBank(){
   el.innerHTML=ALL.map(k=>{
     const n=G.bank[k];
     const selN=UI.sel[k]||0;
+    const shown=n-selN;                 // pile total minus what's staged to take = true remaining
     const dis = k==="gold" || (!humanControls()) || n<1;
     return `<div class="token ${n<1?"empty":""} ${selN?"sel":""}" data-color="${k}">
       <div class="gem g-${k} ${dis?"disabled":""}" data-action="bank" data-color="${k}"></div>
-      <div class="cnt"><b>${n}</b>${selN?`<i class="selc"> · +${selN}</i>`:""}</div>
+      <div class="cnt"><b>${shown}</b>${selN?`<i class="selc"> · +${selN}</i>`:""}</div>
       <div class="lbl">${NAME[k]}</div>
       ${selN?`<span class="sel-badge">+${selN}</span>`:""}
     </div>`;
@@ -175,7 +176,7 @@ function renderTakeTray(){
 function syncTrayVisibility(){
   const hc=document.getElementById("hudControls"); if(!hc) return;
   const yourTurn = !me().isAI && !G.over;
-  const dock = window.matchMedia("(min-width:1200px)").matches;
+  const dock = window.matchMedia("(min-width:820px)").matches;
   const trayHasContent = !me().isAI && (UI.phase==="discard"
     || (UI.selectedCard && UI.selectedCard.reserved!=null)
     || selCount()>0);
