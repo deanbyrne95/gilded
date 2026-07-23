@@ -11,7 +11,14 @@
 // One click listener for the whole app: find the nearest [data-action] and
 // dispatch. Buy/reserve stop propagation so the card's own click doesn't also fire.
 document.addEventListener("click",(e)=>{
-  const t=e.target.closest("[data-action]"); if(!t) return;
+  const t=e.target.closest("[data-action]");
+  if(!t){
+    // Click in empty space (no actionable target) deselects a selected card.
+    if(UI.selectedCard!=null && typeof humanControls==="function" && humanControls()){
+      UI.selectedCard=null; UI.sel={}; render();
+    }
+    return;
+  }
   if(t.matches("input[type=range]")) return;  // volume sliders: see the input listener below
   const a=t.dataset.action;
   // A soft UI tick for menu/header buttons only — board actions keep their own

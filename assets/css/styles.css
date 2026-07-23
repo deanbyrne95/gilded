@@ -386,8 +386,7 @@ body.watching #hudControls{display:none}
 .deck.t3{background:linear-gradient(160deg,#3a1622,#241017)}
 .deck:hover{border-color:var(--gilt-soft)}
 .deck.sel{border-color:var(--gilt-soft); box-shadow:0 0 0 2px var(--gilt-soft), var(--shadow)}
-.deck.sel .dleft{visibility:hidden}
-.deck-menu{position:absolute; inset:auto 4px 4px 4px; display:flex}
+.deck-menu{position:absolute; inset:auto 6px 6px 6px; display:flex}
 .deck-menu .mbtn{flex:1; font-size:clamp(8px,22cqi,12px); padding:clamp(3px,6cqi,6px) 0}
 .cards{display:flex; gap:12px; flex-wrap:wrap}
 .card{width:112px; height:150px; border-radius:12px; position:relative;
@@ -413,20 +412,28 @@ body.watching #hudControls{display:none}
 .card.g-red{background:linear-gradient(165deg,#e04c66,#a82b42)}
 .card.g-black{background:linear-gradient(165deg,#4a4557,#272334)}
 /* The band no longer carries the colour — it just anchors the prestige number in
-   the top-right. A soft dark scrim keeps the number legible on light gems. */
-.card-band{flex:0 0 38%; position:relative; display:flex; justify-content:flex-end;
-  align-items:flex-start; padding:7px 8px; border-radius:11px 11px 0 0;
+   the top-right. Kept compact (auto height) so the cost column and the bottom
+   action bar both fit without overlapping, even on a four-gem card. */
+.card-band{flex:0 0 auto; position:relative; display:flex; justify-content:flex-end;
+  align-items:flex-start; padding:7px 8px 0; border-radius:11px 11px 0 0;
   background:linear-gradient(180deg,rgba(0,0,0,.14),rgba(0,0,0,0))}
 .card-pts{font-family:"Cormorant Garamond",serif; font-weight:700; line-height:1;
   font-size:clamp(15px,26cqi,26px); color:var(--gilt-soft);
   font-variant-numeric:lining-nums tabular-nums; font-feature-settings:"lnum" 1,"tnum" 1;
   background:rgba(20,15,26,.82); border-radius:8px; padding:2px 6px;
   min-width:1.5em; display:inline-flex; align-items:center; justify-content:center; text-align:center}
-.card-body{flex:1 1 auto; display:flex; flex-direction:column; justify-content:flex-end;
-  gap:clamp(3px,4cqi,6px); padding:clamp(6px,7cqi,10px)}
-.card .cost{display:flex; flex-direction:column; gap:clamp(3px,3cqi,5px); align-items:flex-start; justify-content:flex-end; flex-wrap:nowrap}
+/* Cost sits at the TOP-left of the body. The body reserves the action-bar height
+   at its foot (via padding) so the cost occupies the same space whether or not the
+   card is selected, and never slips beneath the bar. If a tall (4-gem) cost can't
+   fit in one column it wraps into a second column rather than overlapping. */
+.card-body{flex:1 1 auto; display:flex; flex-direction:column; justify-content:flex-start;
+  gap:clamp(3px,4cqi,6px); padding:clamp(6px,7cqi,10px); padding-bottom:clamp(28px,30cqi,34px); min-height:0}
+.card .cost{display:flex; flex-direction:column; flex-wrap:wrap; align-content:flex-start;
+  gap:clamp(3px,3cqi,5px); align-items:flex-start; justify-content:flex-start; max-height:100%}
+/* Action buttons — IDENTICAL treatment to the tier deck's "Hold": a full-width
+   bar pinned across the bottom of the card, so both card types behave the same. */
 .card .menu{position:absolute; inset:auto 6px 6px 6px; display:flex; gap:6px}
-.mbtn{flex:1; border:none; border-radius:7px; padding:6px 0; font-size:12px; letter-spacing:.5px; color:#1a1420}
+.mbtn{flex:1; border:none; border-radius:7px; padding:6px 0; font-size:12px; letter-spacing:.5px; color:#1a1420; cursor:pointer}
 .mbtn.buy{background:linear-gradient(180deg,#7fd39a,#4fae72)}
 .mbtn.buy:disabled{background:#3a4440; color:#7d8580; cursor:not-allowed}
 .mbtn.res{background:linear-gradient(180deg,#e6cd86,#c7a24c)}
