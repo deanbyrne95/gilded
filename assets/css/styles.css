@@ -632,7 +632,8 @@ body.light .modal.mainmenu{background:radial-gradient(ellipse at 50% 28%, #fbf6e
 body.pre-game .wrap, body.pre-game .hud, body.pre-game .gem-hud, body.pre-game .ledger-drawer, body.pre-game #fxLayer{display:none}
 .sess-list{display:flex; flex-direction:column; gap:8px; margin:14px 0 6px; max-height:46vh; overflow:auto}
 .sess{display:flex; align-items:center; justify-content:space-between; gap:12px;
-  background:var(--felt-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px}
+  background:var(--felt-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+  min-height:84px; box-sizing:border-box}
 .sess-name{font-family:"Cormorant Garamond",serif; font-size:18px; color:var(--gilt-soft)}
 .sess-scores{display:flex; flex-wrap:wrap; gap:4px 10px; margin:3px 0 1px}
 .sess-scores .sc{display:inline-flex; align-items:center; gap:4px; font-size:12.5px; color:var(--ink-dim); letter-spacing:.2px}
@@ -648,6 +649,13 @@ body.pre-game .wrap, body.pre-game .hud, body.pre-game .gem-hud, body.pre-game .
 .sess .gbtn{padding:6px 12px; font-size:13px}
 .sess-del{color:#d98a8a}
 .sess-empty{color:var(--ink-dim); text-align:center; padding:18px 0}
+/* empty save slots: a dashed placeholder like the empty reserve/patron slots in
+   play, so the max number of saves is visible even when few (or none) are used.
+   Shares the base .sess min-height so filled and empty slots are the same size. */
+.sess-slot{justify-content:center; background:rgba(255,255,255,.02);
+  border:1px dashed var(--line)}
+.sess-slot-label{font-family:"Jost"; font-size:11px; letter-spacing:2px; text-transform:uppercase;
+  color:var(--ink-dim); opacity:.6}
 .sess-cap{color:var(--ink-dim); font-size:12px; margin:4px 0 0; letter-spacing:.3px}
 .win-name{font-family:"Cormorant Garamond",serif; font-size:38px; color:var(--gilt-soft); text-align:center; margin:6px 0}
 .hidden{display:none !important}

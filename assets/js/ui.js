@@ -432,7 +432,7 @@ function askDeleteSession(id){ delConfirmId=id; sessRerender(); }
 // back to a compact summary for legacy sessions saved without per-player scores.
 function sessionsHTML(from){
   const list=loadSessions();
-  const rows = list.length ? list.map(s=>{
+  const filled = list.map(s=>{
     const m=s.meta||{};
     const when=new Date(s.savedAt||Date.now()).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
     const stage = m.over ? 'Finished' : `Turn ${m.turn||0}`;
@@ -475,7 +475,15 @@ function sessionsHTML(from){
     return `<div class="sess">
       <div class="sess-info"><div class="sess-name">${s.name}</div>${board}<div class="sess-sub">${stage} · ${when}</div></div>
       ${acts}</div>`;
-  }).join("") : `<p class="sess-empty">No saved sessions yet. Use “Save game” during play to store one.</p>`;
+  });
+  // Always show all MAX_SESSIONS slots: filled saves first, then dashed empty
+  // placeholders (like the empty reserve/patron slots in play) so the cap is
+  // visible at a glance.
+  const empties=[];
+  for(let i=list.length; i<MAX_SESSIONS; i++){
+    empties.push(`<div class="sess sess-slot" aria-hidden="true"><span class="sess-slot-label">Empty slot</span></div>`);
+  }
+  const rows = filled.join("") + empties.join("");
   let footBtn;
   if(from==='menu') footBtn=`<button class="gbtn ghost" data-action="open-menu">Back</button>`;
   else if(from==='main') footBtn=`<button class="gbtn ghost" data-action="open-mainmenu">Back</button>`;
