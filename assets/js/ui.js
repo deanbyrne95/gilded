@@ -23,35 +23,105 @@ function ig(c){ return `<span class="inline-gem g-${c}"></span>`; }
 
 // Markup for the how-to-play tutorial.
 // The how-to-play body (no chrome), shared by the standalone tutorial modal and
-// the Settings ▸ How to Play tab.
+// the Settings ▸ How to Play tab. It is fully illustrated: the Bank, a sample
+// development card, and a sample patron are built from the game's REAL components
+// (the same gem/card/patron markup used on the board) so the guide matches play.
+function htIcon(name){
+  const p={
+    bank:'<circle cx="12" cy="12" r="8"/><path d="M12 8.5v7M9.6 10.2a2 2 0 0 1 2-1.7h1a1.8 1.8 0 0 1 .3 3.5l-1.4.4a1.8 1.8 0 0 0 .3 3.5h1a2 2 0 0 0 2-1.7"/>',
+    card:'<rect x="7" y="4" width="12" height="16" rx="2"/><path d="M4 7v12a2 2 0 0 0 2 2h9" opacity=".55"/>',
+    crown:'<path d="M4 8l3.5 3L12 5l4.5 6L20 8l-1.4 9.5H5.4z"/>',
+    turn:'<path d="M4 12a8 8 0 0 1 13.7-5.6L20 8M20 4v4h-4"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 16M4 20v-4h4"/>',
+    win:'<path d="M8 4h8v3a4 4 0 0 1-8 0z"/><path d="M8 5H5v1a3 3 0 0 0 3 3M16 5h3v1a3 3 0 0 1-3 3"/><path d="M12 11v4M9 20h6M10 17.5h4"/>',
+  }[name]||'';
+  return `<svg class="htp-hi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+}
 function tutorialBodyHTML(){
-  return `<p>You're a Renaissance gem merchant building an empire. Buy development cards, earn prestige, and be the first to reach the game's prestige target (set when you start a new game).</p>
+  // The Bank: every token type as its real faceted gem + name.
+  const gemRow = ALL.map(k=>`<span class="htp-tok"><span class="gem g-${k}"></span><small>${NAME[k]}</small></span>`).join("");
+  // A sample development card, exactly as it renders on the board: prestige in the
+  // coloured band, its purchase cost as gem dots below.
+  const sampleCard = `<div class="card htp-demo-card">
+    <div class="card-band g-blue"><span class="card-pts">2</span></div>
+    <div class="card-body"><div class="cost">${dot('red',3)}${dot('black',2)}</div></div>
+  </div>`;
+  // A sample patron tile, exactly as it renders on the board.
+  const samplePatron = `<div class="noble htp-demo-noble"><div class="np">3<small>prestige</small></div>
+    <div class="req">${dot('green',3)}${dot('red',3)}${dot('black',3)}</div></div>`;
 
-  <h3>Your turn — do exactly one thing</h3>
-  <ul>
-    <li><b>Take 3 gems</b> of different colours (one each).</li>
-    <li><b>Take 2 gems</b> of the same colour — only if that pile has 4 or more.</li>
-    <li><b>Reserve a card</b> to save it for later and grab a ${ig("gold")} <b>gold</b> (wild) token. You may hold up to 3.</li>
-    <li><b>Buy a card</b> from the table or from your reserve.</li>
-  </ul>
-  <p>Gold ${ig("gold")} counts as any colour when buying. You can never end a turn holding more than 10 tokens.</p>
+  return `<div class="htp">
+  <p class="htp-lead">You are a Renaissance gem merchant. Collect gems, buy development cards for their <b>prestige</b> and colour <b>bonuses</b>, attract patrons — and be first to the prestige target (chosen when you start a game).</p>
 
-  <h3>Cards are permanent discounts</h3>
-  <p>Every card you buy gives a coloured bonus. A ${ig("green")} card means every future purchase costs one less ${ig("green")}. Stack these and expensive cards become cheap. The big number in the corner is prestige.</p>
+  <section class="htp-sec">
+    <div class="htp-head">${htIcon('bank')}<h3>The Bank</h3></div>
+    <div class="htp-body">
+      <div class="htp-fig"><div class="htp-gems">${gemRow}</div></div>
+      <div class="htp-txt">
+        <p>The bank holds five gem colours plus <b>gold</b>. Gold is a wild — it stands in for any colour when buying, and is only gained by reserving.</p>
+        <p>On your turn you may <b>take gems</b>: three of different colours, or two of a single colour (only when that pile still has four or more).</p>
+      </div>
+    </div>
+  </section>
 
-  <h3>Patrons</h3>
-  <p>The tiles up top are patrons, worth <b>3</b> prestige each. When your <i>card bonuses</i> meet a patron's requirement (tokens don't count), they visit you automatically — no action needed.</p>
+  <section class="htp-sec">
+    <div class="htp-head">${htIcon('card')}<h3>Development cards</h3></div>
+    <div class="htp-body">
+      <div class="htp-fig">${sampleCard}</div>
+      <div class="htp-txt">
+        <p>Buy a card by paying the gem cost shown at its foot (${dot('red',3)} ${dot('black',2)} here). Cards come in three tiers — <b>I</b>, <b>II</b>, <b>III</b> — growing pricier and worth more.</p>
+        <p>The corner number is <b>prestige</b>. The band colour is a permanent <b>bonus</b>: this ${ig("blue")} card makes every future purchase cost one less ${ig("blue")}. Stack bonuses and dear cards become cheap.</p>
+      </div>
+    </div>
+  </section>
 
-  <h3>Winning</h3>
-  <p>The moment anyone reaches the target, the round is played out so everyone has had the same number of turns. Highest prestige wins; ties go to whoever owns fewer cards.</p>`;
+  <section class="htp-sec">
+    <div class="htp-head">${htIcon('crown')}<h3>Patrons</h3></div>
+    <div class="htp-body">
+      <div class="htp-fig">${samplePatron}</div>
+      <div class="htp-txt">
+        <p>Patrons are worth <b>3 prestige</b> each. The tile shows what it wants — here <b>3</b> ${ig("green")}, <b>3</b> ${ig("red")} and <b>3</b> ${ig("black")}.</p>
+        <p>Requirements are met by your <b>card bonuses</b>, not your gems. When you qualify, the patron visits automatically — no action, no cost.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="htp-sec">
+    <div class="htp-head">${htIcon('turn')}<h3>Your turn — one action</h3></div>
+    <div class="htp-body">
+      <ul class="htp-actions">
+        <li><b>Take 3 gems</b> of different colours.</li>
+        <li><b>Take 2 gems</b> of one colour — only if that pile has 4+.</li>
+        <li><b>Reserve a card</b> to save it and take a ${ig("gold")} <b>gold</b>. Hold up to 3.</li>
+        <li><b>Buy a card</b> from the table or from your reserve.</li>
+      </ul>
+      <p class="htp-note">You can never end a turn holding more than <b>10</b> tokens — discard the excess if you go over.</p>
+    </div>
+  </section>
+
+  <section class="htp-sec">
+    <div class="htp-head">${htIcon('win')}<h3>Winning</h3></div>
+    <div class="htp-body">
+      <p>The moment anyone reaches the prestige target, the round is finished so everyone has taken the same number of turns. Highest prestige wins; a tie goes to whoever bought fewer cards.</p>
+    </div>
+  </section>
+</div>`;
 }
-function tutorialHTML(){
-  return `<div class="eyebrow">How to play</div>
-  <h2>Gilded</h2>
-  ${tutorialBodyHTML()}
-  <div class="foot"><button class="gbtn" data-action="${landing?'open-mainmenu':'close-modal'}">${landing?'Back to menu':'Got it'}</button></div>`;
+// `tutorialFrom` remembers the opener ('menu' = in-game pause menu) so the guide
+// backs out to the right place. From the main menu it renders as a full-screen
+// landing PAGE (not a popup), matching New Game / Settings; elsewhere (first run,
+// in-game pause) it is a tidy "tutorial" modal. Esc backs out in every context.
+let tutorialFrom=null;
+function openTutorial(from){
+  tutorialFrom=from||null;
+  const act = landing ? 'open-mainmenu' : (tutorialFrom==='menu' ? 'open-menu' : 'close-modal');
+  const label = landing ? 'Back to menu' : (tutorialFrom==='menu' ? 'Back' : 'Got it');
+  const foot = `<div class="foot"><button class="gbtn" data-action="${act}">${label}</button></div>`;
+  if(landing){
+    openLandingPage(`<div class="htp-page"><h2 class="htp-page-title">How to Play</h2>${tutorialBodyHTML()}${foot}</div>`);
+  } else {
+    openModal(`<div class="eyebrow">How to play</div><h2>Gilded</h2>${tutorialBodyHTML()}${foot}`, true, "tutorial");
+  }
 }
-function openTutorial(){ openModal(tutorialHTML(), !landing); }
 
 // Start-game menu state. `ngForce` blocks cancel (forced on first load);
 // `pendingMainMenu` opens the main menu right after the tutorial is dismissed;
@@ -87,7 +157,8 @@ function iconSvg(name){
     ai:       '<rect x="6" y="6" width="12" height="12" rx="2"/><circle cx="9.5" cy="10.5" r="1"/><circle cx="14.5" cy="10.5" r="1"/><path d="M9 14.5h6M9 2.5v3M15 2.5v3M9 18.5v3M15 18.5v3M2.5 9h3M2.5 15h3M18.5 9h3M18.5 15h3"/>',
     players:  '<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M15.5 5.2a3 3 0 0 1 0 5.6"/><path d="M17 20a6 6 0 0 0-2.8-5.1"/>',
     watch:    '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
-    online:   '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.7-3.8-9s1.3-6.4 3.8-9z"/>'
+    online:   '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.7-3.8-9s1.3-6.4 3.8-9z"/>',
+    help:     '<circle cx="12" cy="12" r="9"/><path d="M9.4 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.4 2.2-2.4 3.9"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/>'
   };
   const p = paths[name];
   if(!p) return '';
@@ -105,6 +176,7 @@ function mainMenuHTML(){
       <button class="mm-item" data-action="open-newgame">${mmIcon('new')}<span class="mm-tx"><span class="mm-i-t">New Game</span><span class="mm-i-s">Vs AI, pass-and-play, or watch</span></span></button>
       <button class="mm-item" data-action="load-game" data-from="main" ${hasSave()?'':'disabled'}>${mmIcon('load')}<span class="mm-tx"><span class="mm-i-t">Load Game</span><span class="mm-i-s">${hasSave()?'Continue a saved game':'No saved games yet'}</span></span></button>
       <button class="mm-item" data-action="open-settings">${mmIcon('settings')}<span class="mm-tx"><span class="mm-i-t">Settings</span><span class="mm-i-s">${SET_TABS.map(t=>t[1]).join(', ')}</span></span></button>
+      <button class="mm-item" data-action="open-tutorial">${mmIcon('help')}<span class="mm-tx"><span class="mm-i-t">How to Play</span><span class="mm-i-s">Bank, cards, patrons &amp; winning</span></span></button>
     </div>
   </div>`;
 }
@@ -225,11 +297,12 @@ function applySettings(){
   WIN = SETTINGS.maxVP || 15;
   const toasts=document.getElementById('toasts');
   if(toasts) toasts.className='toasts pos-'+(SETTINGS.toastPos||'br');
-  const tt=document.getElementById('themeToggle');
-  if(tt){ const light=SETTINGS.theme==='light';
-    tt.innerHTML = light ? '<span aria-hidden="true">\u2600</span> Light' : '<span aria-hidden="true">\u263E</span> Dark';
-    tt.setAttribute('aria-pressed', light?'true':'false');
-  }
+  // Both theme buttons (in-game header + main-menu float) share the same icon-only
+  // round design, so give them the same glyph and pressed state.
+  const light=SETTINGS.theme==='light';
+  const themeGlyph = light ? '<span aria-hidden="true">\u2600</span>' : '<span aria-hidden="true">\u263E</span>';
+  ['themeToggle','themeFloat'].forEach(id=>{ const b=document.getElementById(id);
+    if(b){ b.innerHTML=themeGlyph; b.setAttribute('aria-pressed', light?'true':'false'); } });
   if(typeof Sfx!=="undefined") Sfx.setVolume();
   if(typeof Music!=="undefined") Music.setVolume();
 }
@@ -409,7 +482,8 @@ function menuHTML(note){
   const items = [
     ['close-modal','Resume','Back to the table','resume',''],
     ['save-game','Save game','Store this game to a slot','save',''],
-    ['settings-from-menu','Settings','Audio, visuals, how to play','settings',''],
+    ['tutorial-from-menu','How to Play','Bank, cards, patrons &amp; winning','help',''],
+    ['settings-from-menu','Settings','Audio, visuals &amp; controls','settings',''],
   ];
   if(G && !landing) items.push(['return-mainmenu','Return to main menu','Autosaves, then leaves the game','exit','mm-item-leave']);
   const list = items.map(([act,t,s,ic,cls])=>
@@ -427,14 +501,14 @@ function openMenu(note){ openModal(menuHTML(note), true, "gamemenu"); paused=tru
 // their slot first, so they can be resumed later via Load Game.
 function returnToMainMenu(){ autoSave(); openMainMenu(); }
 
-// Settings — organised into tabs (How to Play / Visual / Audio / Alerts /
-// Controls). `settingsTab` is preserved across re-renders so changing a control
-// keeps you on the same tab. The prestige target now lives in New Game.
-let settingsTab='howto';
-const SET_TABS=[['howto','How to Play'],['visual','Visual'],['audio','Audio'],['alerts','Alerts'],['controls','Controls']];
+// Settings — organised into tabs (Visual / Audio / Alerts / Controls).
+// `settingsTab` is preserved across re-renders so changing a control keeps you on
+// the same tab. How to Play is its own menu entry now, not a settings tab.
+let settingsTab='visual';
+const SET_TABS=[['visual','Visual'],['audio','Audio'],['alerts','Alerts'],['controls','Controls']];
 function settingsHTML(fromMenu){
   const cvd=SETTINGS.cvd||'off';
-  const tpos=SETTINGS.toastPos||'br', tms=SETTINGS.toastMs||3000, theme=SETTINGS.theme||'dark';
+  const tpos=SETTINGS.toastPos||'br', tms=SETTINGS.toastMs||3000;
   const svol=SETTINGS.volume!=null?String(+SETTINGS.volume):'0.6';
   const mvol=SETTINGS.musicVol!=null?String(+SETTINGS.musicVol):'0.5';
   const mastvol=SETTINGS.masterVol!=null?String(+SETTINGS.masterVol):'1';
@@ -445,10 +519,7 @@ function settingsHTML(fromMenu){
     return `<div class="set-row"><div class="set-label">${label}${hint?`<span class="set-hint">${hint}</span>`:''}</div>`
       +`<div class="slider-group"><input type="range" class="vol-slider" min="0" max="100" step="5" value="${pct}" data-action="set-${action}" aria-label="${label}" aria-valuetext="${pct}%"><output class="vol-val">${pct}%</output></div></div>`; };
   const panels={
-    howto:`<div class="howto-panel">${tutorialBodyHTML()}</div>`,
-    visual:`${row('Theme','light or dark table',
-        seg('theme','dark',theme,'Dark')+seg('theme','light',theme,'Light'))}
-      ${row('Colour-vision mode','recolours gems for clarity',
+    visual:`${row('Colour-vision mode','recolours gems for clarity',
         seg('cvd','off',cvd,'Off')+seg('cvd','prot',cvd,'Protanopia')+seg('cvd','deut',cvd,'Deuteranopia')+seg('cvd','trit',cvd,'Tritanopia'))}`,
     alerts:`${row('Alert position','where warnings pop up',
         seg('toastpos','tl',tpos,'Top left')+seg('toastpos','tr',tpos,'Top right')+seg('toastpos','bl',tpos,'Bottom left')+seg('toastpos','br',tpos,'Bottom right'))}
@@ -465,7 +536,7 @@ function settingsHTML(fromMenu){
         <div class="key-row"><span class="key-keys"><kbd>Enter</kbd><kbd>Space</kbd></span><span class="key-desc">Select the highlighted option.</span></div>
       </div>`,
   };
-  const tab = panels[settingsTab] ? settingsTab : 'howto';
+  const tab = panels[settingsTab] ? settingsTab : 'visual';
   const tabs = SET_TABS.map(([id,label])=>`<button class="set-tab ${id===tab?'on':''}" data-action="set-tab" data-v="${id}" role="tab" aria-selected="${id===tab}">${label}</button>`).join("");
   let foot;
   if(landing) foot=`<button class="gbtn" data-action="open-mainmenu">Back to menu</button>`;
@@ -503,7 +574,11 @@ function syncPauseUI(){
   const on = !!paused && active;
   const btn=document.getElementById('menuBtn');
   if(btn){ btn.classList.toggle('on', on);
-    btn.innerHTML = on ? '&#9776; Paused' : '&#9776; Menu';
+    // Icon-only round button (matches the theme toggle): hamburger normally, a
+    // pause glyph when the game is paused; the word lives in the label/title.
+    btn.innerHTML = on ? '<span aria-hidden="true">&#10073;&#10073;</span>' : '<span aria-hidden="true">&#9776;</span>';
+    btn.setAttribute('aria-label', on ? 'Paused — open menu' : 'Menu');
+    btn.setAttribute('title', on ? 'Paused' : 'Menu');
     btn.setAttribute('aria-pressed', on?'true':'false'); }
   document.body.classList.toggle('paused', on);
 }
@@ -511,7 +586,6 @@ function syncPauseUI(){
 // Settings segment handlers: change win target / colour-vision mode live.
 function setTab(v){ settingsTab=v; openSettings(); }
 function setCVD(v){ SETTINGS.cvd=v; saveSettings(); applySettings(); openSettings(); }
-function setTheme(v){ SETTINGS.theme=v; saveSettings(); applySettings(); openSettings(); }
 function setMaster(v, el){ SETTINGS.masterVol=Math.max(0,Math.min(1,(+v)/100)); saveSettings(); Sfx.unlock(); Sfx.setVolume(); Music.start(); Music.setVolume(); updateVolLabel(el); }
 function setVol(v, el){ SETTINGS.volume=Math.max(0,Math.min(1,(+v)/100)); saveSettings(); Sfx.unlock(); Sfx.setVolume(); updateVolLabel(el); }
 function setMusicVol(v, el){ SETTINGS.musicVol=Math.max(0,Math.min(1,(+v)/100)); saveSettings(); Music.start(); Music.setVolume(); updateVolLabel(el); }

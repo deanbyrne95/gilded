@@ -26,8 +26,8 @@
       <span class="sub">A Gem Merchant's Game</span>
     </div>
     <div class="spacer"></div>
-    <button class="gbtn theme-toggle" id="themeToggle" data-action="toggle-theme" aria-label="Toggle light or dark theme" aria-pressed="false"></button>
-    <button class="gbtn menu-btn" id="menuBtn" data-action="open-menu" aria-haspopup="dialog">&#9776; Menu</button>
+    <button class="theme-btn theme-toggle" id="themeToggle" data-action="toggle-theme" aria-label="Toggle light or dark theme" aria-pressed="false" title="Toggle light / dark theme"></button>
+    <button class="theme-btn menu-btn" id="menuBtn" data-action="open-menu" aria-haspopup="dialog" aria-label="Menu" title="Menu">&#9776;</button>
   </div>
 
   <div class="goal-banner" id="goalBanner"></div>
@@ -71,6 +71,9 @@
 <div id="fxLayer"></div>
 <div id="rtip" class="rtip" hidden></div>
 <div id="toasts" class="toasts pos-br" aria-live="polite"></div>
+
+<!-- Quick theme toggle: small fixed button shown on the main menu -->
+<button class="theme-btn theme-float" id="themeFloat" data-action="toggle-theme" aria-label="Toggle light or dark theme" aria-pressed="false" title="Toggle light / dark theme"></button>
 
 <!-- Tutorial / dialogs -->
 <div class="scrim" id="scrim">

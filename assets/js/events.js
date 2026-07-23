@@ -16,9 +16,10 @@ document.addEventListener("click",(e)=>{
   const a=t.dataset.action;
   // A soft UI tick for menu/header buttons only — board actions keep their own
   // thematic cues, so we skip clicks inside the game view.
-  if(t.closest("#modal") || t.closest(".topbar")) sfx("click");
+  if(t.closest("#modal") || t.closest(".topbar") || t.closest(".theme-float")) sfx("click");
   switch(a){
     case "open-tutorial": openTutorial(); break;
+    case "tutorial-from-menu": openTutorial('menu'); break;
     case "open-newgame": openNewGame(); break;
     case "open-mainmenu": openMainMenu(); break;
     case "return-mainmenu": returnToMainMenu(); break;
@@ -63,7 +64,6 @@ document.addEventListener("click",(e)=>{
     case "toggle-theme": toggleTheme(); break;
     case "set-tab": setTab(t.dataset.v); break;
     case "set-cvd": setCVD(t.dataset.v); break;
-    case "set-theme": setTheme(t.dataset.v); break;
     case "set-keys": setKeys(t.dataset.v); break;
     case "set-toastpos": setToastPos(t.dataset.v); break;
     case "set-toastms": setToastMs(t.dataset.v); break;
@@ -108,6 +108,12 @@ document.addEventListener("keydown",(e)=>{
     if(open){
       if(!landing && modalEl.classList.contains("settings") && settingsFromMenu){
         e.preventDefault(); openMenu();                // in-game Settings (from menu) → back to the Menu
+      } else if(modalEl.classList.contains("tutorial")){
+        // How to Play → back out to wherever it was opened from (its foot button
+        // action is already context-correct: main menu, pause menu, or close).
+        e.preventDefault();
+        const back = modalEl.querySelector(".foot .gbtn");
+        if(back) back.click(); else { closeModal(); if(pendingMainMenu){ pendingMainMenu=false; openMainMenu(); } }
       } else if(landing && modalEl.classList.contains("page")){
         // Landing sub-page → walk back one tier by triggering the page's own
         // Back button (New Game step 2 → step 1 → main menu; Load/Settings → menu).

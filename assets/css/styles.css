@@ -26,10 +26,23 @@ button{font-family:"Jost",sans-serif; cursor:pointer}
 .brand h1{font-size:34px; letter-spacing:.5px; color:var(--gilt-soft)}
 .brand .sub{font-size:12.5px; letter-spacing:3px; text-transform:uppercase; color:var(--ink-dim)}
 .topbar .spacer{flex:1}
-.theme-toggle{flex:0 0 auto; white-space:nowrap; display:inline-flex; align-items:center; gap:6px}
-.menu-btn{flex:0 0 auto; white-space:nowrap}
+/* Theme toggle — a small round icon button used in two places: the in-game
+   header (.theme-toggle) and the main menu (.theme-float, fixed bottom-left).
+   Both share the .theme-btn look so they match. */
+.theme-btn{display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto;
+  width:40px; height:40px; border-radius:50%; border:1px solid var(--gilt);
+  background:linear-gradient(180deg,#332942,#271f33); color:var(--gilt-soft);
+  font-size:18px; line-height:1; cursor:pointer; box-shadow:var(--shadow)}
+.theme-btn:hover{color:#fff; border-color:var(--gilt-soft)}
+body.light .theme-btn{background:linear-gradient(180deg,#f6efe0,#ece1c9); color:#7d5c21}
+/* menu variant: fixed in the bottom-left corner, shown only on the main menu
+   (pre-game), sitting above the menu scrim so it stays clickable. */
+.theme-float{position:fixed; left:16px; bottom:calc(16px + env(safe-area-inset-bottom,0px)); z-index:55;
+  display:none; width:44px; height:44px; font-size:19px}
+body.pre-game .theme-float{display:inline-flex}
 .menu-btn[hidden]{display:none}
-.menu-btn.on{border-color:var(--gilt); color:var(--gilt-soft); box-shadow:0 0 0 1px var(--gilt)}
+/* paused state: gilt ring + brighter icon so the frozen game reads clearly */
+.menu-btn.on{color:#fff; border-color:var(--gilt-soft); box-shadow:0 0 0 2px var(--gilt)}
 /* paused: dim the play area so the frozen state reads clearly */
 body.paused #nobles, body.paused #tiers, body.paused #bank{
   opacity:.5; filter:grayscale(.4); pointer-events:none; transition:opacity .2s ease, filter .2s ease}
@@ -514,7 +527,7 @@ body.light .log .log-round{background:#fbf6ea}
 .scrim:has(.mainmenu){padding:0}
 .modal.mainmenu{max-width:none; width:100%; height:100%; max-height:100%; border:none; border-radius:0;
   background:radial-gradient(ellipse at 50% 28%, #2b2338, #16111e 72%);
-  display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:15vh 24px 6vh; overflow:auto}
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:clamp(28px,7vh,90px) 24px 6vh; overflow:auto}
 .mm{width:100%; max-width:520px; display:flex; flex-direction:column; align-items:center; text-align:center}
 .mm-hero{margin-bottom:clamp(24px,5vh,44px)}
 .mm-hero .eyebrow{font-size:12px; letter-spacing:4px}
@@ -547,7 +560,61 @@ body.light .modal.mainmenu{background:radial-gradient(ellipse at 50% 28%, #fbf6e
 /* On landing pages the leading button is always a "Back" — anchor it to the
    left while primary actions (Start game) stay on the right. */
 .mm-page .foot > .gbtn:first-child{margin-right:auto}
-.howto-panel{max-height:none}
+/* How to Play — illustrated guide shown in a tidy modal box (its own "tutorial"
+   modal, opened from the main menu or the in-game pause menu). The .modal wrapper
+   already caps height and scrolls, so it reads the same everywhere.
+   Each section pairs a heading + a figure built from the game's real components
+   (bank gems, a sample card, a sample patron) with a short explanation. */
+.htp-lead{font-size:15px; line-height:1.6; color:var(--ink); margin:0 0 4px}
+.htp-lead b{color:var(--gilt-soft)}
+.htp-sec{margin-top:16px}
+.htp-head{display:flex; align-items:center; gap:9px}
+.htp-head h3{margin:0; font-size:19px; color:var(--ink)}
+.htp-hi{width:20px; height:20px; flex:0 0 auto; color:var(--gilt-soft)}
+.htp-body{display:flex; flex-wrap:wrap; gap:14px 18px; align-items:flex-start; margin-top:8px}
+.htp-fig{flex:0 0 auto}
+.htp-txt{flex:1 1 210px; min-width:0}
+.htp-txt p{margin:0 0 6px}
+.htp-txt p:last-child{margin-bottom:0}
+.htp-txt .inline-gem, .htp .dot{vertical-align:-2px}
+/* the bank: real faceted gems + names */
+.htp-gems{display:flex; flex-wrap:wrap; gap:10px 12px; max-width:236px}
+.htp-tok{display:flex; flex-direction:column; align-items:center; gap:4px; width:44px}
+.htp-tok .gem{width:30px; height:30px}
+.htp-tok small{font-size:9px; letter-spacing:.3px; text-transform:uppercase; color:var(--ink-dim)}
+/* sample development card: the real card scaled down (its cqi internals follow) */
+.htp .card.htp-demo-card{width:96px; height:128px; flex:0 0 auto; cursor:default; transition:none}
+.htp .card.htp-demo-card:hover{transform:none; border-color:var(--line)}
+/* sample patron: the real tile at a fixed compact size */
+.htp .noble.htp-demo-noble{width:112px; min-height:74px; flex:0 0 auto; cursor:default}
+/* turn actions */
+.htp-actions{margin:0; padding-left:18px}
+.htp-actions li{font-size:14px; line-height:1.6; color:var(--ink-dim); margin:3px 0}
+.htp-actions b{color:var(--ink)}
+.htp-note{margin:8px 0 0; font-size:13px; color:var(--ink-dim)}
+
+/* How to Play as a full-screen LANDING PAGE (opened from the main menu): the
+   "Gilded" hero is top-anchored at the SAME position as every other landing page
+   (the shared .modal.mainmenu padding). This page just widens and flows the guide
+   into two compact columns so it fits below the title without scrolling. */
+.mm-page:has(.htp-page){max-width:960px}
+.mm-page:has(.htp-page) .mm-page-hero{margin-bottom:clamp(10px,2vh,20px)}
+.htp-page-title{text-align:center; font-family:"Cormorant Garamond",serif; font-size:22px;
+  color:var(--gilt-soft); margin:0 0 10px}
+.htp-page .htp{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:2px 34px; align-items:start}
+.htp-page .htp-lead{grid-column:1/-1; margin:0 0 2px; font-size:14px}
+.htp-page .htp-sec{margin-top:10px}
+.htp-page .htp-head h3{font-size:17px}
+.htp-page .htp-body{gap:10px 14px; margin-top:5px}
+.htp-page .htp-txt p{font-size:13.5px; line-height:1.5}
+.htp-page .htp-actions li{font-size:13px; line-height:1.5}
+.htp-page .htp-gems{gap:7px 10px; max-width:214px}
+.htp-page .htp-tok{width:40px}
+.htp-page .htp-tok .gem{width:26px; height:26px}
+.htp-page .card.htp-demo-card{width:84px; height:112px}
+.htp-page .noble.htp-demo-noble{width:104px; min-height:66px}
+.htp-page .foot{margin-top:12px}
 /* stacked settings row: label on top, controls (e.g. name inputs) below */
 .set-row.col{display:block}
 .set-row.col .set-label{margin-bottom:8px}
