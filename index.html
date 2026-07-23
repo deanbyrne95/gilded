@@ -75,8 +75,14 @@
 <!-- Quick theme toggle: small fixed button shown on the main menu -->
 <button class="theme-btn theme-float" id="themeFloat" data-action="toggle-theme" aria-label="Toggle light or dark theme" aria-pressed="false" title="Toggle light / dark theme"></button>
 
-<!-- Interactive tutorial overlay: spotlight + coaching card (hidden until run) -->
+<!-- Interactive tutorial overlay: spotlight + coaching card (hidden until run).
+     The four shields block clicks everywhere except the highlighted target, so
+     the player can only interact with the current step's controls. -->
 <div id="tutorLayer" hidden>
+  <div class="tutor-shield" data-edge="top"></div>
+  <div class="tutor-shield" data-edge="right"></div>
+  <div class="tutor-shield" data-edge="bottom"></div>
+  <div class="tutor-shield" data-edge="left"></div>
   <div id="tutorSpot" aria-hidden="true"></div>
   <div id="tutorCard" role="dialog" aria-label="Tutorial"></div>
 </div>

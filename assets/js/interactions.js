@@ -46,6 +46,7 @@ function onDeselect(color){
 
 // Commit the current gem selection as this turn's "take gems" action.
 function confirmTake(){
+  if(tutorBlocks("take")) return;
   if(!humanControls()) return;
   const total=selCount(); if(total===0) return flash("Select some gems first.");
   const colors=Object.keys(UI.sel).filter(k=>UI.sel[k]>0);
@@ -78,6 +79,7 @@ function onCardClick(loc){
 
 // Buy the selected card if affordable, animate it to the player, and log it.
 function doBuy(){
+  if(tutorBlocks("buy")) return;
   const loc=UI.selectedCard; if(!loc) return; const p=me();
   const card = loc.reserved!=null ? p.reserved[loc.reserved] : G.board[loc.tier][loc.idx];
   if(!card) return;
@@ -94,6 +96,7 @@ function doBuy(){
 
 // Reserve the selected board card (taking a gold if available), then log it.
 function doReserve(){
+  if(tutorBlocks("reserve")) return;
   const loc=UI.selectedCard; if(!loc||loc.reserved!=null) return; const p=me();
   if(p.reserved.length>=3) return flash("You can hold at most 3 reserved cards.");
   const card=G.board[loc.tier][loc.idx];
@@ -108,6 +111,7 @@ function doReserve(){
 
 // Blindly reserve the top card of a tier's deck (taking a gold if available).
 function onDeckReserve(tier){
+  if(tutorBlocks("reserve")) return;
   if(!humanControls()) return; const p=me();
   if(p.reserved.length>=3) return flash("You can hold at most 3 reserved cards.");
   if(!G.decks[tier].length) return flash("That deck is empty.");
@@ -145,6 +149,14 @@ function onDiscard(color){
 
 // True when the local player may take a play-phase action.
 function humanControls(){ return !G.over && !paused && !me().isAI && UI.phase==="play"; }
+
+// During a gated tutorial step, only the intended action kind is allowed — a
+// backstop in case some path bypasses the hidden buttons. Returns true if the
+// given action is blocked right now.
+function tutorBlocks(kind){
+  const g = (typeof tutorAwaiting==="function") ? tutorAwaiting() : null;
+  return !!g && g!==kind;
+}
 
 // Compare two card locations (board slot / reserved index / deck) for equality.
 function sameLoc(a,b){ if(!a||!b)return false; return a.tier===b.tier&&a.idx===b.idx&&a.reserved===b.reserved&&a.deck===b.deck; }

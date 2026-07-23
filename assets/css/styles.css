@@ -897,12 +897,16 @@ body.cvd-trit{ --blue:#3b3bdb; --green:#2a9d3a; --red:#d6334c; --gold:#cfae2b; }
 #tutorLayer{position:fixed; inset:0; z-index:90; pointer-events:none}
 #tutorLayer[hidden]{display:none}
 #tutorLayer.solid{background:rgba(6,4,10,.64)}
+/* Click-shields: transparent blockers positioned around the spotlight so only the
+   highlighted target (the gap between them) reaches the board. Full-screen when a
+   step has no target. */
+.tutor-shield{position:fixed; pointer-events:auto; background:transparent}
 #tutorSpot{position:fixed; border-radius:12px; pointer-events:none; border:2px solid var(--gilt-soft);
   box-shadow:0 0 0 9999px rgba(6,4,10,.64), 0 0 22px 4px rgba(212,175,85,.4);
   transition:top .28s cubic-bezier(.2,.8,.2,1), left .28s cubic-bezier(.2,.8,.2,1),
              width .28s cubic-bezier(.2,.8,.2,1), height .28s cubic-bezier(.2,.8,.2,1)}
 #tutorCard{position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
-  width:min(440px,92vw); pointer-events:auto; color:var(--ink);
+  width:min(440px,92vw); pointer-events:auto; color:var(--ink); z-index:2;
   background:linear-gradient(170deg,#2b2338,#211a2b); border:1px solid var(--gilt);
   border-radius:14px; padding:16px 18px; box-shadow:0 16px 44px rgba(0,0,0,.6)}
 #tutorCard.at-bottom{top:auto; bottom:clamp(14px,4vh,30px); transform:translateX(-50%)}

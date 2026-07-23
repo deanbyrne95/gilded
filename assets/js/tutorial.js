@@ -151,8 +151,28 @@ const Tutor = (function(){
     reposition();
   }
 
+  // Position the four click-shields so they cover everything EXCEPT the rectangle
+  // (l,t,r,b) — leaving that hole clickable. Pass a zero-area rect to block the
+  // whole screen.
+  function shields(){ return [...document.querySelectorAll("#tutorLayer .tutor-shield")]; }
+  function setShields(t,l,r,b){
+    const vw=window.innerWidth, vh=window.innerHeight;
+    t=Math.max(0,t); l=Math.max(0,l); r=Math.min(vw,r); b=Math.min(vh,b);
+    if(r<l||b<t){ t=l=r=b=0; }   // degenerate → full-screen block
+    const rects={
+      top:    {left:0, top:0, width:vw, height:t},
+      bottom: {left:0, top:b, width:vw, height:Math.max(0,vh-b)},
+      left:   {left:0, top:t, width:l, height:Math.max(0,b-t)},
+      right:  {left:r, top:t, width:Math.max(0,vw-r), height:Math.max(0,b-t)},
+    };
+    shields().forEach(sh=>{ const q=rects[sh.dataset.edge]; if(!q) return;
+      sh.style.left=q.left+"px"; sh.style.top=q.top+"px";
+      sh.style.width=q.width+"px"; sh.style.height=q.height+"px"; });
+  }
+
   // Place the spotlight over the current target (if any) and the coaching card
-  // clear of it. Called after every render, resize and scroll while active.
+  // clear of it, and shape the click-shields to the same hole. Called after every
+  // render, resize and scroll while active.
   function reposition(){
     if(!active) return;
     const step=steps[idx]; if(!step) return;
@@ -173,20 +193,29 @@ const Tutor = (function(){
       s.style.left=(left-pad)+"px";
       s.style.width=(right-left+pad*2)+"px";
       s.style.height=(bottom-top+pad*2)+"px";
+      // Only the highlighted rectangle stays clickable.
+      setShields(top-pad, left-pad, right+pad, bottom+pad);
       // Put the card on whichever side has more room (above or below the target).
       const below = vh - bottom, above = top;
       c.classList.remove("at-top","at-bottom");
       if(below>=above){ c.classList.add("at-bottom"); }
       else { c.classList.add("at-top"); }
     } else {
-      // No target: dim the whole screen via the layer and centre the card.
+      // No target: dim the whole screen via the layer, block all board clicks,
+      // and centre the card (only its buttons are interactive).
       s.style.display="none";
       if(l) l.classList.add("solid");
+      setShields(0,0,0,0);
       c.classList.remove("at-top","at-bottom");
     }
   }
 
-  return { begin, end, next, notify, reposition, isActive:()=>active };
+  // The action kind the current step is waiting for ('take'|'buy'|'reserve'), or
+  // null. Lets the board restrict the card menus so the player can only take the
+  // intended action during a gated step.
+  function awaiting(){ return active && steps[idx] ? (steps[idx].await||null) : null; }
+
+  return { begin, end, next, notify, reposition, isActive:()=>active, awaiting };
 })();
 
 // ---- global glue -----------------------------------------------------------
@@ -205,3 +234,6 @@ function tutorNotify(kind){ try{ if(typeof Tutor!=="undefined") Tutor.notify(kin
 // render()/resize/scroll call this so the spotlight tracks the live DOM.
 function tutorReposition(){ try{ if(typeof Tutor!=="undefined") Tutor.reposition(); }catch(e){} }
 function tutorActive(){ try{ return typeof Tutor!=="undefined" && Tutor.isActive(); }catch(e){ return false; } }
+// The action the current tutorial step is gating on ('buy'|'reserve'|'take'|null),
+// used by the board to restrict card menus so the player stays on task.
+function tutorAwaiting(){ try{ return typeof Tutor!=="undefined" ? Tutor.awaiting() : null; }catch(e){ return null; } }

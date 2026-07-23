@@ -84,7 +84,11 @@ function renderTiers(){
   el.innerHTML=[3,2,1].map(t=>{
     const dsel = sameLoc(UI.selectedCard,{deck:t});
     const canRes = humanControls() && p.reserved.length<3 && G.decks[t].length>0;
-    const dmenu = (dsel && humanControls())
+    // Deck "Hold" is a reserve; hide it during a gated tutorial step that isn't
+    // the reserve lesson (e.g. the buy step) so the player stays on task.
+    const gate=tutorAwaiting();
+    const showDeckRes = (dsel && humanControls()) && (!gate || gate==="reserve");
+    const dmenu = showDeckRes
       ? `<div class="deck-menu"><button class="mbtn res" data-action="hold-deck" data-tier="${t}" ${canRes?"":"disabled"}>Hold</button></div>` : "";
     const deck=`<div class="deck t${t} ${dsel?"sel":""}" data-action="deck" data-tier="${t}"><div class="dlabel">Tier</div><div class="dnum">${t}</div><div class="dleft">${G.decks[t].length} left</div>${dmenu}</div>`;
     const cards=G.board[t].map((c,idx)=> c?cardHTML(c,{tier:t,idx}):`<div class="card empty" aria-hidden="true"></div>`).join("");
@@ -103,9 +107,15 @@ function cardHTML(c,loc){
   if(sel && humanControls()){
     const canBuy=affordPlan(p,c).ok;
     const canRes=loc.reserved==null && p.reserved.length<3;
+    // During a gated tutorial step, offer only the intended action so the player
+    // can't take a different move that would break the lesson (e.g. reserving on
+    // the "buy" step). Outside the tutorial both buttons show as normal.
+    const gate=tutorAwaiting();
+    const showBuy = !gate || gate==="buy";
+    const showRes = (!gate || gate==="reserve") && loc.reserved==null;
     menu=`<div class="menu">
-      <button class="mbtn buy" data-action="buy" ${canBuy?"":"disabled"}>Buy</button>
-      ${loc.reserved==null?`<button class="mbtn res" data-action="reserve" ${canRes?"":"disabled"}>Hold</button>`:""}
+      ${showBuy?`<button class="mbtn buy" data-action="buy" ${canBuy?"":"disabled"}>Buy</button>`:""}
+      ${showRes?`<button class="mbtn res" data-action="reserve" ${canRes?"":"disabled"}>Hold</button>`:""}
     </div>`;
   }
   const dataloc = loc.reserved!=null?`data-reserved="${loc.reserved}"`:`data-tier="${loc.tier}" data-idx="${loc.idx}"`;
