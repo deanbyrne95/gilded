@@ -6,7 +6,9 @@
  * are decoded once into AudioBuffers; gems keep a per-colour "voice" by pitch-
  * shifting a glass sample. The AudioContext is created eagerly at load so it is
  * ready the instant the user first interacts — browsers still block *sound*
- * until that first gesture, but this way even the very first click plays.
+ * until that first gesture, but this way even the very first click plays. On iOS
+ * a looping silent <audio> element is also started on that gesture so Web Audio
+ * plays through the hardware mute (ringer) switch instead of being silenced.
  * Respects the Sound-effects / Volume settings.
  * ==========================================================================*/
 
@@ -37,12 +39,44 @@ const Sfx = (function(){
     return ctx;
   }
 
+  // iOS routes Web Audio through an audio session that is *silenced by the
+  // hardware mute (ringer) switch*, so a pure Web Audio game goes quiet in silent
+  // mode even after a gesture — unlike an HTMLMediaElement, whose playback ignores
+  // the switch. Playing a looping, genuinely-silent <audio> element flips the
+  // page's audio session to the media-playback category, after which our Web Audio
+  // cues and music are audible in silent mode too. Created and (re)started inside
+  // a user gesture via unlock(); kept looping thereafter.
+  const SILENT_WAV="data:audio/wav;base64,UklGRmQGAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YUAGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+  let silentEl=null;
+  function iosNeedsUnmute(){
+    if(typeof navigator==="undefined") return false;
+    const ua=navigator.userAgent||"";
+    // iPhone/iPod/iPad, plus iPadOS which now reports as "MacIntel" with touch.
+    return /iP(hone|od|ad)/.test(ua) || (navigator.platform==="MacIntel" && (navigator.maxTouchPoints||0)>1);
+  }
+  function keepSessionActive(){
+    if(!iosNeedsUnmute()) return;
+    try{
+      if(!silentEl){
+        silentEl=new Audio(SILENT_WAV);
+        silentEl.loop=true;
+        silentEl.preload="auto";
+        silentEl.setAttribute("playsinline","");   // never take over the screen
+        // Must stay UNMUTED for iOS to switch the audio session category; the
+        // buffer is all-zero samples, so it is inaudible regardless of volume.
+      }
+      if(silentEl.paused){ const pr=silentEl.play(); if(pr&&pr.catch) pr.catch(()=>{}); }
+    }catch(e){}
+  }
+
   // Kick the context alive on a user gesture (no-op once running). Also plays a
-  // one-sample silent buffer, which is what actually unlocks audio on iOS.
+  // one-sample silent buffer, which is what actually unlocks audio on iOS, and
+  // starts the silent <audio> element that lets Web Audio ignore the mute switch.
   function unlock(){
     const c=ensure(); if(!c) return;
     if(c.state==="suspended"){ try{ c.resume(); }catch(e){} }
     try{ const b=c.createBufferSource(); b.buffer=c.createBuffer(1,1,c.sampleRate); b.connect(c.destination); b.start(0); }catch(e){}
+    keepSessionActive();
   }
 
   // Re-apply the current volume to the live master gain.

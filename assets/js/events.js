@@ -173,5 +173,9 @@ function armAudio(){ try{ Sfx.unlock(); Music.start(); }catch(e){} }
 armAudio();
 ["pointerdown","touchstart","keydown","click"].forEach(ev=>
   window.addEventListener(ev, armAudio, true));
+// iOS suspends the audio context (and pauses the silent keep-alive element) when
+// the page is backgrounded or interrupted by a call; re-arm when it returns to
+// the foreground so sound resumes without needing an extra tap.
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) armAudio(); });
 if(!seenTutorial()){ markTutorialSeen(); pendingMainMenu=true; openTutorial(); }
 else openMainMenu();
