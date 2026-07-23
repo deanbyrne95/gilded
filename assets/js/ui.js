@@ -254,8 +254,14 @@ function newGameStep2HTML(){
 }
 
 function newGameHTML(){ return ngStep===2 ? newGameStep2HTML() : newGameStep1HTML(); }
-// Present the new-game flow: a full page in the landing flow, a dialog in-game.
-function ngRender(){ if(landing) openLandingPage(newGameHTML()); else openModal(newGameHTML(), (ngForce)?false:!!G); }
+// Present the new-game flow. From the main menu it is a FULL-SCREEN page (the same
+// ".mainmenu page" surface as the other landing pages, so Esc/Back navigation is
+// preserved) but WITHOUT the pinned "Gilded" hero — just the clean choose-a-mode /
+// setup panel. In-game (the winner screen's "Play again") it opens as a dialog.
+function ngRender(){
+  if(landing) openModal(`<div class="mm-page ng-page"><div class="mm-page-body">${newGameHTML()}</div></div>`, false, "mainmenu page");
+  else openModal(newGameHTML(), (ngForce)?false:!!G);
+}
 function openNewGame(force){ ngForce=!!force; ngStep=1; ngRender(); }
 function ngRerender(){ ngRender(); }
 function ngNext(){ ngStep=2; ngRender(); }

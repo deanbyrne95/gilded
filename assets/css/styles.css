@@ -564,6 +564,11 @@ body.light .modal.mainmenu{background:radial-gradient(ellipse at 50% 28%, #fbf6e
 /* On landing pages the leading button is always a "Back" — anchor it to the
    left while primary actions (Start game) stay on the right. */
 .mm-page .foot > .gbtn:first-child{margin-right:auto}
+/* New Game full-screen page (no "Gilded" hero). Cap the panel to the same inner
+   width as the compact dialog (~584px = 640 modal minus its 28px padding) so the
+   mode cards wrap 3-then-1 exactly like the dialog, instead of stretching into a
+   single full-width row. The purple surface still fills the whole viewport. */
+.mm-page.ng-page{max-width:584px}
 /* How to Play — illustrated guide shown in a tidy modal box (its own "tutorial"
    modal, opened from the main menu or the in-game pause menu). The .modal wrapper
    already caps height and scrolls, so it reads the same everywhere.
