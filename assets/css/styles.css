@@ -782,6 +782,15 @@ html,body{overflow-x:hidden}
   /* Player chips share the compact base sizing now; on phones just allow a
      narrower chip so more fit before the pager kicks in. */
   .pchip{min-width:112px}
+  /* Load Game session cards: on narrow screens the side-by-side info+buttons
+     layout overflows and clips. Stack each card so the info takes the full
+     width on the first line and the action buttons sit right-aligned on the
+     second line. Works for both the normal and confirm states. */
+  .sess{flex-wrap:wrap}
+  .sess-info{flex:1 1 100%; min-width:0}
+  .sess-acts{flex:0 0 100%; justify-content:flex-end}
+  .sess-acts.confirm{flex-direction:row; align-items:center}
+  .sess-confirm-q{display:none}
 }
 
 @media (prefers-reduced-motion: reduce){
