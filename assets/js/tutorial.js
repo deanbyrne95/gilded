@@ -50,7 +50,7 @@ const Tutor = (function(){
         cta:"Begin",
       },
       {
-        text:`<h3>The Bank</h3><p>These are the gem piles. On your turn you may <b>take gems</b>. Take <b>3 gems of different colours</b>: tap three piles, then press <b>Take</b>.</p>`,
+        text:`<h3>The Bank</h3><p>These are the gem piles. On your turn you may <b>take gems</b>: either <b>3 of different colours</b>, or <b>2 of the same colour</b> (only when that pile has at least 4). Tap three piles, then press <b>Take</b>.</p>`,
         target:()=>[document.getElementById("gemHud"), document.getElementById("hudControls")],
         await:"take",
       },
